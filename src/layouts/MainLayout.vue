@@ -79,11 +79,11 @@
                 <span class="revalia ">{{ companyName }}</span>
               </h1>
               <p class="hero-subtitle q-mb-md">
-                Migramos seus sistemas para a nuvem com foco em
-                <strong>redução de custos</strong>, automação de rotinas e
-                <strong>IA no WhatsApp</strong> para captar leads e vender mais.
-                Tudo isso sem parar a operação atual.
+                Equipe <strong>especializada</strong> em <strong>agentes de IA no WhatsApp</strong> que atendem seus clientes e gera vendas 24h,
+                <strong>criamos e migramos sistemas na nuvem</strong> com foco em
+                <strong>redução de custos</strong> e <strong>automação</strong> de processos.
               </p>
+
 
               <div class="hero-badges row q-col-gutter-sm q-mb-md">
                 <div class="col-auto">
@@ -324,16 +324,19 @@
             <div class="row items-center justify-between q-col-gutter-md">
               <div class="col-12 col-md-auto">
                 <div class="text-caption">
-                  <q-img src="/favicon.png" width="60px"></q-img><strong class="revalia">{{ companyName }}</strong> — Consultoria em Nuvem, Automação e
+                  <q-img src="/favicon.png" width="60px"></q-img><strong class="revalia">{{ companyName }}</strong> —
+                  Consultoria em Nuvem, Automação e
                   IA no WhatsApp.
                 </div>
                 <div class="text-caption">
-                  <q-icon name="mdi-instagram" color="teal" size="sm"></q-icon> Acompanhe as novidades em nosso Instagram:
-                  <a href="https://www.instagram.com/aitosoftwares/" style="text-decoration: none;" class="text-bold text-teal"
-                  target="_blank">@aitosoftwares</a>
+                  <q-icon name="mdi-instagram" color="teal" size="sm"></q-icon> Acompanhe as novidades em nosso
+                  Instagram:
+                  <a href="https://www.instagram.com/aitosoftwares/" style="text-decoration: none;"
+                    class="text-bold text-teal" target="_blank">@aitosoftwares</a>
                 </div>
                 <div class="text-caption q-pt-md">
-                  <q-icon name="pin_drop" color="teal" size="sm"></q-icon> Atendemos Valparaíso de Goiás, região do DF, Goiânia e projetos remotos em todo o Brasil.
+                  <q-icon name="pin_drop" color="teal" size="sm"></q-icon> Atendemos Valparaíso de Goiás, região do DF,
+                  Goiânia e projetos remotos em todo o Brasil.
                 </div>
               </div>
               <div class="col-12 col-md-auto text-right">
@@ -349,10 +352,14 @@
 
         <!-- BOTÃO FIXO IA -->
         <q-btn round class="ia-fab cta-btn animate__animated animate__slower animate__delay-4s animate__fadeInUp"
-          @click="openIAChat()">
+          @click="iaChat = !iaChat">
           <q-img src="/ia.gif" width="80px" alt="gif robo atendimento 24h com i.a" />
         </q-btn>
       </q-page>
+      <q-dialog v-model="iaChat" class="animate__animated animate__slower animate__ZoomIn"
+        style="backdrop-filter: blur(10px);">
+        <IAChatComponent class="w100" />
+      </q-dialog>
     </q-page-container>
 
   </q-layout>
@@ -361,17 +368,18 @@
 <script setup>
 import { ref, computed } from 'vue'
 import { useMeta } from 'quasar'
+import IAChatComponent from 'src/components/IAChatComponent.vue'
 
 const isMobile = window.innerWidth < 768
 const companyName = 'AITO SOFTWARES' // ajuste o nome da empresa
 const drawerOpen = ref(false)
-
+const iaChat = ref(false)
 const phone = ref('')
 const email = ref('')
 const company = ref('')
 
 // número do WhatsApp no formato DDI + DDD + número (sem símbolos)
-const WHATSAPP_NUMBER = '556181748795' // <-- troque para o número oficial
+const WHATSAPP_NUMBER = '5561981748795' // <-- troque para o número oficial
 
 const defaultMessage =
   'Olá! Gostaria de agendar uma consultoria gratuita para minha Empresa.'
@@ -630,7 +638,7 @@ useMeta(() => ({
   width: 40px;
   height: 40px;
   border-radius: 50%;
-  background: radial-gradient(circle at 30% 30%, #14b8a6, #14b8a6);
+  /* background: radial-gradient(circle at 30% 30%, #14b8a6, #14b8a6); */
   box-shadow: 0 0 18px rgba(56, 189, 248, 0.5);
 }
 
@@ -817,17 +825,17 @@ useMeta(() => ({
   transition: all 0.3s ease;
 }
 
+.cta-btn:hover {
+  filter: drop-shadow(0 8px 24px rgba(34, 197, 94, 0.5));
+  transform: translateY(-2px);
+}
+
 .cta-btn-2 {
   background: linear-gradient(135deg, #20b4be, #0bdf75);
   color: #f9fafb;
   font-weight: 600;
   border-radius: 999px;
   transition: all 0.3s ease;
-}
-
-.cta-btn:hover {
-  filter: drop-shadow(0 8px 24px rgba(34, 197, 94, 0.5));
-  transform: translateY(-2px);
 }
 
 .cta-btn-2:hover {
