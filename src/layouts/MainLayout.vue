@@ -11,7 +11,7 @@
               style="position: fixed;">
               <div class="row items-center animate__animated animate__slower animate__delay-1s animate__fadeInLeft">
                 <div class="logo-dot">
-                  <q-img src="/favicon.png" width="40px"></q-img>
+                  <q-img src="/favicon.png" width="50px"></q-img>
                 </div>
                 <div class="q-ml-sm">
                   <div class="text-subtitle1 text-white cta-btn-2 revalia q-px-sm">
@@ -32,14 +32,19 @@
               </nav>
 
               <!-- Menu mobile -->
-              <div class="lt-md animate__animated animate__slower animate__delay-1s animate__rotateIn">
-                <q-btn flat round dense icon="menu" size="lg" class="text-accent" @click="drawerOpen = !drawerOpen" />
+              <div class="lt-md">
+                <q-btn v-if="!drawerOpen" flat round dense icon="menu" size="lg"
+                  class="cta-btn  animate__animated animate__slower animate__rotateIn"
+                  @click="drawerOpen = !drawerOpen" />
+                <q-btn v-else flat round dense icon="close" size="lg"
+                  class="cta-btn  animate__animated animate__slower animate__rotateIn"
+                  @click="drawerOpen = !drawerOpen" />
               </div>
             </header>
           </div>
 
           <!-- Nav mobile dropdown -->
-          <q-slide-transition style="position: fixed;z-index: 99999;" class="w90">
+          <q-slide-transition style="position: fixed;z-index: 99999!important;" class="w90">
             <div v-if="drawerOpen" class="lt-md glass-card q-pa-sm q-mb-lg nav-mobile">
               <q-btn v-for="item in navItems" :key="item.target" flat dense no-caps
                 class="full-width text-left text-dark q-mb-xs" :label="item.label"
@@ -51,7 +56,7 @@
 
           <!-- HERO -->
           <section id="inicio"
-            class="section-block hero-block animate__animated animate__slower animate__slideInUp row items-center  q-mb-md">
+            class="section-block hero-block animate__animated animate__slower animate__slideInUp row items-center bg-black-grad  q-mb-md">
             <!-- VÍDEO / IMAGEM -->
             <div class="col-12 col-md-6">
               <!-- <div class="text-caption text-secondary-light text-uppercase text-weight-medium q-mb-md q-pl-sm">
@@ -67,19 +72,20 @@
                     </div>
                   </div>
                 </q-responsive> -->
-                <q-img src="/chat.png" width="75%" alt="Imagem ilustrativa de tecnologia em nuvem e IA no WhatsApp"
+                <q-img v-if="!isMobile" src="/landing.avif" width="85%" alt="Imagem ilustrativa de tecnologia em nuvem e IA no WhatsApp"
                   class="hero-media" />
               </div>
             </div>
             <!-- TEXTO -->
-            <div class="col-12 col-md-6">
+            <div class="col-12 col-md-6" style="z-index: 999!important;">
               <h1
                 class="hero-title animate__animated animate__slower animate__slideInLeft   q-mb-md row items-center no-wrap">
-                <q-img src="/favicon.png" width="85px"></q-img>
+                <q-img v-if="!isMobile" src="/favicon.png" width="85px"></q-img>
                 <span class="revalia ">{{ companyName }}</span>
               </h1>
-              <p class="hero-subtitle q-mb-md">
-                Equipe <strong>especializada</strong> em <strong>agentes de IA no WhatsApp</strong> que atendem seus clientes e gera vendas 24h,
+              <p class="hero-subtitle q-mb-md text-grey-4" v-if="!isMobile">
+                Equipe <strong>especializada</strong> em <strong>agentes de IA no WhatsApp</strong> que atendem seus
+                clientes e gera vendas 24h,
                 <strong>criamos e migramos sistemas na nuvem</strong> com foco em
                 <strong>redução de custos</strong> e <strong>automação</strong> de processos.
               </p>
@@ -114,12 +120,12 @@
                     label="Quero reduzir meus custos" @click="openWhatsapp" />
                 </div>
                 <div class="col-12 col-sm-auto">
-                  <q-btn flat no-caps class="text-dark full-width" label="Ver como funciona na prática"
+                  <q-btn flat no-caps class="text-grey-3 full-width" label="Ver como funciona na prática"
                     @click="scrollToSection('como-funciona')" />
                 </div>
               </div>
 
-              <div class="text-caption text-secondary-light q-mt-md">
+              <div class="text-caption text-grey-6 q-mt-md">
                 ✔ Consultoria inicial 100% gratuita (online ou presencial*).<br>
                 ✔ Projeto acompanhando em tempo real.<br>
                 ✔ Suporte de excelência durante e após a implantação.
@@ -184,7 +190,7 @@
                 <article class="glass-card q-pa-md service-card">
                   <div class="row items-start q-col-gutter-sm">
                     <div class="col-auto">
-                      <q-icon :name="service.icon" size="32px" class="text-accent" />
+                      <q-icon :name="service.icon" size="32px" class="text-green-14" />
                     </div>
                     <div class="col">
                       <h3 class="text-subtitle1 text-dark q-mb-xs">
@@ -366,7 +372,7 @@
 </template>
 
 <script setup>
-import { ref, computed } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import { useMeta } from 'quasar'
 import IAChatComponent from 'src/components/IAChatComponent.vue'
 
@@ -595,6 +601,88 @@ useMeta(() => ({
     }
   ]
 }))
+function initStarfieldForElement(container) {
+  // Cria o canvas uma vez por container
+  const canvas = document.createElement('canvas');
+  canvas.classList.add('starfield');
+  container.appendChild(canvas);
+
+  const ctx = canvas.getContext('2d');
+
+  const stars = [];
+  let width, height, numStars;
+
+  function resize() {
+    width = container.clientWidth;
+    height = container.clientHeight;
+
+    canvas.width = width;
+    canvas.height = height;
+
+    // quantidade de estrelas proporcional à área
+    numStars = Math.floor((width * height) / 7000); // ajuste se quiser mais/menos
+    stars.length = 0;
+    for (let i = 0; i < numStars; i++) {
+      stars.push({
+        x: Math.random() * width,
+        y: Math.random() * height,
+        radius: Math.random() * .3 + 0.2,   // tamanho da estrela
+        alpha: Math.random(),                // brilho inicial
+       delta: (Math.random() * 0.006) + 0.001  // velocidade do brilho
+      });
+    }
+  }
+
+  function draw() {
+    ctx.clearRect(0, 0, width, height);
+
+    for (const star of stars) {
+      // pisca mais devagar multiplicando por um fator < 1
+      star.alpha += star.delta * 0.35;
+
+      // inverte o brilho pra dar efeito de piscar
+      if (star.alpha <= 0 || star.alpha >= 1) {
+        star.delta *= -1;
+      }
+
+      ctx.save();
+      ctx.globalAlpha = star.alpha;
+      const gradient = ctx.createRadialGradient(
+        star.x, star.y, 0,
+        star.x, star.y, star.radius * 3
+      );
+      gradient.addColorStop(0.1, 'white');
+      gradient.addColorStop(0.4, 'white');
+      gradient.addColorStop(1, 'white');
+
+      ctx.fillStyle = gradient;
+      ctx.beginPath();
+      ctx.arc(star.x, star.y, star.radius * 3, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.restore();
+    }
+
+    requestAnimationFrame(draw);
+  }
+
+  resize();
+  draw();
+
+  // Recalcula em resize
+  window.addEventListener('resize', () => {
+    resize();
+  });
+}
+
+function initStarfields() {
+  const containers = document.querySelectorAll('.bg-black-grad');
+  containers.forEach(initStarfieldForElement);
+}
+
+onMounted(() => {
+  if (typeof window === 'undefined') return
+  initStarfields()
+})
 </script>
 
 <style scoped>
@@ -632,14 +720,6 @@ useMeta(() => ({
   padding: 8px 18px;
   border: 1px solid rgba(148, 163, 184, 0.3);
   box-shadow: 0 14px 40px rgba(148, 163, 184, 0.35);
-}
-
-.logo-dot {
-  width: 40px;
-  height: 40px;
-  border-radius: 50%;
-  /* background: radial-gradient(circle at 30% 30%, #14b8a6, #14b8a6); */
-  box-shadow: 0 0 18px rgba(56, 189, 248, 0.5);
 }
 
 .nav-link {
@@ -682,7 +762,7 @@ useMeta(() => ({
   padding: 6px 12px;
   border-radius: 999px;
   border: 1px solid rgba(148, 163, 184, 0.7);
-  background: rgba(248, 250, 252, 0.9);
+  background: rgba(248, 250, 252, 0.822);
   color: #374151;
 }
 
@@ -708,11 +788,11 @@ useMeta(() => ({
 /* GLASS */
 
 .glass-card {
-  background: rgba(255, 255, 255, 0.178);
+  background: rgba(255, 255, 255, 0.377);
   border-radius: 24px;
   border: 1px solid rgba(148, 163, 184, 0.25);
   backdrop-filter: blur(20px);
-  filter: drop-shadow(0 8px 24px rgba(42, 42, 43, 0.37));
+  filter: drop-shadow(0 8px 24px rgba(14, 14, 14, 0.493));
 }
 
 /* LOGOS STRIP */
@@ -871,6 +951,44 @@ useMeta(() => ({
   bottom: 18px;
   z-index: 40;
 }
+
+.bg-black-grad {
+  position: relative;
+  overflow: hidden;
+  /* Fundo preto em degradê, bem sutil */
+  background:
+    radial-gradient(circle at 80% 100%, #363636c4 0, #080808 45%),
+    radial-gradient(circle at  15% 30%, #272727 0, #1b1b1b 55%),
+    #03000e;
+  color: #f9fafb;
+  /* opcional, texto claro em cima */
+}
+
+/* Estrelas em overlay */
+.bg-black-grad::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 0;
+  background-image:
+    radial-gradient(1px 1px at 10% 20%, rgba(255, 255, 255, 0.9), transparent),
+    radial-gradient(1px 1px at 30% 80%, rgba(255, 255, 255, 0.6), transparent),
+    radial-gradient(2px 2px at 70% 30%, rgba(255, 255, 255, 0.7), transparent),
+    radial-gradient(1.5px 1.5px at 90% 60%, rgba(255, 255, 255, 0.8), transparent),
+    radial-gradient(1px 1px at 50% 50%, rgba(255, 255, 255, 0.4), transparent);
+  background-repeat: no-repeat;
+  background-size: cover;
+  opacity: 0.9;
+  filter: drop-shadow(0 0 6px rgba(255, 255, 255, 0.5));
+}
+
+/* Garante que o conteúdo fique acima das estrelas */
+.bg-black-grad>* {
+  position: relative;
+  z-index: 1;
+}
+
 
 /* RESPONSIVO */
 

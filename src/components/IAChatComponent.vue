@@ -88,6 +88,8 @@
 import { ref, computed, watch, nextTick, onMounted } from 'vue'
 import { api } from 'boot/axios' // usando o boot/axios
 
+const STORAGE_KEY = 'aito_site_chat_messages_v1'
+
 const messages = ref([
   {
     from: 'ia',
@@ -119,8 +121,37 @@ const scrollToBottom = () => {
   sa.setScrollPosition('vertical', target.scrollHeight, duration)
 }
 
-// desce quando montar
+// carregar histórico do sessionStorage (se existir)
+const loadFromSession = () => {
+  try {
+    const raw = sessionStorage.getItem(STORAGE_KEY)
+    if (!raw) return
+
+    const parsed = JSON.parse(raw)
+    if (Array.isArray(parsed) && parsed.length > 0) {
+      messages.value = parsed.map(m => ({
+        from: m.from,
+        text: m.text,
+        link: m.link || null
+      }))
+    }
+  } catch (e) {
+    console.error('Erro ao carregar histórico do chat do sessionStorage:', e)
+  }
+}
+
+// salvar histórico no sessionStorage sempre que mudar
+const saveToSession = (val) => {
+  try {
+    sessionStorage.setItem(STORAGE_KEY, JSON.stringify(val))
+  } catch (e) {
+    console.error('Erro ao salvar histórico do chat no sessionStorage:', e)
+  }
+}
+
+// desce quando montar + tenta recuperar histórico
 onMounted(async () => {
+  loadFromSession()
   await nextTick()
   scrollToBottom()
 })
@@ -134,6 +165,15 @@ watch(
   }
 )
 
+// sempre que qualquer coisa em messages mudar, salva no sessionStorage
+watch(
+  messages,
+  (val) => {
+    saveToSession(val)
+  },
+  { deep: true }
+)
+
 // Só pode enviar se tiver texto e não estiver carregando resposta da IA
 const canSend = computed(() => {
   return currentMessage.value.trim().length > 0 && !loading.value
@@ -141,12 +181,13 @@ const canSend = computed(() => {
 
 const sleep = (ms) => new Promise(resolve => setTimeout(resolve, ms))
 
-// manda replies da IA uma a uma, com delay
+// manda replies da IA uma a uma, com delay (se quiser usar depois)
 const pushIaRepliesWithDelay = async (replies, delayMs = 900) => {
   for (const text of replies) {
     messages.value.push({
       from: 'ia',
-      text
+      text,
+      link: null
     })
 
     await nextTick()
@@ -215,8 +256,8 @@ const sendMessage = async () => {
     loading.value = false
   }
 }
-
 </script>
+
 
 <style scoped>
 .chat-container {

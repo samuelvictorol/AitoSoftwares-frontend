@@ -38,3 +38,29 @@ body {
   color: transparent; /* importante pro texto pegar o gradiente */
   display: inline-block; /* ajuda a aplicar bem o gradiente no texto */
 }
+
+.bg-black-grad {
+  position: relative;
+  overflow: hidden;
+  background:
+    radial-gradient(circle at 10% 0%, #111 0, #141414e3 50%),
+    radial-gradient(circle at 90% 100%, #050505 0, #141414e3 55%),
+    #141414e3;
+  color: #f9fafb;
+}
+
+/* canvas das estrelas fica por cima, mas não atrapalha o clique */
+.bg-black-grad canvas.starfield {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  z-index: 0;
+}
+
+/* conteúdo aparece acima das estrelas */
+.bg-black-grad > * {
+  position: relative;
+  z-index: 1;
+}
