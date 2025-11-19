@@ -72,8 +72,8 @@
                     </div>
                   </div>
                 </q-responsive> -->
-                <q-img v-if="!isMobile" src="/landing.avif" width="85%" alt="Imagem ilustrativa de tecnologia em nuvem e IA no WhatsApp"
-                  class="hero-media" />
+                <q-img v-if="!isMobile" src="/landing.avif" width="85%"
+                  alt="Imagem ilustrativa de tecnologia em nuvem e IA no WhatsApp" class="hero-media" />
               </div>
             </div>
             <!-- TEXTO -->
@@ -357,13 +357,14 @@
         </div>
 
         <!-- BOTÃO FIXO IA -->
-        <q-btn round class="ia-fab cta-btn animate__animated animate__slower animate__delay-4s animate__fadeInUp"
+        <q-btn round class="relative ia-fab cta-btn animate__animated animate__slower animate__delay-4s animate__fadeInUp"
           @click="iaChat = !iaChat">
+          <div v-if="hintIa" if="hintia" class="q-pl-md animate__animated animate__slower">Posso Ajudar?</div>
           <q-img src="/ia.gif" width="80px" alt="gif robo atendimento 24h com i.a" />
         </q-btn>
       </q-page>
       <q-dialog v-model="iaChat" class="animate__animated animate__slower animate__ZoomIn"
-        style="backdrop-filter: blur(10px);">
+        style="backdrop-filter: blur(28px);">
         <IAChatComponent class="w100" />
       </q-dialog>
     </q-page-container>
@@ -375,6 +376,7 @@
 import { ref, computed, onMounted } from 'vue'
 import { useMeta } from 'quasar'
 import IAChatComponent from 'src/components/IAChatComponent.vue'
+import { Utils } from 'src/Utils'
 
 const isMobile = window.innerWidth < 768
 const companyName = 'AITO SOFTWARES' // ajuste o nome da empresa
@@ -386,6 +388,29 @@ const company = ref('')
 
 // número do WhatsApp no formato DDI + DDD + número (sem símbolos)
 const WHATSAPP_NUMBER = '5561981748795' // <-- troque para o número oficial
+const hintIa = ref(true)
+
+setTimeout(() => {
+  const hintiaEl = document.getElementById('hintia')
+
+  if (hintiaEl) {
+    // adiciona as classes do animate.css
+    hintiaEl.classList.add('animate__animated', 'animate__fadeOutRight')
+
+    // espera a animação terminar pra esconder de vez
+    hintiaEl.addEventListener(
+      'animationend',
+      () => {
+        hintIa.value = false
+      },
+      { once: true } // executa só uma vez
+    )
+  } else {
+    // fallback: se não achar o elemento, esconde direto
+    hintIa.value = false
+  }
+}, 4000)
+
 
 const defaultMessage =
   'Olá! Gostaria de agendar uma consultoria gratuita para minha Empresa.'
@@ -628,7 +653,7 @@ function initStarfieldForElement(container) {
         y: Math.random() * height,
         radius: Math.random() * .3 + 0.2,   // tamanho da estrela
         alpha: Math.random(),                // brilho inicial
-       delta: (Math.random() * 0.006) + 0.001  // velocidade do brilho
+        delta: (Math.random() * 0.006) + 0.001  // velocidade do brilho
       });
     }
   }
@@ -682,6 +707,7 @@ function initStarfields() {
 onMounted(() => {
   if (typeof window === 'undefined') return
   initStarfields()
+
 })
 </script>
 
@@ -958,7 +984,7 @@ onMounted(() => {
   /* Fundo preto em degradê, bem sutil */
   background:
     radial-gradient(circle at 80% 100%, #363636c4 0, #080808 45%),
-    radial-gradient(circle at  15% 30%, #272727 0, #1b1b1b 55%),
+    radial-gradient(circle at 15% 30%, #272727 0, #1b1b1b 55%),
     #03000e;
   color: #f9fafb;
   /* opcional, texto claro em cima */

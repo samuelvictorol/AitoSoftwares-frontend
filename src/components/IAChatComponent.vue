@@ -5,10 +5,7 @@
       <!-- Cabeçalho -->
       <div class="row items-center justify-between q-mb-md">
         <div class="text-subtitle1 text-bold row items-center">
-          <q-btn
-            round
-            class="ia-fab cta-btn animate__animated animate__slower animate__fadeInUp q-mr-sm"
-          >
+          <q-btn round class="ia-fab cta-btn animate__animated animate__slower animate__fadeInUp q-mr-sm">
             <q-img src="/ia.gif" width="50px" alt="gif robo atendimento 24h com i.a" />
           </q-btn>
           <div>
@@ -23,31 +20,18 @@
       <!-- Lista de mensagens -->
       <div class="chat-messages col">
         <q-scroll-area ref="scrollAreaRef" class="fit">
-          <div
-            v-for="(msg, index) in messages"
-            :key="index"
-            class="q-mb-sm flex"
-            :class="msg.from === 'user' ? 'justify-end' : 'justify-start'"
-          >
-            <div
-              class="chat-bubble animate__animated animate__slower"
-              :class="msg.from === 'user' ? 'chat-bubble-user animate__slideInRight' : 'chat-bubble-ia animate__slideInLeft'"
-            >
+          <div v-for="(msg, index) in messages" :key="index" class="q-mb-lg flex"
+            :class="msg.from === 'user' ? 'justify-end' : 'justify-start'">
+            <div class="chat-bubble animate__animated animate__slower"
+              :class="msg.from === 'user' ? 'chat-bubble-user animate__slideInRight' : 'chat-bubble-ia animate__slideInLeft'">
               <div class="text-body2">
                 {{ msg.text }}
               </div>
 
               <!-- Botão de link (só aparece quando o backend mandar link) -->
               <div v-if="msg.link" class="q-mt-xs">
-                <q-btn
-                  :label="msg.link.label || 'Abrir link'"
-                  :href="msg.link.url"
-                  target="_blank" color="green-14"
-                  rel="noopener"
-                  icon="open_in_new"
-                  size="sm"
-                  no-caps
-                />
+                <q-btn :label="msg.link.label || 'Abrir link'" :href="msg.link.url" target="_blank" color="green-14"
+                  rel="noopener" icon="open_in_new" size="sm" no-caps />
               </div>
             </div>
           </div>
@@ -60,25 +44,10 @@
 
       <!-- Input + botão enviar -->
       <div class="chat-input row items-center q-gutter-sm q-pt-sm">
-        <q-input
-          v-model="currentMessage"
-          class="col"
-          color="secondary"
-          dense
-          outlined
-          bg-color="grey-4"
-          placeholder="Digite sua mensagem..."
-          :disable="loading"
-          @keyup.enter="sendMessage"
-        />
+        <q-input v-model="currentMessage" class="col" color="secondary" dense outlined bg-color="grey-4"
+          placeholder="Digite sua mensagem..." :disable="loading" @keyup.enter="sendMessage" />
 
-        <q-btn
-          class="cta-btn"
-          icon="send"
-          :loading="loading"
-          :disable="!canSend"
-          @click="sendMessage"
-        />
+        <q-btn class="cta-btn" icon="send" :loading="loading" :disable="!canSend" @click="sendMessage" />
       </div>
     </div>
   </div>
@@ -87,21 +56,40 @@
 <script setup>
 import { ref, computed, watch, nextTick, onMounted } from 'vue'
 import { api } from 'boot/axios' // usando o boot/axios
+import { Utils } from 'src/Utils'
 
 const STORAGE_KEY = 'aito_site_chat_messages_v1'
 
 const messages = ref([
   {
     from: 'ia',
-    text: 'Olá, Sou seu Assistente 24h! 👋 Como posso te ajudar hoje?',
+    text: ' 👋 Olá! Como posso te ajudar hoje?',
     link: null
   },
-  {
+])
+
+
+function pushInitialMessage() {
+  if (sessionStorage.getItem('aito_site_chat_messages_v1') != null) return
+  Utils.playAudio('/ianotify.wav')
+  messages.value.push({
     from: 'ia',
     text: '😊 Temos Consultoria Gratuita, Agentes de IA, Bots para WhatsApp, Criação de Sistemas, Suporte e muito mais!',
     link: null
-  }
-])
+  })
+  setTimeout(() => {
+    Utils.playAudio('/ianotify.wav')
+    messages.value.push({
+      from: 'ia',
+      text: ' Do que se trata o seu projeto ou empresa?',
+      link: null
+    })
+  }, 1200)
+}
+
+setTimeout(() => {
+  pushInitialMessage()
+}, 1500)
 
 const currentMessage = ref('')
 const loading = ref(false)
@@ -179,26 +167,9 @@ const canSend = computed(() => {
   return currentMessage.value.trim().length > 0 && !loading.value
 })
 
-const sleep = (ms) => new Promise(resolve => setTimeout(resolve, ms))
-
-// manda replies da IA uma a uma, com delay (se quiser usar depois)
-const pushIaRepliesWithDelay = async (replies, delayMs = 900) => {
-  for (const text of replies) {
-    messages.value.push({
-      from: 'ia',
-      text,
-      link: null
-    })
-
-    await nextTick()
-    scrollToBottom()
-    await sleep(delayMs)
-  }
-}
 
 const sendMessage = async () => {
   if (!canSend.value) return
-
   const text = currentMessage.value.trim()
   currentMessage.value = ''
 
@@ -208,7 +179,7 @@ const sendMessage = async () => {
     text,
     link: null
   })
-
+  Utils.playAudio('/usernotify.wav')
   loading.value = true
 
   try {
@@ -219,20 +190,24 @@ const sendMessage = async () => {
         text: m.text
       }))
     }
-
+    Utils.playAudio('/tipping.wav')
     const { data } = await api.post('/talk-site-ia', payload)
 
     const iaReplies = data.ia_replies || []
     const link = data.link || null
 
-    // adiciona cada resposta da IA
-    iaReplies.forEach(reply => {
-      messages.value.push({
-        from: 'ia',
-        text: reply,
-        link: null
-      })
+    // adiciona cada resposta da IA com delay em cascata
+    iaReplies.forEach((reply, index) => {
+      setTimeout(() => {
+        Utils.playAudio('/ianotify.wav')
+        messages.value.push({
+          from: 'ia',
+          text: reply,
+          link: null
+        })
+      }, 1000 * (index + 1)) // 1s a mais por mensagem
     })
+
 
     // se vier link do backend, adiciona uma "mensagem especial" com botão
     if (link && link.url) {
@@ -294,7 +269,7 @@ const sendMessage = async () => {
 }
 
 .chat-input {
-  border-top: 1px solid rgba(148, 163, 184, 0.3);
+  /* border-top: 1px solid rgba(148, 163, 184, 0.3); */
 }
 
 .cta-btn {
