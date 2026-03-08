@@ -1,25 +1,25 @@
-// Quasar SCSS (& Sass) Variables
+// Quasar SCSS Variables
 // --------------------------------------------------
-// To customize the look and feel of this app, you can override
-// the Sass/SCSS variables found in Quasar's source Sass/SCSS files.
+// Ajuste de identidade da AITO (moderno, escuro no hero + verde/teal no CTA)
 
-// Check documentation for full list of Quasar variables
+$primary   : #0b1220;   // navy/tech
+$secondary : #22c55e;   // green
+$accent    : #20b4be;   // teal
 
-// Your own variables (that are declared here) and Quasar's own
-// ones will be available out of the box in your .vue/.scss/.sass files
+$dark      : #0b1220;
+$dark-page : #070b14;
 
-// It's highly recommended to change the default colors
-// to match your app's branding.
-// Tip: Use the "Theme Builder" on Quasar's documentation website.
+$positive  : #22c55e;
+$negative  : #ef4444;
+$info      : #38bdf8;
+$warning   : #f59e0b;
 
-$primary   : #1976D2;
-$secondary : #26A69A;
-$accent    : #20b4be;
+// Typography
+$typography-font-family : 'Montserrat', system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
 
-$dark      : #1D1D1D;
-$dark-page : #121212;
+// (Opcional) arredondamento padrão
+$generic-border-radius : 18px;
+$button-border-radius  : 999px;
 
-$positive  : #21BA45;
-$negative  : #C10015;
-$info      : #31CCEC;
-$warning   : #F2C037;
+// (Opcional) sombra padrão (deixa mais “premium”)
+$shadow-color: rgba(15, 23, 42, 0.18);

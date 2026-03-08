@@ -1,1039 +1,1472 @@
 <template>
-  <q-layout view="hHh lpR fFf">
-    <q-page-container>
-      <q-page class="relative  landing-page" style="padding-top: 2rem;">
-        <div class="landing-bg"></div>
-
-        <div class="page-inner q-px-md q-py-lg">
-          <!-- HEADER -->
-          <div class="w100 row justify-center q-pa-lg">
-            <header id="top" class="landing-header glass-card row items-center justify-between w90 q-mb-xl"
-              style="position: fixed;">
-              <div class="row items-center animate__animated animate__slower animate__delay-1s animate__fadeInLeft">
-                <div class="logo-dot">
-                  <q-img src="/favicon.png" width="50px"></q-img>
-                </div>
-                <div class="q-ml-sm">
-                  <div class="text-subtitle1 text-white cta-btn-2 revalia q-px-sm">
-                    {{ companyName }}
-                  </div>
-                  <div v-if="!isMobile" class="text-caption text-secondary-light text-grey-8">
-                    IA no WhatsApp • Migração para nuvem • Automação
-                  </div>
-                </div>
+  <q-layout view="lHh Lpr lFf" class="ait-root">
+    <!-- HEADER (minimal, squared) -->
+    <q-header elevated class="ait-header">
+      <div class="ait-wrap">
+        <div class="row items-center justify-between q-py-sm">
+          <!-- Brand -->
+          <div class="row items-center no-wrap">
+            <q-btn flat dense round class="" @click="scrollTo('top')" aria-label="Topo">
+              <q-img src="/favicon.png" width="60px" height="34px" style="border-radius: 6px" />
+            </q-btn>
+            <div class="column">
+              <div class="row items-center no-wrap">
+                <div class="">{{ companyName }}</div>
+                <q-chip class="gt-xs q-ml-sm" dense outline color="grey-8" text-color="grey-9" icon="mdi-shield-check-outline">
+                  Software Studio
+                </q-chip>
               </div>
-
-              <!-- Menu desktop -->
-              <nav class="gt-sm row items-center">
-                <q-btn v-for="item in navItems" :key="item.target" flat dense no-caps :label="item.label"
-                  class="q-mx-xs nav-link text-dark" @click="scrollToSection(item.target)" />
-                <q-btn unelevated no-caps class="q-ml-sm cta-btn" icon="mdi-whatsapp"
-                  label="Agendar consultoria gratuita" @click="openWhatsapp" />
-              </nav>
-
-              <!-- Menu mobile -->
-              <div class="lt-md">
-                <q-btn v-if="!drawerOpen" flat round dense icon="menu" size="lg"
-                  class="cta-btn  animate__animated animate__slower animate__rotateIn"
-                  @click="drawerOpen = !drawerOpen" />
-                <q-btn v-else flat round dense icon="close" size="lg"
-                  class="cta-btn  animate__animated animate__slower animate__rotateIn"
-                  @click="drawerOpen = !drawerOpen" />
+              <div class="text-caption text-grey-6 gt-sm">
+                IA no WhatsApp • Cloud • Automação • Integrações • Design de Software
               </div>
-            </header>
+            </div>
           </div>
 
-          <!-- Nav mobile dropdown -->
-          <q-slide-transition style="position: fixed;z-index: 99999!important;" class="w90">
-            <div v-if="drawerOpen" class="lt-md glass-card q-pa-sm q-mb-lg nav-mobile">
-              <q-btn v-for="item in navItems" :key="item.target" flat dense no-caps
-                class="full-width text-left text-dark q-mb-xs" :label="item.label"
-                @click="scrollToSection(item.target)" />
-              <q-btn unelevated no-caps class="full-width q-mt-sm cta-btn" icon="mdi-whatsapp"
-                label="Agendar consultoria" @click="openWhatsapp" />
-            </div>
-          </q-slide-transition>
+          <!-- Desktop nav -->
+          <div class="gt-sm row items-center no-wrap">
+            <q-btn
+              v-for="item in navItems"
+              :key="item.label"
+              flat
+              dense
+              no-caps
+              class="ait-nav-btn q-mt-xs"
+              :icon="item.icon"
+              :label="item.label"
+              @click="handleNav(item)"
+            />
+            <q-separator vertical inset class="q-mx-md" />
+            <q-btn
+              unelevated
+              no-caps
+              class="ait-cta"
+              icon="mdi-whatsapp"
+              label="Diagnóstico grátis"
+              @click="openWhatsapp('Quero um diagnóstico grátis (custos, automação e IA).')"
+            />
+          </div>
 
-          <!-- HERO -->
-          <section id="inicio"
-            class="section-block hero-block animate__animated animate__slower animate__slideInUp row items-center bg-black-grad  q-mb-md">
-            <!-- VÍDEO / IMAGEM -->
-            <div class="col-12 col-md-6">
-              <!-- <div class="text-caption text-secondary-light text-uppercase text-weight-medium q-mb-md q-pl-sm">
-            📍 Distrito Federal e Entorno
-          </div> -->
-              <div class="hero-media cursor-pointer q-pa-sm q-mr-md row justify-center">
-                <!-- <q-responsive :ratio="16 / 9">
-                  troque pelo seu vídeo ou imagem
-                  <div class="video-placeholder flex flex-center column">
-                    <q-icon name="play_circle_filled" size="64px" class="accent-text" />
-                    <div class="text-caption text-secondary-light q-mt-sm q-px-md">
+          <!-- Mobile actions -->
+          <div class="lt-md row items-center">
+            <q-btn
+              unelevated
+              no-caps
+              class="ait-cta q-mr-sm"
+              icon="mdi-whatsapp"
+              label="Falar"
+              @click="openWhatsapp()"
+            />
+            <q-btn
+              flat
+              round
+              dense
+              :icon="drawerOpen ? 'mdi-close' : 'mdi-menu'"
+              @click="drawerOpen = !drawerOpen"
+              aria-label="Menu"
+            />
+          </div>
+        </div>
+
+        <!-- Mobile menu -->
+        <q-slide-transition>
+          <div v-if="drawerOpen" class="lt-md ait-mobile-menu q-mb-sm">
+            <q-btn
+              v-for="item in navItems"
+              :key="item.label + '-m'"
+              flat
+              dense
+              no-caps
+              class="full-width text-left ait-mobile-btn q-mb-xs"
+              :icon="item.icon"
+              :label="item.label"
+              @click="handleNav(item, true)"
+            />
+            <q-btn
+              unelevated
+              no-caps
+              class="full-width ait-cta q-mt-sm"
+              icon="mdi-whatsapp"
+              label="Agendar diagnóstico grátis"
+              @click="openWhatsapp('Quero agendar um diagnóstico grátis.'); drawerOpen = false"
+            />
+          </div>
+        </q-slide-transition>
+      </div>
+    </q-header>
+
+    <q-page-container>
+      <q-page class="ait-page">
+        <div id="top" class="ait-bg"></div>
+        <div class="ait-wrap q-pb-md">
+          <!-- HERO (VSL + copy strong) -->
+          <section id="inicio" class="ait-hero bg-grey-3 q-pa-md rounded-borders">
+            <div class="ait-hero-grid">
+              <!-- VSL -->
+              <div class="ait-vsl">
+                <div class="ait-panel">
+                  <div class="ait-panel-head">
+                    <div class="row items-center no-wrap">
+                      <q-icon name="mdi-play-circle-outline" size="18px" class="q-mr-sm" />
+                      <div class="text-subtitle2 text-grey-9">Assista em 60 segundos</div>
+                    </div>
+                    <q-chip dense outline color="grey-8" text-color="grey-9" icon="mdi-timer-outline">
                       VSL
-                    </div>
-                  </div>
-                </q-responsive> -->
-                <q-img v-if="!isMobile" src="/landing.avif" width="85%"
-                  alt="Imagem ilustrativa de tecnologia em nuvem e IA no WhatsApp" class="hero-media" />
-              </div>
-            </div>
-            <!-- TEXTO -->
-            <div class="col-12 col-md-6" style="z-index: 999!important;">
-              <h1
-                class="hero-title animate__animated animate__slower animate__slideInLeft   q-mb-md row items-center no-wrap">
-                <q-img v-if="!isMobile" src="/favicon.png" width="85px"></q-img>
-                <span class="revalia ">{{ companyName }}</span>
-              </h1>
-              <p class="hero-subtitle q-mb-md text-grey-4" v-if="!isMobile">
-                Equipe <strong>especializada</strong> em <strong>agentes de IA no WhatsApp</strong> que atendem seus
-                clientes e gera vendas 24h,
-                <strong>criamos e migramos sistemas na nuvem</strong> com foco em
-                <strong>redução de custos</strong> e <strong>automação</strong> de processos.
-              </p>
-
-
-              <div class="hero-badges row q-col-gutter-sm q-mb-md">
-                <div class="col-auto">
-                  <div class="badge-chip">
-                    Migração e Hospedagem na Nuvem
-                  </div>
-                </div>
-                <div class="col-auto">
-                  <div class="badge-chip">
-                    Redução de taxas e mensalidades
-                  </div>
-                </div>
-                <div class="col-auto">
-                  <div class="badge-chip">
-                    IA no WhatsApp Personalizada
-                  </div>
-                </div>
-                <div class="col-auto">
-                  <div class="badge-chip">
-                    Integração com Sistemas Legados e ERPs
-                  </div>
-                </div>
-              </div>
-
-              <div class="row items-center q-col-gutter-md q-mb-sm">
-                <div class="col-12 col-sm-auto">
-                  <q-btn unelevated no-caps class="cta-btn full-width" icon="mdi-whatsapp"
-                    label="Quero reduzir meus custos" @click="openWhatsapp" />
-                </div>
-                <div class="col-12 col-sm-auto">
-                  <q-btn flat no-caps class="text-grey-3 full-width" label="Ver como funciona na prática"
-                    @click="scrollToSection('como-funciona')" />
-                </div>
-              </div>
-
-              <div class="text-caption text-grey-6 q-mt-md">
-                ✔ Consultoria inicial 100% gratuita (online ou presencial*).<br>
-                ✔ Projeto acompanhando em tempo real.<br>
-                ✔ Suporte de excelência durante e após a implantação.
-              </div>
-            </div>
-          </section>
-
-          <!-- MARCAS + CARROSSEL -->
-          <section id="marcas"
-            class="section-block q-mb-md animate__animated animate__slower animate__delay-1s animate__zoomInDown">
-            <div class="section-label text-grey-9 q-mb-lg">
-              Marcas que já evoluíram com a gente
-            </div>
-            <!-- Linha de logos ao estilo Omie -->
-            <div class="logos-strip ">
-              <div class="logos-strip-inner">
-                <div v-for="brand in brandItems" :key="brand.name + '-strip'" class="logo-text">
-                  <!-- {{ brand.name }} -->
-                  <q-img :src="brand.imgUrl" :alt="brand.name" fit="fill" class="brand-logo" />
-                </div>
-              </div>
-            </div>
-          </section>
-          <!-- COMO FUNCIONA -->
-          <section id="como-funciona"
-            class="section-block q-mb-xl animate__animated animate__slower animate__delay-1s animate__fadeInRight">
-            <div class="section-label text-secondary-light q-mb-xs">
-              Metodologia
-            </div>
-            <div class="section-title q-mb-md">
-              Consultoria personalizada, contrato transparente e acompanhamento em tempo real
-            </div>
-
-            <div class="row q-col-gutter-md">
-              <div v-for="(step, index) in steps" :key="step.title" class="col-12 col-md-3">
-                <div class="step-card glass-card q-pa-md">
-                  <!-- <div class="step-index">
-                {{ index + 1 }}
-              </div> -->
-                  <div class="text-subtitle2 text-dark q-mb-xs">
-                    {{ step.title }}
-                  </div>
-                  <div class="text-body2 text-secondary-light">
-                    {{ step.text }}
-                  </div>
-                </div>
-              </div>
-            </div>
-          </section>
-
-          <!-- SERVIÇOS -->
-          <section id="servicos" class="section-block q-mb-xl">
-            <div class="section-label text-secondary-light q-mb-xs">
-              Soluções
-            </div>
-            <div class="section-title q-mb-md">
-              Migração para nuvem, automação e IA no WhatsApp, integrados ao que você já usa
-            </div>
-
-            <div class="row q-col-gutter-md">
-              <div v-for="service in services" :key="service.title" class="col-12 col-md-6">
-                <article class="glass-card q-pa-md service-card">
-                  <div class="row items-start q-col-gutter-sm">
-                    <div class="col-auto">
-                      <q-icon :name="service.icon" size="32px" class="text-green-14" />
-                    </div>
-                    <div class="col">
-                      <h3 class="text-subtitle1 text-dark q-mb-xs">
-                        {{ service.title }}
-                      </h3>
-                      <p class="text-body2 text-secondary-light q-mb-sm">
-                        {{ service.text }}
-                      </p>
-                      <ul class="service-list text-secondary-light">
-                        <li v-for="item in service.items" :key="item">
-                          {{ item }}
-                        </li>
-                      </ul>
-                    </div>
-                  </div>
-                </article>
-              </div>
-            </div>
-          </section>
-
-          <!-- SOBRE / DESENVOLVEDORES -->
-          <section id="sobre" class="section-block q-mb-xl">
-            <div class="section-label text-secondary-light q-mb-xs">
-              Quem somos
-            </div>
-            <div class="row q-col-gutter-xl">
-              <div class="col-12 col-md-7">
-                <div class="section-title q-mb-md">
-                  Especialistas em desenvolvimento, marketing, automação e gateways de pagamentos
-                </div>
-                <p class="text-body2 text-secondary-light q-mb-sm">
-                  Somos consultores de sistemas e desenvolvedores de alta performance experientes em
-                  <strong>sistemas robustos</strong> e <strong>estruturação e otimização de processos focados em redução
-                    de custos</strong>. Atuamos na criação de
-                  produtos digitais, migração e construção de serviços na
-                  <strong>AWS e outras clouds</strong>, sempre conectando tecnologia com resultado de negócio.
-                </p>
-                <ul class="text-body2 text-secondary-light q-mb-md">
-                  <li>Redução de custos (taxas, mensalidades e licenças).</li>
-                  <li>Automação de tarefas repetitivas e fluxos de atendimento.</li>
-                  <li>Uso de dados para captar leads e aumentar conversão.</li>
-                  <li>Transparência total: você acompanha o projeto em tempo real.</li>
-                </ul>
-                <p class="text-body2 text-secondary-light">
-                  Nosso objetivo é que o software seja um
-                  <strong>ativo estratégico</strong> da sua empresa, e não um custo a mais.
-                </p>
-              </div>
-
-              <div class="col-12 col-md-5">
-                <div class="glass-card q-pa-md about-side-card">
-                  <h3 class="text-subtitle1 text-dark q-mb-sm">
-                    Por que vale a pena evoluir agora?
-                  </h3>
-                  <ul class="text-body2 text-secondary-light q-mb-md">
-                    <li>Cloud mais acessível e flexível do que nunca.</li>
-                    <li>IA no WhatsApp reduz fila e aumenta faturamento.</li>
-                    <li>Você para de depender de plataformas com taxas abusivas.</li>
-                    <li>Fazemos tudo em paralelo ao que você já usa hoje.</li>
-                  </ul>
-                  <q-btn unelevated no-caps class="cta-btn full-width" icon="mdi-whatsapp"
-                    label="Marcar consultoria gratuita" @click="openWhatsapp" />
-                  <div class="text-caption text-secondary-light q-mt-lg">
-                    O tempo de entrega é definido no plano do projeto. Você conta com
-                    suporte próximo e humano durante implantação e pós-go-live.
-                  </div>
-                </div>
-              </div>
-            </div>
-          </section>
-
-          <!-- CONTATO -->
-          <section id="contato" class="section-block q-mb-xl">
-            <div class="section-label text-secondary-light q-mb-xs">
-              Próximo passo
-            </div>
-            <div class="section-title q-mb-md">
-              Deixe seus dados e receba o contato para uma consultoria sem compromisso
-            </div>
-
-            <div class="row q-col-gutter-md">
-              <div class="col-12 col-md-7">
-                <div class="glass-card q-pa-md">
-                  <div class="row q-col-gutter-md q-mb-md">
-                    <div class="col-12 col-sm-6">
-                      <q-input v-model="phone" label="WhatsApp / Telefone" outlined dense input-class="text-body2"
-                        color="accent" prefix="+55" />
-                    </div>
-                    <div class="col-12 col-sm-6">
-                      <q-input v-model="email" label="E-mail" outlined dense input-class="text-body2" color="accent" />
-                    </div>
-                    <div class="col-12">
-                      <q-input v-model="company" label="Empresa / Projeto" outlined dense input-class="text-body2"
-                        color="accent" />
-                    </div>
+                    </q-chip>
                   </div>
 
-                  <div class="row q-col-gutter-md items-center">
-                    <div class="col-12 col-sm-auto">
-                      <q-btn unelevated no-caps class="cta-btn full-width" icon="mdi-whatsapp"
-                        label="Enviar dados pelo WhatsApp" @click="sendLead" />
-                    </div>
-                    <div class="col-12 col-sm">
-                      <div class="text-caption text-secondary-light">
-                        Ao clicar, abriremos o WhatsApp já com uma mensagem pronta
-                        com seus dados para agilizar a consultoria gratuita.
+                  <q-separator />
+
+                  <div class="q-pa-sm">
+                    <q-responsive :ratio="16/9" class="ait-video">
+                      <!-- Se quiser embed real, só preencher vslUrl -->
+                      <iframe
+                        v-if="vslUrl"
+                        :src="vslUrl"
+                        title="VSL AITO"
+                        frameborder="0"
+                        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                        allowfullscreen
+                        class="ait-iframe"
+                      />
+                      <div v-else class="ait-video-placeholder">
+                        <q-icon name="mdi-play" size="56px" class="text-grey-9" />
+                        <div class="text-body2 text-grey-8 q-mt-sm text-center">
+                          Cole sua VSL aqui (YouTube/Vimeo/embed).<br />
+                          <span class="text-caption text-grey-6">Estrutura pronta pra conversão.</span>
+                        </div>
+                      </div>
+                    </q-responsive>
+
+                    <div class="row q-col-gutter-sm q-mt-sm">
+                      <div class="col-12 col-sm-6">
+                        <q-btn
+                          unelevated
+                          no-caps
+                          class="ait-cta full-width"
+                          icon="mdi-whatsapp"
+                          label="Quero reduzir custos"
+                          @click="openWhatsapp('Quero reduzir custos com tecnologia (cloud/automação/IA).')"
+                        />
+                      </div>
+                      <div class="col-12 col-sm-6">
+                        <q-btn
+                          outline
+                          no-caps
+                          class="ait-outline full-width"
+                          icon="mdi-briefcase-outline"
+                          label="Ver cases"
+                          @click="scrollTo('cases')"
+                        />
                       </div>
                     </div>
+
+                    <div class="ait-microproof q-mt-sm">
+                      <q-icon name="mdi-check-circle-outline" class="q-mr-xs" />
+                      Diagnóstico gratuito • Contrato claro • Entrega por etapas • Suporte real
+                    </div>
                   </div>
                 </div>
               </div>
 
-              <!-- CTA lateral -->
-              <div class="col-12 col-md-5">
-                <div class="glass-card q-pa-md contact-side-card">
-                  <h3 class="text-subtitle1 text-dark q-mb-sm">
-                    O que vamos analisar na consultoria:
-                  </h3>
-                  <ul class="text-body2 text-secondary-light q-mb-md">
-                    <li>Onde é possível <strong>reduzir custos</strong> com tecnologia.</li>
-                    <li>Quais processos podem ser <strong>automatizados</strong> com segurança.</li>
-                    <li>Como usar <strong>IA no WhatsApp</strong> sem perder o toque humano.</li>
-                    <li>Integrações possíveis com sistemas que você já utiliza.</li>
-                  </ul>
-                  <p class="text-caption text-secondary-light">
-                    Depois desse diagnóstico, elaboramos um
-                    <strong>contrato transparente</strong>, revisado por você,
-                    com etapas, prazos e entregas bem definidos.
-                  </p>
+              <!-- Copy -->
+              <div class="ait-copy">
+                <div class="ait-kicker">
+                  <q-icon name="mdi-lightning-bolt-outline" size="18px" class="q-mr-xs" />
+                  Engenharia aplicada ao seu resultado
+                </div>
+
+                <h1 class="ait-title">
+                  Pare de depender de sistema travado e processo manual.
+                  <span class="ait-grad">Faça a operação rodar sozinha.</span>
+                </h1>
+
+                <!-- <p class="ait-subtitle">
+                  Somos uma equipe de <strong>engenheiros</strong>, <strong>desenvolvedores</strong> e especialistas em
+                  <strong>automação, IA e design de software</strong>. Criamos soluções sob medida que
+                  <strong>reduzem custo</strong>, <strong>aumentam conversão</strong> e escalam sua empresa com segurança.
+                </p> -->
+
+                <div class="ait-bullets">
+                  <div class="ait-bullet">
+                    <q-icon name="mdi-robot-outline" size="18px" class="q-mr-sm" />
+                    IA no WhatsApp que atende, qualifica e entrega lead pronto (sem soar robô)
+                  </div>
+                  <div class="ait-bullet">
+                    <q-icon name="mdi-cloud-outline" size="18px" class="q-mr-sm" />
+                    Migração para cloud com otimização de custos e monitoramento contínuo
+                  </div>
+                  <div class="ait-bullet">
+                    <q-icon name="mdi-cog-sync-outline" size="18px" class="q-mr-sm" />
+                    Automação de rotinas e integrações com legado/ERP/CRM/pagamentos
+                  </div>
+                  <div class="ait-bullet">
+                    <q-icon name="mdi-chart-line" size="18px" class="q-mr-sm" />
+                    Landing pages e funis prontos para tráfego pago com tracking e ROI
+                  </div>
+                </div>
+
+                <div class="ait-stats">
+                  <div class="ait-stat">
+                    <div class="ait-stat-num">24/7</div>
+                    <div class="ait-stat-label">Atendimento com IA</div>
+                  </div>
+                  <div class="ait-stat">
+                    <div class="ait-stat-num">+ROI</div>
+                    <div class="ait-stat-label">Conversão no funil</div>
+                  </div>
+                  <div class="ait-stat">
+                    <div class="ait-stat-num">↓Custo</div>
+                    <div class="ait-stat-label">Cloud otimizada</div>
+                  </div>
+                </div>
+
+                <div class="row q-col-gutter-sm q-mt-md">
+                  <div class="col-12 col-sm-7">
+                    <q-btn
+                      unelevated
+                      no-caps
+                      class="ait-cta full-width"
+                      icon="mdi-whatsapp"
+                      label="Quero um diagnóstico grátis"
+                      @click="openWhatsapp('Quero um diagnóstico grátis. Vou te explicar meu cenário e metas.')"
+                    />
+                  </div>
+                  <div class="col-12 col-sm-5">
+                    <q-btn
+                      outline
+                      no-caps
+                      class="ait-outline full-width"
+                      icon="mdi-arrow-down"
+                      label="Como funciona"
+                      @click="scrollTo('metodo')"
+                    />
+                  </div>
+                </div>
+
+                <div class="ait-trustline q-mt-md">
+                  <span class="text-caption text-grey-6">Experiência em ambientes críticos:</span>
+                  <div class="row q-col-gutter-xs q-mt-xs">
+                    <div class="col-auto" v-for="t in trustTags" :key="t">
+                      <q-chip dense outline color="grey-8" text-color="grey-9" icon="mdi-domain">
+                        {{ t }}
+                      </q-chip>
+                    </div>
+                  </div>
                 </div>
               </div>
             </div>
           </section>
 
-          <!-- FOOTER -->
-          <footer class="q-my-xl q-pt-md q-pb-xl footer text-secondary-light">
-            <div class="row items-center justify-between q-col-gutter-md">
-              <div class="col-12 col-md-auto">
-                <div class="text-caption">
-                  <q-img src="/favicon.png" width="60px"></q-img><strong class="revalia">{{ companyName }}</strong> —
-                  Consultoria em Nuvem, Automação e
-                  IA no WhatsApp.
+          <!-- CLIENTS / LOGOS (clean strip) -->
+          <section id="clientes" class="ait-section">
+            <div class="ait-section-head">
+              <div class="ait-section-title">Clientes, produtos e ambientes que já passaram pelo nosso teclado</div>
+              <div class="ait-section-sub">
+                Integramos com legado, sistemas críticos, operação real — e colocamos automação + IA pra trabalhar.
+              </div>
+            </div>
+
+            <div class="ait-logos">
+              <div class="ait-logos-track">
+                <div v-for="b in brandStrip" :key="b.name + '-1'" class="ait-logo">
+                  <q-img class="rounded-borders" :src="b.imgUrl" :alt="b.name" fit="contain" />
                 </div>
-                <div class="text-caption">
-                  <q-icon name="mdi-instagram" color="teal" size="sm"></q-icon> Acompanhe as novidades em nosso
-                  Instagram:
-                  <a href="https://www.instagram.com/aitosoftwares/" style="text-decoration: none;"
-                    class="text-bold text-teal" target="_blank">@aitosoftwares</a>
-                </div>
-                <div class="text-caption q-pt-md">
-                  <q-icon name="pin_drop" color="teal" size="sm"></q-icon> Atendemos Valparaíso de Goiás, região do DF,
-                  Goiânia e projetos remotos em todo o Brasil.
+                <div v-for="b in brandStrip" :key="b.name + '-2'" class="ait-logo">
+                  <q-img class="rounded-borders" :src="b.imgUrl" :alt="b.name" fit="contain" />
                 </div>
               </div>
+            </div>
+          </section>
+
+          <!-- METHOD (minimal steps) -->
+          <section id="metodo" class="ait-section">
+            <div class="ait-section-head">
+              <div class="ait-section-title">Método simples, profissional e rastreável</div>
+              <div class="ait-section-sub">Sem “freela no escuro”. Aqui tem etapa, contrato e entrega incremental.</div>
+            </div>
+
+            <div class="ait-steps">
+              <div class="ait-step" v-for="s in steps" :key="s.title">
+                <div class="ait-step-top">
+                  <q-icon :name="s.icon" size="20px" />
+                  <div class="ait-step-title">{{ s.title }}</div>
+                </div>
+                <div class="ait-step-text">{{ s.text }}</div>
+              </div>
+            </div>
+          </section>
+
+          <!-- SOLUTIONS (grid minimal) -->
+          <section id="solucoes" class="ait-section">
+            <div class="ait-section-head">
+              <div class="ait-section-title">Soluções que atacam o problema raiz</div>
+              <div class="ait-section-sub">
+                A gente corta desperdício, elimina retrabalho e transforma operação em software que vende e escala.
+              </div>
+            </div>
+
+            <div class="ait-cards">
+              <div class="ait-card" v-for="s in services" :key="s.title">
+                <div class="ait-card-top">
+                  <q-icon :name="s.icon" size="22px" />
+                  <div class="ait-card-title">{{ s.title }}</div>
+                </div>
+                <div class="ait-card-text">{{ s.text }}</div>
+                <ul class="ait-list">
+                  <li v-for="i in s.items" :key="i">{{ i }}</li>
+                </ul>
+
+                <div class="row items-center justify-between q-mt-sm">
+                  <q-chip dense outline color="grey-8" text-color="grey-9" icon="mdi-check-decagram">
+                    Entrega por etapas
+                  </q-chip>
+                  <q-btn
+                    flat
+                    dense
+                    no-caps
+                    icon="mdi-whatsapp"
+                    label="Quero isso"
+                    @click="openWhatsapp(`Quero falar sobre: ${s.title}`)"
+                  />
+                </div>
+              </div>
+            </div>
+          </section>
+
+          <!-- CASES / PRODUCTS -->
+          <section id="cases" class="ait-section">
+            <div class="ait-section-head">
+              <div class="ait-section-title">Produtos e cases (na prática)</div>
+              <div class="ait-section-sub">Exemplos do que a AITO entrega do início ao “rodando em produção”.</div>
+            </div>
+
+            <div class="ait-cases">
+              <div class="ait-case" v-for="c in cases" :key="c.title">
+                <div class="ait-case-head">
+                  <div class="row items-center no-wrap">
+                    <q-icon :name="c.icon" size="22px" class="q-mr-sm" />
+                    <div>
+                      <div class="ait-case-title">{{ c.title }}</div>
+                      <div class="ait-case-sub">{{ c.subtitle }}</div>
+                    </div>
+                  </div>
+                  <q-btn
+                    outline
+                    no-caps
+                    class="ait-outline"
+                    icon="mdi-whatsapp"
+                    label="Quero um igual"
+                    @click="openWhatsapp(`Quero um projeto no estilo: ${c.title}. Me mostra o caminho?`)"
+                  />
+                </div>
+
+                <ul class="ait-list q-mt-sm">
+                  <li v-for="i in c.items" :key="i">{{ i }}</li>
+                </ul>
+
+                <div class="row q-col-gutter-xs q-mt-sm">
+                  <div class="col-auto" v-for="t in c.tags" :key="t">
+                    <q-chip dense outline color="grey-8" text-color="grey-9" icon="mdi-tag-outline">
+                      {{ t }}
+                    </q-chip>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </section>
+
+          <!-- SATISFACTION -->
+          <section id="satisfacao" class="ait-section">
+            <div class="ait-section-head">
+              <div class="ait-section-title">Satisfação e confiança</div>
+              <div class="ait-section-sub">
+                Você não compra “um site”. Você compra previsibilidade, suporte e um sistema que aguenta pancada.
+              </div>
+            </div>
+
+            <div class="ait-sat-grid">
+              <div class="ait-sat-left">
+                <div class="ait-panel">
+                  <div class="ait-panel-head">
+                    <div class="text-subtitle2 text-grey-9">O que muda no seu dia a dia</div>
+                    <q-chip dense outline color="grey-8" text-color="grey-9" icon="mdi-handshake-outline">
+                      Suporte próximo
+                    </q-chip>
+                  </div>
+                  <q-separator />
+                  <div class="q-pa-md">
+                    <div class="ait-sat-row" v-for="m in satisfaction" :key="m.title">
+                      <div class="row items-center no-wrap">
+                        <q-icon :name="m.icon" size="18px" class="q-mr-sm" />
+                        <div class="text-body2 text-grey-9 text-weight-medium">{{ m.title }}</div>
+                      </div>
+                      <div class="text-caption text-grey-7 q-mt-xs">{{ m.text }}</div>
+                      <q-separator spaced />
+                    </div>
+
+                    <q-btn
+                      unelevated
+                      no-caps
+                      class="ait-cta full-width"
+                      icon="mdi-whatsapp"
+                      label="Quero conversar"
+                      @click="openWhatsapp('Quero conversar sobre automação/IA/cloud para meu negócio.')"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              <div class="ait-sat-right">
+                <div class="ait-testimonials">
+                  <div class="ait-quote" v-for="t in testimonials" :key="t.name + t.role">
+                    <div class="row items-center justify-between">
+                      <div class="row items-center">
+                        <q-avatar size="34px" color="grey-3" text-color="grey-9" icon="mdi-account" />
+                        <div class="q-ml-sm">
+                          <div class="text-body2 text-grey-9 text-weight-medium">{{ t.name }}</div>
+                          <div class="text-caption text-grey-6">{{ t.role }}</div>
+                        </div>
+                      </div>
+                      <q-rating readonly :model-value="t.stars" size="18px" color="amber" />
+                    </div>
+
+                    <div class="ait-quote-text q-mt-sm">
+                      “{{ t.text }}”
+                    </div>
+
+                    <div class="text-caption text-grey-6 q-mt-sm">
+                      <q-icon name="mdi-check-decagram" class="q-mr-xs" />
+                      {{ t.context }}
+                    </div>
+                  </div>
+                </div>
+
+                <div class="ait-note q-mt-md">
+                  <q-icon name="mdi-lock-check-outline" size="18px" class="q-mr-sm" />
+                  Contrato claro, etapas definidas e acompanhamento em tempo real.
+                </div>
+              </div>
+            </div>
+          </section>
+
+          <!-- FOUNDERS -->
+          <section id="founders" class="ait-section">
+            <div class="ait-section-head">
+              <div class="ait-section-title">Founders</div>
+              <div class="ait-section-sub">
+                Criado por Samuel Victor e Dion — especialistas em tecnologia com experiência em bancos e sistemas críticos.
+                <strong>Espaço pronto</strong> pra foto e mini bio.
+              </div>
+            </div>
+
+            <div class="ait-founders">
+              <div class="ait-founder" v-for="f in founders" :key="f.name">
+                <div class="row items-start q-col-gutter-md">
+                  <div class="col-auto">
+                    <q-avatar size="72px" square class="ait-avatar">
+                      <q-img v-if="f.img" :src="f.img" :alt="f.name" fit="cover" />
+                      <q-icon v-else name="mdi-account-circle-outline" size="56px" class="text-grey-7" />
+                    </q-avatar>
+                  </div>
+                  <div class="col">
+                    <div class="row items-center justify-between">
+                      <div>
+                        <div class="text-subtitle1 text-grey-9 text-weight-bold">{{ f.name }}</div>
+                        <div class="text-caption text-grey-6">{{ f.role }}</div>
+                      </div>
+                      <q-chip dense outline color="grey-8" text-color="grey-9" icon="mdi-briefcase-outline">
+                        Founder
+                      </q-chip>
+                    </div>
+
+                    <div class="text-body2 text-grey-8 q-mt-sm">
+                      {{ f.summary }}
+                    </div>
+
+                    <div class="row q-col-gutter-xs q-mt-sm">
+                      <div class="col-auto" v-for="h in f.highlights" :key="h">
+                        <q-chip dense outline color="grey-8" text-color="grey-9" icon="mdi-check">
+                          {{ h }}
+                        </q-chip>
+                      </div>
+                    </div>
+
+                    <div class="text-caption text-grey-6 q-mt-sm">
+                      <q-icon name="mdi-domain" class="q-mr-xs" />
+                      Experiência: {{ trustTags.join(' • ') }}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </section>
+
+          <!-- CONTACT + REFERRAL (tabs) -->
+          <section id="contato" class="ait-section">
+            <div class="ait-section-head">
+              <div class="ait-section-title">Contato</div>
+              <div class="ait-section-sub">
+                Conte seu cenário. A gente responde com diagnóstico e caminho realista (sem promessa vazia).
+              </div>
+            </div>
+
+            <div class="ait-tabs">
+              <q-tabs
+                v-model="activeTab"
+                dense
+                align="left"
+                class="ait-qtabs"
+                active-color="dark"
+                indicator-color="dark"
+              >
+                <q-tab name="lead" icon="mdi-email-fast-outline" label="Falar com a AITO" />
+                <q-tab name="ref" icon="mdi-cash-multiple" label="Indique & Ganhe" />
+              </q-tabs>
+
+              <q-separator />
+
+              <q-tab-panels v-model="activeTab" animated class="ait-panels">
+                <!-- Lead -->
+                <q-tab-panel name="lead" class="q-pa-none">
+                  <div class="ait-form-grid">
+                    <div class="ait-form-side">
+                      <div class="ait-form-note">
+                        <div class="ait-form-note-title">O que analisamos no diagnóstico</div>
+                        <ul class="ait-list">
+                          <li>Onde dá pra <strong>reduzir custos</strong> (cloud, retrabalho, licenças, taxa).</li>
+                          <li>Quais rotinas viram <strong>automação segura</strong>.</li>
+                          <li>Como usar <strong>IA no WhatsApp</strong> sem perder o toque humano.</li>
+                          <li>Integrações com legado/ERP/CRM/pagamentos/catálogos.</li>
+                        </ul>
+
+                        <div class="row items-center q-mt-sm">
+                          <q-icon name="mdi-post-outline" class="q-mr-sm" />
+                          <q-btn flat dense no-caps label="Ir para o Blog" @click="goBlog" />
+                        </div>
+                      </div>
+                    </div>
+
+                    <div class="ait-form-main">
+                      <q-form @submit.prevent="sendLead">
+                        <div class="row q-col-gutter-sm">
+                          <div class="col-12 col-sm-6">
+                            <q-input v-model="lead.name" dense outlined label="Seu nome" />
+                          </div>
+                          <div class="col-12 col-sm-6">
+                            <q-input v-model="lead.phone" dense outlined label="WhatsApp" prefix="+55" />
+                          </div>
+                          <div class="col-12 col-sm-6">
+                            <q-input v-model="lead.email" dense outlined label="E-mail" />
+                          </div>
+                          <div class="col-12 col-sm-6">
+                            <q-input v-model="lead.company" dense outlined label="Empresa / Projeto" />
+                          </div>
+                          <div class="col-12">
+                            <q-input v-model="lead.message" dense outlined type="textarea" autogrow label="O que você quer resolver?" />
+                          </div>
+                        </div>
+
+                        <div class="row q-col-gutter-sm q-mt-sm">
+                          <div class="col-12 col-sm-7">
+                            <q-btn
+                              unelevated
+                              no-caps
+                              class="ait-cta full-width"
+                              icon="mdi-whatsapp"
+                              label="Enviar pelo WhatsApp"
+                              type="submit"
+                            />
+                          </div>
+                          <div class="col-12 col-sm-5">
+                            <q-btn
+                              outline
+                              no-caps
+                              class="ait-outline full-width"
+                              icon="mdi-arrow-up"
+                              label="Voltar ao topo"
+                              @click="scrollTo('top')"
+                            />
+                          </div>
+                        </div>
+
+                        <div class="text-caption text-grey-6 q-mt-sm">
+                          Ao clicar, abrimos o WhatsApp com uma mensagem pronta (rápido e direto).
+                        </div>
+                      </q-form>
+                    </div>
+                  </div>
+                </q-tab-panel>
+
+                <!-- Referral -->
+                <q-tab-panel name="ref" class="q-pa-none">
+                  <div class="ait-form-grid">
+                    <div class="ait-form-side">
+                      <div class="ait-form-note">
+                        <div class="ait-form-note-title">Indique & ganhe (network)</div>
+                        <div class="text-body2 text-grey-8">
+                          Indicou e fechou contrato? A comissão é <strong>negociável</strong> conforme o tamanho do projeto.
+                          Transparente, combinado e registrado.
+                        </div>
+
+                        <div class="q-mt-sm">
+                          <q-banner class="ait-banner" rounded>
+                            <template #avatar>
+                              <q-icon name="mdi-cash-fast" />
+                            </template>
+                            <div class="text-body2">
+                              Comissão e formato de pagamento: <strong>negociável</strong>.
+                            </div>
+                          </q-banner>
+                        </div>
+
+                        <ul class="ait-list q-mt-sm">
+                          <li>Você indica</li>
+                          <li>Nós diagnosticamos e propomos</li>
+                          <li>Fechou? Comissão combinada</li>
+                          <li>Você acompanha o status</li>
+                        </ul>
+                      </div>
+                    </div>
+
+                    <div class="ait-form-main">
+                      <q-form @submit.prevent="sendReferral">
+                        <div class="row q-col-gutter-sm">
+                          <div class="col-12 col-sm-6">
+                            <q-input v-model="referral.name" dense outlined label="Seu nome" />
+                          </div>
+                          <div class="col-12 col-sm-6">
+                            <q-input v-model="referral.phone" dense outlined label="Seu WhatsApp" prefix="+55" />
+                          </div>
+                          <div class="col-12">
+                            <q-input v-model="referral.leadName" dense outlined label="Nome do indicado" />
+                          </div>
+                          <div class="col-12">
+                            <q-input v-model="referral.company" dense outlined label="Empresa / Projeto do indicado" />
+                          </div>
+                          <div class="col-12">
+                            <q-input v-model="referral.notes" dense outlined type="textarea" autogrow label="Contexto (o que ele precisa?)" />
+                          </div>
+                        </div>
+
+                        <div class="row q-col-gutter-sm q-mt-sm">
+                          <div class="col-12 col-sm-7">
+                            <q-btn
+                              unelevated
+                              no-caps
+                              class="ait-cta full-width"
+                              icon="mdi-whatsapp"
+                              label="Enviar indicação"
+                              type="submit"
+                            />
+                          </div>
+                          <div class="col-12 col-sm-5">
+                            <q-btn
+                              outline
+                              no-caps
+                              class="ait-outline full-width"
+                              icon="mdi-post-outline"
+                              label="Ver blog"
+                              @click="goBlog"
+                            />
+                          </div>
+                        </div>
+                      </q-form>
+                    </div>
+                  </div>
+                </q-tab-panel>
+              </q-tab-panels>
+            </div>
+          </section>
+
+          <!-- FOOTER (minimal) -->
+          <footer class="ait-footer q-mt-lg">
+            <div class="row items-center justify-between q-col-gutter-md">
+              <div class="col-12 col-md-auto">
+                <div class="row items-center no-wrap">
+                  <q-img src="/favicon.png" width="34px" height="34px" style="border-radius: 6px" />
+                  <div class="q-ml-sm">
+                    <div class="text-subtitle2 text-grey-9 text-weight-bold">{{ companyName }}</div>
+                    <div class="text-caption text-grey-6">Cloud • Automação • IA no WhatsApp • Integrações</div>
+                  </div>
+                </div>
+                <div class="text-caption text-grey-6 q-mt-sm">
+                  <q-icon name="mdi-map-marker-outline" class="q-mr-xs" />
+                  Valparaíso de Goiás • DF • Goiânia • Remoto (Brasil)
+                </div>
+              </div>
+
               <div class="col-12 col-md-auto text-right">
-                <div class="text-caption">
-                  © {{ new Date().getFullYear() }} — Todos os direitos reservados. <br> <a
-                    href="https://samuelvictorol.github.io/portfolio/" class="revalia" target="_blank"
-                    style="color: teal;">59.905.708/0001-34</a>
+                <div class="text-caption text-grey-6">© {{ currentYear }} — Todos os direitos reservados.</div>
+                <div class="text-caption text-grey-6">
+                  Criado por <strong>Samuel Victor</strong> & <strong>Dion</strong>.
                 </div>
               </div>
             </div>
           </footer>
         </div>
 
-        <!-- BOTÃO FIXO IA -->
-        <q-btn round class="relative ia-fab cta-btn animate__animated animate__slower animate__delay-4s animate__fadeInUp"
-          @click="iaChat = !iaChat">
-          <div v-if="hintIa" if="hintia" class="q-pl-md animate__animated animate__slower">Posso Ajudar?</div>
-          <q-img src="/ia.gif" width="80px" alt="gif robo atendimento 24h com i.a" />
+        <!-- IA FAB (mantém IAChatComponent) -->
+        <q-btn round class="ait-ia-fab" @click="iaChat = !iaChat" aria-label="Abrir IA">
+          <q-img src="/ia.gif" width="70px" alt="IA atendimento" />
         </q-btn>
-      </q-page>
-      <q-dialog v-model="iaChat" class="animate__animated animate__slower animate__ZoomIn"
-        style="backdrop-filter: blur(28px);">
-        <IAChatComponent class="w100" />
-      </q-dialog>
-    </q-page-container>
 
+        <q-dialog v-model="iaChat" style="backdrop-filter: blur(14px);">
+          <IAChatComponent class="w100" />
+        </q-dialog>
+      </q-page>
+    </q-page-container>
   </q-layout>
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue'
-import { useMeta } from 'quasar'
+import { computed, onMounted, reactive, ref } from 'vue'
+import { useQuasar } from 'quasar'
+import { useRouter } from 'vue-router'
 import IAChatComponent from 'src/components/IAChatComponent.vue'
-import { Utils } from 'src/Utils'
 
-const isMobile = window.innerWidth < 768
-const companyName = 'AITO SOFTWARES' // ajuste o nome da empresa
+const $q = useQuasar()
+const router = useRouter()
+
+const companyName = 'AITOSOFTWARES'
+const currentYear = new Date().getFullYear()
+
 const drawerOpen = ref(false)
 const iaChat = ref(false)
-const phone = ref('')
-const email = ref('')
-const company = ref('')
 
-// número do WhatsApp no formato DDI + DDD + número (sem símbolos)
-const WHATSAPP_NUMBER = '5561981748795' // <-- troque para o número oficial
-const hintIa = ref(true)
+const activeTab = ref('lead')
 
-setTimeout(() => {
-  const hintiaEl = document.getElementById('hintia')
+// VSL: se quiser embed real, cole o link embed (ex: https://www.youtube.com/embed/VIDEO_ID)
+const vslUrl = ref('') // deixe vazio pra aparecer placeholder
 
-  if (hintiaEl) {
-    // adiciona as classes do animate.css
-    hintiaEl.classList.add('animate__animated', 'animate__fadeOutRight')
+const WHATSAPP_NUMBER = '5561981748795'
 
-    // espera a animação terminar pra esconder de vez
-    hintiaEl.addEventListener(
-      'animationend',
-      () => {
-        hintIa.value = false
-      },
-      { once: true } // executa só uma vez
-    )
-  } else {
-    // fallback: se não achar o elemento, esconde direto
-    hintIa.value = false
-  }
-}, 4000)
-
-
-const defaultMessage =
-  'Olá! Gostaria de agendar uma consultoria gratuita para minha Empresa.'
-
-const buildWhatsappUrl = (extra = '') => {
-  const msg =
-    defaultMessage +
-    (extra
-      ? `\n\nDados de contato:\n${extra}`
-      : '')
-  return `https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(msg)}`
-}
-
-const whatsappUrl = computed(() => buildWhatsappUrl())
+const trustTags = ['CAIXA', 'BASA', 'GLOBO', 'TJGO', 'SUS']
 
 const navItems = [
-  { label: 'Início', target: 'inicio' },
-  { label: 'Como funciona', target: 'como-funciona' },
-  { label: 'Serviços', target: 'servicos' },
-  { label: 'Sobre', target: 'sobre' },
-  { label: 'Contato', target: 'contato' }
-]
-
-// carrossel de marcas (dinâmico)
-const brandSlide = ref(0)
-const brandItems = [
-  {
-    name: 'Empregos.com.br',
-    project: 'Automação de fluxos de cadastro e disparos com IA em WhatsApp.',
-    imgUrl: 'https://static.empregos.com.br/assets/_nuxt/logo.IAkruRZb.svg'
-  },
-  {
-    name: 'Mercado Pago',
-    project: 'Automação de fluxos de cadastro e disparos com IA em WhatsApp.',
-    imgUrl: 'https://woocommerce.com/wp-content/uploads/2021/05/fb-mercado-pago-v2@2x.png'
-  },
-  {
-    name: 'CAIXA',
-    project: 'Criação de Landing Page responsiva, layouts e copys com foco em divulgação da modalidade, aulas e captação de leads.',
-    imgUrl: 'https://www.publicitarioscriativos.com/wp-content/uploads/2018/09/nova-identidade-visual-da-caixa-pode-custar-ate-800-milhoes.png'
-  },
-  {
-    name: 'Eletro Nogueira',
-    project: 'Migração de sistema legado e catálogo online integrado ao estoque físico + I.A para atendimento instantâneo no WhatsApp.',
-    imgUrl: 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQWkoE4wphrr3rmiQjB_WamkBHm2CQ4POAbnQ&s'
-  },
-  {
-    name: 'VerdBank',
-    project: 'Automação de fluxos de cadastro e disparos com IA em WhatsApp.',
-    imgUrl: 'https://static.wixstatic.com/media/8c100f_2f22249dc334447eadfc4aea1c65031a~mv2.jpg/v1/fill/w_2500,h_1454,al_c/8c100f_2f22249dc334447eadfc4aea1c65031a~mv2.jpg'
-  },
-  {
-    name: 'GLOBO',
-    project: 'Desenvolvimento e manutenção de processos e pipelines, arquiteturas de sistemas e controle de riscos e qualidade.',
-    imgUrl: 'https://s3.glbimg.com/v1/AUTH_b58693ed41d04a39826739159bf600a0/photos/logo_redes.png'
-  },
-  {
-    name: 'Banco da Amazônia',
-    project: 'Automação de fluxos de cadastro e disparos com IA em WhatsApp.',
-    imgUrl: 'https://play-lh.googleusercontent.com/MDcygNMjShpab7QKV4KUbd0XYZyeFklcmS9qChtA-6xCdQowETqBTG3G3fDNQCe4Qw'
-  },
-  {
-    name: 'AGHU – SUS',
-    project: 'Integrações e melhorias em ambiente hospitalar universitário.',
-    imgUrl: 'https://www.gov.br/ebserh/pt-br/governanca/plataformas-e-tecnologias/aghu/aghu/@@collective.cover.banner/f3c7e40f-6713-404c-a7cb-994f2a66d332/@@images/f206f037-e2a6-4094-a742-48897bce3296.png'
-  },
-  {
-    name: 'Coco Bambu',
-    project: 'Soluções para gestão de processos e guias, com alta disponibilidade. Manutenção em sistemas críticos e legados.',
-    imgUrl: 'https://mir-s3-cdn-cf.behance.net/projects/404/a87f35210460461.Y3JvcCwxMjMxLDk2MywzNjIsNDU.png'
-  },
-  {
-    name: 'Tribunal de Justiça do Goiás',
-    project: 'Soluções para gestão de processos e guias, com alta disponibilidade. Manutenção em sistemas críticos e legados.',
-    imgUrl: 'https://tjgo.4biz.globalweb.com.br/4biz/logoImages/44.png'
-  },
-  {
-    name: 'ChatCar IA',
-    project: 'Automação de fluxos de cadastro e disparos com IA em WhatsApp.',
-    imgUrl: 'https://chatcar.me/logo.jpeg'
-  },
-  {
-    name: 'Cast Group',
-    project: 'Migração de sistema legado e catálogo online integrado ao estoque físico + I.A para atendimento instantâneo no WhatsApp.',
-    imgUrl: 'https://upbase.com.br/wp-content/uploads/2023/10/maxresdefault.jpg'
-  },
-  {
-    name: 'Sinerji',
-    project: 'Automação de fluxos de cadastro e disparos com IA em WhatsApp.',
-    imgUrl: 'https://media.glassdoor.com/sqll/7882017/sinerji-brazil-squarelogo-1665494683816.png'
-  },
-  // você pode adicionar mais itens aqui depois
+  { label: 'Início', icon: 'mdi-home-outline', type: 'scroll', target: 'inicio' },
+  { label: 'Clientes', icon: 'mdi-domain', type: 'scroll', target: 'clientes' },
+  { label: 'Método', icon: 'mdi-map-check-outline', type: 'scroll', target: 'metodo' },
+  { label: 'Soluções', icon: 'mdi-layers-outline', type: 'scroll', target: 'solucoes' },
+  { label: 'Cases', icon: 'mdi-briefcase-outline', type: 'scroll', target: 'cases' },
+  { label: 'Satisfação', icon: 'mdi-star-outline', type: 'scroll', target: 'satisfacao' },
+  { label: 'Founders', icon: 'mdi-account-group-outline', type: 'scroll', target: 'founders' },
+  { label: 'Contato', icon: 'mdi-email-fast-outline', type: 'scroll', target: 'contato' },
+  { label: 'Blog', icon: 'mdi-post-outline', type: 'route', to: '/blog' }
 ]
 
 const steps = [
-  {
-    title: '1. Consultoria gratuita',
-    text: 'Online ou presencial* (dependendo da distância) para entender sua realidade, custos atuais e objetivos.'
-  },
-  {
-    title: '2. Diagnóstico e plano',
-    text: 'Identificamos onde reduzir taxas, cortar mensalidades, melhorar processos e usar IA a favor das vendas.'
-  },
-  {
-    title: '3. Implementação em etapas',
-    text: 'Migramos para a nuvem, criamos automações e IA no WhatsApp integradas aos sistemas que você já utiliza.'
-  },
-  {
-    title: '4. Contrato claro e suporte',
-    text: 'Contrato revisado por você, acompanhamento em tempo real e suporte de excelência após a entrega.'
-  }
+  { icon: 'mdi-magnify', title: 'Diagnóstico', text: 'Levantamos custos, gargalos, risco e oportunidades (sem chute).' },
+  { icon: 'mdi-pencil-ruler', title: 'Plano & arquitetura', text: 'Desenhamos a solução, etapas e o caminho mais seguro.' },
+  { icon: 'mdi-tools', title: 'Execução por etapas', text: 'Entrega incremental: você vê valor antes do “final”.' },
+  { icon: 'mdi-rocket-launch-outline', title: 'Go-live & otimização', text: 'Publica, monitora, ajusta e melhora continuamente.' }
 ]
 
 const services = [
   {
-    icon: 'cloud_sync',
-    title: 'Migração de sistemas para a nuvem',
-    text: 'Leve seus sistemas para a cloud com segurança, escalabilidade e foco em economia.',
+    icon: 'mdi-robot-outline',
+    title: 'IA no WhatsApp (vendas e suporte)',
+    text: 'Agentes que atendem, qualificam e encaminham leads com abordagem pronta.',
     items: [
-      'Diagnóstico de infraestrutura e custos recorrentes.',
-      'Plano de migração por etapas, sem parar a operação.',
-      'Uso de serviços gerenciados (AWS e outras clouds).',
-      'Monitoramento e otimização contínua da conta.'
+      'Atendimento 24/7 com linguagem natural',
+      'Takeover humano simples',
+      'Integração com catálogo/CRM/funil',
+      'Relatórios e melhoria contínua'
     ]
   },
   {
-    icon: 'autorenew',
-    title: 'Automação de processos e rotinas',
-    text: 'Automatize tarefas repetitivas e fluxos críticos para ganhar tempo e previsibilidade.',
+    icon: 'mdi-cloud-outline',
+    title: 'Cloud & migração (com custo sob controle)',
+    text: 'Infra segura, escalável e otimizada — sem desperdício e sem susto na fatura.',
     items: [
-      'Automação de atendimento inicial e triagem.',
-      'Integração com ERPs e sistemas legados.',
-      'Gatilhos automáticos baseados em eventos e dados.',
-      'Dashboards com visão em tempo real.'
+      'Plano por etapas (sem parar operação)',
+      'Monitoramento e observabilidade',
+      'Otimização recorrente de custo',
+      'Boas práticas de segurança'
     ]
   },
   {
-    icon: 'mdi-whatsapp',
-    title: 'IA no WhatsApp focada em vendas',
-    text: 'Bots inteligentes que entendem seu negócio, geram leads e não soam robóticos.',
+    icon: 'mdi-cog-sync-outline',
+    title: 'Automação de processos',
+    text: 'Elimine tarefas repetitivas e transforme fluxo manual em rotina rastreável.',
     items: [
-      'Atendimento 24/7 sem perder o toque humano.',
-      'Integração com CRM e funil de vendas.',
-      'Fluxos personalizados por produto ou serviço.',
-      'Takeover fácil para o vendedor quando necessário.'
+      'Integrações com legado/ERP/CRM',
+      'Gatilhos e orquestração de rotinas',
+      'Dashboards e alertas',
+      'Padronização e governança'
     ]
   },
   {
-    icon: 'insights',
-    title: 'Dados, marketing e conversão',
-    text: 'Transforme dados em decisões e campanhas que trazem retorno de verdade.',
+    icon: 'mdi-palette-outline',
+    title: 'Design de software + conversão',
+    text: 'Layout minimalista, rápido e feito pra vender — com tracking e SEO.',
     items: [
-      'Mapeamento de oportunidades em sua base.',
-      'Funis de lead à venda com copy otimizada.',
-      'Landing pages de alta conversão.',
-      'Relatórios claros para tomada de decisão.'
+      'Landing pages de alta conversão',
+      'Onboarding e ativação',
+      'SEO + performance',
+      'Métricas e funil'
     ]
   }
 ]
 
-function scrollToSection(id) {
-  drawerOpen.value = false
-  if (typeof window === 'undefined') return
+const cases = [
+  {
+    icon: 'mdi-storefront-outline',
+    title: 'EletroNogueira',
+    subtitle: 'Modernização total: cloud + SEO + catálogo + IA no WhatsApp.',
+    items: [
+      'Migração e reestruturação do sistema',
+      'Redução de custos e ganho de performance',
+      'Catálogo integrado ao estoque físico',
+      'Atendimento 24h com IA no WhatsApp'
+    ],
+    tags: ['Cloud', 'SEO', 'Catálogo', 'WhatsApp IA']
+  },
+  {
+    icon: 'mdi-car-outline',
+    title: 'ChatCar IA',
+    subtitle: 'SaaS automotivo: transforme estoque em vendedor 24h.',
+    items: [
+      'Qualifica e encaminha leads automaticamente',
+      'Integração com WhatsApp e tráfego pago',
+      'Abordagens prontas e roteiros',
+      'Painel e automações do funil'
+    ],
+    tags: ['SaaS', 'Vendas', 'Automação', 'WhatsApp']
+  },
+  {
+    icon: 'mdi-form-select',
+    title: 'Produtos digitais & formulários inteligentes',
+    subtitle: 'Captação + pagamento + monitoramento + automação.',
+    items: [
+      'Formulários inteligentes por objetivo',
+      'Integração com pagamento e onboarding',
+      'Relatórios e alertas por API/Telegram',
+      'Rotinas de follow-up e conversão'
+    ],
+    tags: ['Leads', 'Pagamentos', 'Monitoramento', 'Funil']
+  }
+]
 
+const satisfaction = [
+  { icon: 'mdi-headset', title: 'Suporte humano de verdade', text: 'Sem enrolação: aparece, resolve, documenta.' },
+  { icon: 'mdi-eye-outline', title: 'Transparência total', text: 'Você acompanha o avanço e entende o que está sendo feito.' },
+  { icon: 'mdi-swap-horizontal', title: 'Integra com o que você já usa', text: 'Nada de “joga tudo fora”. Evoluímos em cima.' },
+  { icon: 'mdi-cash-check', title: 'Custo sob controle', text: 'Otimização contínua e decisões guiadas por dados.' }
+]
+
+const testimonials = [
+  {
+    name: 'Seu cliente aqui',
+    role: 'Empresa • Segmento',
+    stars: 5,
+    text: 'A operação ficou mais rápida e organizada. Ficou com cara de produto de verdade.',
+    context: 'Espaço reservado para depoimento real'
+  },
+  {
+    name: 'Seu cliente aqui',
+    role: 'Empresa • Segmento',
+    stars: 5,
+    text: 'Suporte presente e entrega profissional. Não ficou nada “solto”.',
+    context: 'Espaço reservado para depoimento real'
+  }
+]
+
+const founders = [
+  {
+    name: 'Samuel Victor',
+    role: 'Founder • Engenheiro de Software • Fullstack • Cloud/IA',
+    img: '', // ex: '/founders/samuel.jpg'
+    summary: 'Espaço para mini resumo (1–3 linhas) do Samuel: experiência, resultados, senioridade e foco.',
+    highlights: ['Cloud', 'IA', 'Automação', 'SaaS', 'Sistemas críticos']
+  },
+  {
+    name: 'Dion',
+    role: 'Founder • Especialista em Tecnologia • Arquitetura • Produto',
+    img: '', // ex: '/founders/dion.jpg'
+    summary: 'Espaço para mini resumo (1–3 linhas) do Dion: histórico, resultados e especialidades.',
+    highlights: ['Arquitetura', 'Entrega', 'Escala', 'Qualidade', 'Processos']
+  }
+]
+
+// Logos (mantive suas URLs)
+const brandItems = [
+  { name: 'Empregos.com.br', imgUrl: 'https://static.empregos.com.br/assets/_nuxt/logo.IAkruRZb.svg' },
+  { name: 'Mercado Pago', imgUrl: 'https://woocommerce.com/wp-content/uploads/2021/05/fb-mercado-pago-v2@2x.png' },
+  { name: 'CAIXA', imgUrl: 'https://www.publicitarioscriativos.com/wp-content/uploads/2018/09/nova-identidade-visual-da-caixa-pode-custar-ate-800-milhoes.png' },
+  { name: 'Eletro Nogueira', imgUrl: 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQWkoE4wphrr3rmiQjB_WamkBHm2CQ4POAbnQ&s' },
+  { name: 'VerdBank', imgUrl: 'https://static.wixstatic.com/media/8c100f_2f22249dc334447eadfc4aea1c65031a~mv2.jpg/v1/fill/w_2500,h_1454,al_c/8c100f_2f22249dc334447eadfc4aea1c65031a~mv2.jpg' },
+  { name: 'GLOBO', imgUrl: 'https://s3.glbimg.com/v1/AUTH_b58693ed41d04a39826739159bf600a0/photos/logo_redes.png' },
+  { name: 'Banco da Amazônia', imgUrl: 'https://play-lh.googleusercontent.com/MDcygNMjShpab7QKV4KUbd0XYZyeFklcmS9qChtA-6xCdQowETqBTG3G3fDNQCe4Qw' },
+  { name: 'AGHU – SUS', imgUrl: 'https://www.gov.br/ebserh/pt-br/governanca/plataformas-e-tecnologias/aghu/aghu/@@collective.cover.banner/f3c7e40f-6713-404c-a7cb-994f2a66d332/@@images/f206f037-e2a6-4094-a742-48897bce3296.png' },
+  { name: 'Coco Bambu', imgUrl: 'https://mir-s3-cdn-cf.behance.net/projects/404/a87f35210460461.Y3JvcCwxMjMxLDk2MywzNjIsNDU.png' },
+  { name: 'TJGO', imgUrl: 'https://tjgo.4biz.globalweb.com.br/4biz/logoImages/44.png' },
+  { name: 'ChatCar IA', imgUrl: 'https://chatcar.me/logo.jpeg' },
+  { name: 'Cast Group', imgUrl: 'https://upbase.com.br/wp-content/uploads/2023/10/maxresdefault.jpg' },
+  { name: 'Sinerji', imgUrl: 'https://media.glassdoor.com/sqll/7882017/sinerji-brazil-squarelogo-1665494683816.png' }
+]
+
+// para rolar suave, duplico no template (sem precisar duplicar aqui)
+const brandStrip = computed(() => brandItems)
+
+const lead = reactive({
+  name: '',
+  phone: '',
+  email: '',
+  company: '',
+  message: ''
+})
+
+const referral = reactive({
+  name: '',
+  phone: '',
+  leadName: '',
+  company: '',
+  notes: ''
+})
+
+function handleNav(item, mobile = false) {
+  if (mobile) drawerOpen.value = false
+  if (item.type === 'route') return router.push(item.to)
+  if (item.type === 'scroll') return scrollTo(item.target)
+}
+
+function scrollTo(id) {
   const el = document.getElementById(id)
   if (!el) return
-
-  const top = el.getBoundingClientRect().top + window.scrollY - 80
+  const headerOffset = 86
+  const top = el.getBoundingClientRect().top + window.scrollY - headerOffset
   window.scrollTo({ top, behavior: 'smooth' })
 }
 
-function openWhatsapp() {
-  if (typeof window !== 'undefined') {
-    window.open(whatsappUrl.value, '_blank')
-  }
+function buildWhatsappUrl(msg) {
+  return `https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(msg)}`
+}
+
+function openWhatsapp(extra = '') {
+  const base =
+    'Olá! Quero falar com a AITO.\n\nObjetivo: reduzir custos / automatizar processos / melhorar vendas com IA.\n'
+  const msg = extra ? `${base}\n${extra}` : base
+  window.open(buildWhatsappUrl(msg), '_blank')
 }
 
 function sendLead() {
   const parts = []
-  if (phone.value) parts.push(`Telefone/WhatsApp: ${phone.value}`)
-  if (email.value) parts.push(`E-mail: ${email.value}`)
-  if (company.value) parts.push(`Empresa/Projeto: ${company.value}`)
+  if (lead.name) parts.push(`Nome: ${lead.name}`)
+  if (lead.phone) parts.push(`WhatsApp: ${lead.phone}`)
+  if (lead.email) parts.push(`E-mail: ${lead.email}`)
+  if (lead.company) parts.push(`Empresa/Projeto: ${lead.company}`)
+  if (lead.message) parts.push(`Mensagem: ${lead.message}`)
 
-  const url = buildWhatsappUrl(parts.join('\n'))
-  if (typeof window !== 'undefined') {
-    window.open(url, '_blank')
-  }
+  const msg = `Olá! Quero um diagnóstico grátis.\n\n${parts.join('\n')}`
+  window.open(buildWhatsappUrl(msg), '_blank')
 }
 
-useMeta(() => ({
-  title:
-    'AITO SOFTWARES',
-  meta: [
-    {
-      name: 'description',
-      content:
-        'Consultoria especializada em migração de sistemas para a nuvem, automação de processos e IA no WhatsApp. Foco em redução de custos, aumento de vendas e integração com sistemas existentes em Valparaíso de Goiás, DF e Goiânia.'
-    },
-    {
-      name: 'keywords',
-      content:
-        'migração para nuvem valparaíso de goiás, automação de processos df, consultoria em nuvem goiânia, IA no WhatsApp, chatbot whatsapp vendas, redução de custos com sistemas, criar software próprio, integração sistemas legados'
-    },
-    {
-      property: 'og:title',
-      content:
-        'Migração para Nuvem, Automação e IA no WhatsApp — Consultoria Especializada'
-    },
-    {
-      property: 'og:description',
-      content:
-        'Reduza taxas, corte mensalidades desnecessárias e automatize seu negócio com soluções em nuvem e IA no WhatsApp.'
-    }
-  ]
-}))
-function initStarfieldForElement(container) {
-  // Cria o canvas uma vez por container
-  const canvas = document.createElement('canvas');
-  canvas.classList.add('starfield');
-  container.appendChild(canvas);
+function sendReferral() {
+  const parts = []
+  if (referral.name) parts.push(`Indicador: ${referral.name}`)
+  if (referral.phone) parts.push(`WhatsApp do indicador: ${referral.phone}`)
+  if (referral.leadName) parts.push(`Indicado: ${referral.leadName}`)
+  if (referral.company) parts.push(`Empresa/Projeto: ${referral.company}`)
+  if (referral.notes) parts.push(`Contexto: ${referral.notes}`)
 
-  const ctx = canvas.getContext('2d');
-
-  const stars = [];
-  let width, height, numStars;
-
-  function resize() {
-    width = container.clientWidth;
-    height = container.clientHeight;
-
-    canvas.width = width;
-    canvas.height = height;
-
-    // quantidade de estrelas proporcional à área
-    numStars = Math.floor((width * height) / 7000); // ajuste se quiser mais/menos
-    stars.length = 0;
-    for (let i = 0; i < numStars; i++) {
-      stars.push({
-        x: Math.random() * width,
-        y: Math.random() * height,
-        radius: Math.random() * .3 + 0.2,   // tamanho da estrela
-        alpha: Math.random(),                // brilho inicial
-        delta: (Math.random() * 0.006) + 0.001  // velocidade do brilho
-      });
-    }
-  }
-
-  function draw() {
-    ctx.clearRect(0, 0, width, height);
-
-    for (const star of stars) {
-      // pisca mais devagar multiplicando por um fator < 1
-      star.alpha += star.delta * 0.35;
-
-      // inverte o brilho pra dar efeito de piscar
-      if (star.alpha <= 0 || star.alpha >= 1) {
-        star.delta *= -1;
-      }
-
-      ctx.save();
-      ctx.globalAlpha = star.alpha;
-      const gradient = ctx.createRadialGradient(
-        star.x, star.y, 0,
-        star.x, star.y, star.radius * 3
-      );
-      gradient.addColorStop(0.1, 'white');
-      gradient.addColorStop(0.4, 'white');
-      gradient.addColorStop(1, 'white');
-
-      ctx.fillStyle = gradient;
-      ctx.beginPath();
-      ctx.arc(star.x, star.y, star.radius * 3, 0, Math.PI * 2);
-      ctx.fill();
-      ctx.restore();
-    }
-
-    requestAnimationFrame(draw);
-  }
-
-  resize();
-  draw();
-
-  // Recalcula em resize
-  window.addEventListener('resize', () => {
-    resize();
-  });
+  const msg =
+    `Olá! Quero enviar uma indicação (Indique & Ganhe).\n\n${parts.join('\n')}\n\nPodemos combinar a comissão conforme o contrato?`
+  window.open(buildWhatsappUrl(msg), '_blank')
 }
 
-function initStarfields() {
-  const containers = document.querySelectorAll('.bg-black-grad');
-  containers.forEach(initStarfieldForElement);
+function goBlog() {
+  router.push('/blog')
 }
 
 onMounted(() => {
-  if (typeof window === 'undefined') return
-  initStarfields()
-
+  // nada pesado aqui, layout é minimalista
 })
 </script>
 
 <style scoped>
-.landing-page {
-  position: relative;
-  min-height: 100vh;
-  color: #0f172a;
-  overflow: hidden;
+/* ===========================
+   CSS (copiar e colar)
+   Minimalista • Bordas mais quadradas • Mobile-first
+   =========================== */
+
+.ait-root {
+  background: #ffffff;
 }
 
-.landing-bg {
+/* fundo suave (minimal) */
+.ait-bg {
   position: fixed;
   inset: 0;
-  background:
-    radial-gradient(circle at top left, #1a758093, transparent 55%),
-    radial-gradient(circle at bottom right, #468af088, transparent 55%),
-    linear-gradient(135deg, #e0f7fa, #f9fafb);
   z-index: -2;
+  background:
+    radial-gradient(circle at 20% 10%, rgba(32, 180, 190, 0.12), transparent 52%),
+    radial-gradient(circle at 90% 85%, rgba(34, 197, 94, 0.10), transparent 55%),
+    linear-gradient(180deg, #ffffff 0%, #f6f7fb 100%);
 }
 
-.page-inner {
-  max-width: 1180px;
+/* container */
+.ait-wrap {
+  max-width: 1120px;
   margin: 0 auto;
+  padding-left: 14px;
+  padding-right: 14px;
 }
 
-/* HEADER */
-
-.landing-header {
-  position: sticky;
-  top: 12px;
-  z-index: 10;
-  backdrop-filter: blur(18px);
+/* header */
+.ait-header {
   background: rgba(255, 255, 255, 0.92);
-  border-radius: 999px;
-  padding: 8px 18px;
-  border: 1px solid rgba(148, 163, 184, 0.3);
-  box-shadow: 0 14px 40px rgba(148, 163, 184, 0.35);
+  backdrop-filter: blur(10px);
+  border-bottom: 1px solid rgba(15, 23, 42, 0.08);
+  color: #0b0d12;
+}
+.ait-brand {
+  font-family: "Tomorrow", system-ui, sans-serif;
+  font-weight: 900;
+  letter-spacing: 0.08em;
+  font-size: 0.95rem;
+  color: #0b0d12;
 }
 
-.nav-link {
-  font-size: 0.85rem;
-  opacity: 0.9;
+/* page spacing */
+.ait-page {
+  padding-top: 54px; /* espaço do header */
 }
 
-.nav-mobile {
-  border-radius: 18px;
+/* nav buttons */
+.ait-nav-btn {
+  color: rgba(15, 23, 42, 0.86);
+  border-radius: 8px;
+}
+.ait-nav-btn:hover {
+  background: rgba(15, 23, 42, 0.05);
 }
 
-/* SEÇÕES */
-
-.section-block {
-  background: #f1f8f8;
-  border-radius: 32px;
-  padding: 32px 24px;
-  box-shadow: 0 18px 55px rgba(15, 23, 42, 0.06);
+/* mobile menu */
+.ait-mobile-menu {
+  border: 1px solid rgba(15, 23, 42, 0.10);
+  background: rgba(255, 255, 255, 0.96);
+  border-radius: 10px;
+  padding: 10px;
+}
+.ait-mobile-btn {
+  border-radius: 8px;
 }
 
-.hero-block {
-  padding-top: 40px;
-  padding-bottom: 40px;
+/* buttons */
+.ait-cta {
+  background: linear-gradient(135deg, #22c55e, #20b4be);
+  color: #fff;
+  border-radius: 10px; /* mais quadrado */
+  font-weight: 800;
+  letter-spacing: 0.2px;
+}
+.ait-outline {
+  border-radius: 10px;
+  border: 1px solid rgba(15, 23, 42, 0.18);
+  color: rgba(15, 23, 42, 0.88);
 }
 
 /* HERO */
-
-.hero-title {
-  font-size: clamp(2rem, 3vw, 2.6rem);
-  line-height: 1.12;
+.ait-hero {
+  margin-top: 14px;
 }
-
-.hero-subtitle {
-  font-size: 1rem;
-  color: #4b5563;
+.ait-hero-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 14px;
 }
-
-.hero-badges .badge-chip {
-  font-size: 0.78rem;
-  padding: 6px 12px;
-  border-radius: 999px;
-  border: 1px solid rgba(148, 163, 184, 0.7);
-  background: rgba(248, 250, 252, 0.822);
-  color: #374151;
-}
-
-.hero-media {
-  border-radius: 28px;
-}
-
-.video-placeholder {
-  border-radius: 24px;
-  background: linear-gradient(135deg, #e0f2fe, #f9fafb);
-}
-
-.section-label {
-  font-size: 0.78rem;
-  letter-spacing: 0.16em;
-  text-transform: uppercase;
-}
-
-.section-title {
-  font-size: clamp(1.5rem, 2.1vw, 2rem);
-}
-
-/* GLASS */
-
-.glass-card {
-  background: rgba(255, 255, 255, 0.377);
-  border-radius: 24px;
-  border: 1px solid rgba(148, 163, 184, 0.25);
-  backdrop-filter: blur(20px);
-  filter: drop-shadow(0 8px 24px rgba(14, 14, 14, 0.493));
-}
-
-/* LOGOS STRIP */
-
-.logos-strip {
+.ait-panel {
+  border: 1px solid rgba(15, 23, 42, 0.10);
+  background: rgba(255, 255, 255, 0.88);
+  border-radius: 12px; /* quadrado minimal */
   overflow: hidden;
 }
-
-.logos-strip-inner {
-  display: inline-flex;
-  gap: 32px;
-  white-space: nowrap;
-  animation: logos-scroll 38s linear infinite;
+.ait-panel-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 14px;
 }
 
-.logo-text {
-  font-size: 0.9rem;
-  color: #6b7280;
+/* VSL */
+.ait-video {
+  border: 1px dashed rgba(15, 23, 42, 0.22);
+  border-radius: 10px;
+  overflow: hidden;
+  background: #ffffff;
 }
-
-@keyframes logos-scroll {
-  0% {
-    transform: translateX(0);
-  }
-
-  50% {
-    transform: translateX(-50%);
-  }
-
-  100% {
-    transform: translateX(0);
-  }
-}
-
-/* CARROSSEL */
-
-.brands-carousel {
-  border-radius: 24px;
-  margin-top: 4px;
-}
-
-.brand-card {
+.ait-iframe {
   width: 100%;
-  max-width: 520px;
+  height: 100%;
+}
+.ait-video-placeholder {
+  width: 100%;
+  height: 100%;
+  display: grid;
+  place-content: center;
+  padding: 18px;
+  background: linear-gradient(180deg, #ffffff, #f6f7fb);
 }
 
-.brand-logo {
-  width: 150px;
-  max-height: 120px;
+/* copy area */
+.ait-kicker {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.85rem;
+  color: rgba(15, 23, 42, 0.75);
+  border: 1px solid rgba(15, 23, 42, 0.10);
+  padding: 8px 10px;
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.85);
+  width: fit-content;
+}
+.ait-title {
+  margin: 12px 0 8px 0;
+  font-size: clamp(1.8rem, 4.8vw, 2.6rem);
+  line-height: 1.08;
+  font-weight: 950;
+  color: #0b0d12;
+}
+.ait-grad {
+  background: linear-gradient(135deg, #20b4be, #22c55e);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+.ait-subtitle {
+  margin: 0;
+  font-size: 1.02rem;
+  line-height: 1.5;
+  color: rgba(15, 23, 42, 0.78);
+}
+
+.ait-bullets {
+  margin-top: 12px;
+  border: 1px solid rgba(15, 23, 42, 0.10);
   border-radius: 12px;
-  background: #f3f4f6;
+  background: rgba(255, 255, 255, 0.72);
+  overflow: hidden;
+}
+.ait-bullet {
+  padding: 10px 12px;
+  display: flex;
+  align-items: center;
+  color: rgba(15, 23, 42, 0.86);
+  border-bottom: 1px solid rgba(15, 23, 42, 0.06);
+}
+.ait-bullet:last-child {
+  border-bottom: none;
+}
+
+.ait-stats {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px;
+  margin-top: 12px;
+}
+.ait-stat {
+  border: 1px solid rgba(15, 23, 42, 0.10);
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.78);
+  padding: 10px 12px;
+}
+.ait-stat-num {
+  font-weight: 950;
+  font-size: 1.05rem;
+  color: #0b0d12;
+}
+.ait-stat-label {
+  font-size: 0.82rem;
+  color: rgba(15, 23, 42, 0.65);
+}
+
+.ait-microproof {
+  font-size: 0.82rem;
+  color: rgba(15, 23, 42, 0.65);
+  display: flex;
+  align-items: center;
+}
+
+/* sections */
+.ait-section {
+  margin-top: 14px;
+  border: 1px solid rgba(15, 23, 42, 0.10);
+  background: rgba(255, 255, 255, 0.88);
+  border-radius: 12px;
+  padding: 14px;
+}
+.ait-section-head {
+  max-width: 820px;
+}
+.ait-section-title {
+  font-size: 1.25rem;
+  font-weight: 900;
+  color: #0b0d12;
+}
+.ait-section-sub {
+  margin-top: 6px;
+  color: rgba(15, 23, 42, 0.70);
+}
+
+/* logos strip (clean) */
+.ait-logos {
+  margin-top: 12px;
+  border: 1px solid rgba(15, 23, 42, 0.08);
+  border-radius: 10px;
+  overflow: hidden;
+  background: rgba(246, 247, 251, 0.85);
+}
+.ait-logos-track {
+  display: flex;
+  gap: 14px;
+  padding: 10px;
+  width: max-content;
+  animation: ait-scroll 26s linear infinite;
+}
+.ait-logo {
+  width: 128px;
+  display: grid;
+  place-items: center;
+  background: rgba(255, 255, 255, 0.92);
+  border: 1px solid rgba(15, 23, 42, 0.10);
+  border-radius: 20px;
   padding: 6px 10px;
 }
-
-.brand-name {
-  font-weight: 600;
-  font-size: 0.98rem;
-  color: #111827;
+@keyframes ait-scroll {
+  0% { transform: translateX(0); }
+  100% { transform: translateX(-50%); }
 }
 
-.brand-project {
-  font-size: 0.88rem;
-  color: #6b7280;
+/* steps */
+.ait-steps {
+  margin-top: 12px;
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 10px;
+}
+.ait-step {
+  border: 1px solid rgba(15, 23, 42, 0.10);
+  border-radius: 12px;
+  padding: 12px;
+  background: rgba(255, 255, 255, 0.78);
+}
+.ait-step-top {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.ait-step-title {
+  font-weight: 900;
+  color: #0b0d12;
+}
+.ait-step-text {
+  margin-top: 6px;
+  color: rgba(15, 23, 42, 0.72);
 }
 
-/* STEPS */
-
-.step-card {
-  position: relative;
-  min-height: 180px;
+/* cards */
+.ait-cards {
+  margin-top: 12px;
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 10px;
+}
+.ait-card {
+  border: 1px solid rgba(15, 23, 42, 0.10);
+  border-radius: 12px;
+  padding: 12px;
+  background: rgba(255, 255, 255, 0.78);
+}
+.ait-card-top {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.ait-card-title {
+  font-weight: 900;
+  color: #0b0d12;
+}
+.ait-card-text {
+  margin-top: 6px;
+  color: rgba(15, 23, 42, 0.72);
 }
 
-.step-index {
-  position: absolute;
-  top: 10px;
-  right: 14px;
-  font-size: 0.9rem;
-  color: #818cf8;
+.ait-list {
+  margin: 8px 0 0 0;
+  padding-left: 18px;
+  color: rgba(15, 23, 42, 0.78);
+}
+.ait-list li { margin-bottom: 6px; }
+
+/* cases */
+.ait-cases {
+  margin-top: 12px;
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 10px;
+}
+.ait-case {
+  border: 1px solid rgba(15, 23, 42, 0.10);
+  border-radius: 12px;
+  padding: 12px;
+  background: rgba(255, 255, 255, 0.78);
+}
+.ait-case-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+.ait-case-title {
+  font-weight: 900;
+  color: #0b0d12;
+}
+.ait-case-sub {
+  color: rgba(15, 23, 42, 0.68);
+  font-size: 0.92rem;
 }
 
-/* SERVICES */
+/* satisfaction grid */
+.ait-sat-grid {
+  margin-top: 12px;
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 10px;
+}
+.ait-sat-row:last-child .q-separator { display: none; }
 
-.service-card {
-  height: 100%;
+.ait-testimonials {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 10px;
+}
+.ait-quote {
+  border: 1px solid rgba(15, 23, 42, 0.10);
+  border-radius: 12px;
+  padding: 12px;
+  background: rgba(255, 255, 255, 0.78);
+}
+.ait-quote-text {
+  color: rgba(15, 23, 42, 0.80);
+  line-height: 1.45;
+}
+.ait-note {
+  border: 1px solid rgba(15, 23, 42, 0.10);
+  border-radius: 12px;
+  padding: 10px 12px;
+  background: rgba(246, 247, 251, 0.85);
+  color: rgba(15, 23, 42, 0.74);
+  display: flex;
+  align-items: center;
 }
 
-.service-list {
-  padding-left: 1.1rem;
-  margin: 0;
+/* founders */
+.ait-founders {
+  margin-top: 12px;
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 10px;
 }
-
-.service-list li {
-  margin-bottom: 4px;
+.ait-founder {
+  border: 1px solid rgba(15, 23, 42, 0.10);
+  border-radius: 12px;
+  padding: 12px;
+  background: rgba(255, 255, 255, 0.78);
 }
-
-/* SOBRE / CONTATO */
-
-.about-side-card,
-.contact-side-card {
-  height: 100%;
-}
-
-/* CTA BUTTON */
-
-.cta-btn {
-  background: linear-gradient(135deg, #22c55e, #20b4be);
-  color: #f9fafb;
-  font-weight: 600;
-  border-radius: 999px;
-  transition: all 0.3s ease;
-}
-
-.cta-btn:hover {
-  filter: drop-shadow(0 8px 24px rgba(34, 197, 94, 0.5));
-  transform: translateY(-2px);
-}
-
-.cta-btn-2 {
-  background: linear-gradient(135deg, #20b4be, #0bdf75);
-  color: #f9fafb;
-  font-weight: 600;
-  border-radius: 999px;
-  transition: all 0.3s ease;
-}
-
-.cta-btn-2:hover {
-  filter: drop-shadow(0 8px 24px rgba(34, 145, 197, 0.5));
-  transform: translateY(-2px);
-}
-
-/* TEXTO E CORES */
-
-.text-secondary-light {
-  color: #6b7280;
-}
-
-.accent {
-  color: #16a34a;
-}
-
-.accent-text {
-  color: #16a34a;
-}
-
-/* FOOTER */
-
-.footer {
-  border-top: 1px solid rgba(148, 163, 184, 0.3);
-}
-
-/* WHATSAPP FAB */
-
-.ia-fab {
-  position: fixed;
-  right: 18px;
-  bottom: 18px;
-  z-index: 40;
-}
-
-.bg-black-grad {
-  position: relative;
+.ait-avatar {
+  border: 1px solid rgba(15, 23, 42, 0.10);
+  border-radius: 10px;
   overflow: hidden;
-  /* Fundo preto em degradê, bem sutil */
-  background:
-    radial-gradient(circle at 80% 100%, #363636c4 0, #080808 45%),
-    radial-gradient(circle at 15% 30%, #272727 0, #1b1b1b 55%),
-    #03000e;
-  color: #f9fafb;
-  /* opcional, texto claro em cima */
 }
 
-/* Estrelas em overlay */
-.bg-black-grad::before {
-  content: "";
-  position: absolute;
-  inset: 0;
-  pointer-events: none;
-  z-index: 0;
-  background-image:
-    radial-gradient(1px 1px at 10% 20%, rgba(255, 255, 255, 0.9), transparent),
-    radial-gradient(1px 1px at 30% 80%, rgba(255, 255, 255, 0.6), transparent),
-    radial-gradient(2px 2px at 70% 30%, rgba(255, 255, 255, 0.7), transparent),
-    radial-gradient(1.5px 1.5px at 90% 60%, rgba(255, 255, 255, 0.8), transparent),
-    radial-gradient(1px 1px at 50% 50%, rgba(255, 255, 255, 0.4), transparent);
-  background-repeat: no-repeat;
-  background-size: cover;
-  opacity: 0.9;
-  filter: drop-shadow(0 0 6px rgba(255, 255, 255, 0.5));
+/* tabs */
+.ait-tabs {
+  margin-top: 12px;
+  border: 1px solid rgba(15, 23, 42, 0.10);
+  border-radius: 12px;
+  overflow: hidden;
+  background: rgba(255, 255, 255, 0.78);
+}
+.ait-qtabs {
+  background: rgba(246, 247, 251, 0.75);
+}
+.ait-panels {
+  background: transparent;
+}
+.ait-form-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+}
+.ait-form-side,
+.ait-form-main {
+  padding: 14px;
+}
+.ait-form-note {
+  border: 1px solid rgba(15, 23, 42, 0.10);
+  border-radius: 12px;
+  padding: 12px;
+  background: rgba(246, 247, 251, 0.85);
+}
+.ait-form-note-title {
+  font-weight: 900;
+  color: #0b0d12;
+  margin-bottom: 6px;
+}
+.ait-banner {
+  border: 1px solid rgba(15, 23, 42, 0.10);
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.85);
 }
 
-/* Garante que o conteúdo fique acima das estrelas */
-.bg-black-grad>* {
-  position: relative;
-  z-index: 1;
+/* footer */
+.ait-footer {
+  border-top: 1px solid rgba(15, 23, 42, 0.10);
+  padding-top: 14px;
 }
 
+/* IA FAB */
+.ait-ia-fab {
+  position: fixed;
+  right: 16px;
+  bottom: 16px;
+  z-index: 40;
+  border-radius: 12px; /* quadrado */
+  overflow: hidden;
+  background: linear-gradient(135deg, #22c55e, #20b4be);
+  box-shadow: 0 12px 30px rgba(15, 23, 42, 0.18);
+}
 
-/* RESPONSIVO */
-
-@media (max-width: 767px) {
-  .landing-header {
-    border-radius: 18px;
+/* ======================
+   Responsive upgrades
+   ====================== */
+@media (min-width: 900px) {
+  .ait-hero-grid {
+    grid-template-columns: 1.05fr 0.95fr; /* VSL + copy */
+    align-items: start;
+    gap: 14px;
   }
-
-  .section-block {
-    padding: 24px 18px;
+  .ait-steps {
+    grid-template-columns: repeat(4, 1fr);
   }
-
-  .hero-title {
-    font-size: 1.9rem;
+  .ait-cards {
+    grid-template-columns: repeat(2, 1fr);
   }
-}
-
-#marcas {
-  background-color: #00000000;
-  background: #00000000;
+  .ait-cases {
+    grid-template-columns: repeat(3, 1fr);
+  }
+  .ait-sat-grid {
+    grid-template-columns: 0.95fr 1.05fr;
+  }
+  .ait-testimonials {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  .ait-founders {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  .ait-form-grid {
+    grid-template-columns: 0.95fr 1.05fr;
+  }
 }
 </style>
