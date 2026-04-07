@@ -122,7 +122,7 @@
                 </div> -->
 
                 <h1 class="ait-title">
-                  Software sob medida para negócios que exigem
+                  Sistemas para negócios que exigem
                   <span class="ait-grad">tecnologia sob medida, eficiência e escala.</span>
                 </h1>
 
