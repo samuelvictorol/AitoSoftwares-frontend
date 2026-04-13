@@ -1,13 +1,13 @@
 <template>
-  <q-layout view="lHh Lpr lFf" class="ait-root">
+  <q-layout view="lHh Lpr lFf" class="ait-root ">
     <!-- HEADER (minimal, squared) -->
     <q-header elevated class="ait-header">
       <div class="ait-wrap">
         <div class="row items-center justify-between q-py-sm">
           <!-- Brand -->
-          <div class="row items-center no-wrap">
-            <q-btn flat dense round class="" @click="scrollTo('top')" aria-label="Topo">
-              <q-img src="/favicon.png" width="60px" height="34px" style="border-radius: 6px" />
+          <div class="row items-center no-wrap ">
+            <q-btn flat dense round class="animate__animated animate__fadeInLeft animate__slower animate__delay-1s" @click="scrollTo('top')" aria-label="Topo">
+              <q-img src="/favicon.png" width="60px" height="34px" style="border-radius: 6px" loading="lazy" />
             </q-btn>
             <div class="column">
               <div class="row items-center no-wrap">
@@ -29,12 +29,12 @@
               :icon="item.icon" :label="item.label" @click="handleNav(item)" />
             <q-separator vertical inset class="q-mx-md" />
             <q-btn unelevated no-caps class="ait-cta" icon="mdi-whatsapp" label="Diagnóstico grátis"
-              @click="openWhatsapp('Quero um diagnóstico grátis (custos, automação e IA).')" />
+              @click="openWhatsapp('Quero uma consultoria gratuita (custos, automação e IA).')" />
           </div>
 
           <!-- Mobile actions -->
           <div class="lt-md row items-center">
-            <q-btn unelevated no-caps class="ait-cta q-mr-sm" icon="mdi-whatsapp" label="Falar"
+            <q-btn unelevated no-caps class="ait-cta q-mr-sm" icon="mdi-whatsapp"
               @click="openWhatsapp()" />
             <q-btn flat round dense :icon="drawerOpen ? 'mdi-close' : 'mdi-menu'" @click="drawerOpen = !drawerOpen"
               aria-label="Menu" />
@@ -43,13 +43,13 @@
 
         <!-- Mobile menu -->
         <q-slide-transition>
-          <div v-if="drawerOpen" class="lt-md ait-mobile-menu q-mb-sm">
+          <div v-if="drawerOpen" class="lt-md  q-mb-sm">
             <q-btn v-for="item in navItems" :key="item.label + '-m'" flat dense no-caps
               class="full-width text-left ait-mobile-btn q-mb-xs" :icon="item.icon" :label="item.label"
               @click="handleNav(item, true)" />
             <q-btn unelevated no-caps class="full-width ait-cta q-mt-sm" icon="mdi-whatsapp"
               label="Agendar diagnóstico grátis"
-              @click="openWhatsapp('Quero agendar um diagnóstico grátis.'); drawerOpen = false" />
+              @click="openWhatsapp('Quero agendar uma consultoria gratuita.'); drawerOpen = false" />
           </div>
         </q-slide-transition>
       </div>
@@ -84,7 +84,7 @@
                       <!-- <iframe v-if="vslUrl" :src="vslUrl" title="VSL AITO" frameborder="0"
                         allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
                         allowfullscreen class="ait-iframe" /> -->
-                      <q-img src="/vsl.png" fit="cover" class="ait-iframe rounded-borders" />
+                      <q-img @click="iaChat = true" src="/vsl.png" fit="cover" class="animate__animated animate__fadeInRight animate__slower animate__delay-2s ait-iframe cursor-pointer rounded-borders" />
                       <!-- <div  class="ait-video-placeholder">
                         <q-icon name="mdi-play" size="56px" class="text-grey-9" />
                         <div class="text-body2 text-grey-8 q-mt-sm text-center">
@@ -96,17 +96,17 @@
 
                     <div class="row q-col-gutter-sm q-mt-sm">
                       <div class="col-12 col-sm-6">
-                        <q-btn unelevated no-caps class="ait-cta full-width" icon="mdi-whatsapp"
+                        <q-btn unelevated no-caps class="animate__animated animate__fadeInUp animate__slower animate__delay-2s  ait-cta full-width" icon="mdi-whatsapp"
                           label="Quero reduzir custos"
                           @click="openWhatsapp('Quero reduzir custos com tecnologia (cloud/automação/IA).')" />
                       </div>
                       <div class="col-12 col-sm-6">
-                        <q-btn outline no-caps class="ait-outline full-width" icon="mdi-briefcase-outline"
+                        <q-btn outline no-caps class="animate__animated animate__fadeInUp animate__slower animate__delay-3s  ait-outline full-width" icon="mdi-briefcase-outline"
                           label="Ver cases" @click="scrollTo('cases')" />
                       </div>
                     </div>
 
-                    <div class="ait-microproof q-mt-sm">
+                    <div class="ait-microproof animate__animated animate__slideInLeft animate__slower animate__delay-3s   q-mt-sm">
                       <q-icon name="mdi-check-circle-outline" class="q-mr-xs" />
                       Diagnóstico gratuito • Contrato claro • Entrega por etapas • Suporte real
                     </div>
@@ -115,7 +115,7 @@
               </div>
 
               <!-- Copy -->
-              <div class="ait-copy">
+              <div class="ait-copy animate__animated animate__slideInUp animate__slower animate__delay-3s">
                 <!-- <div class="ait-kicker">
                   <q-icon name="mdi-lightning-bolt-outline" size="18px" class="q-mr-xs" />
                   Engenharia aplicada ao seu resultado
@@ -454,7 +454,7 @@
 
                         <div class="row items-center q-mt-sm">
                           <q-icon name="mdi-post-outline" class="q-mr-sm" />
-                          <q-btn flat dense no-caps label="Ir para o Blog" @click="goBlog" />
+                          <!-- <q-btn flat dense no-caps label="Ir para o Blog" @click="goBlog" /> -->
                         </div>
                       </div>
                     </div>
@@ -557,10 +557,10 @@
                             <q-btn unelevated no-caps class="ait-cta full-width" icon="mdi-whatsapp"
                               label="Enviar indicação" type="submit" />
                           </div>
-                          <div class="col-12 col-sm-5">
+                          <!-- <div class="col-12 col-sm-5">
                             <q-btn outline no-caps class="ait-outline full-width" icon="mdi-post-outline"
                               label="Ver blog" @click="goBlog" />
-                          </div>
+                          </div> -->
                         </div>
                       </q-form>
                     </div>
@@ -583,7 +583,7 @@
                 </div>
                 <div class="text-caption text-grey-6 q-mt-sm">
                   <q-icon name="mdi-map-marker-outline" class="q-mr-xs" />
-                  Valparaíso de Goiás • DF • Goiânia • Remoto (Brasil)
+                  Distrito Federal e Entorno • Projetos Remotos (Brasil)
                 </div>
               </div>
 
@@ -598,7 +598,7 @@
         </div>
 
         <!-- IA FAB (mantém IAChatComponent) -->
-        <q-btn round class="ait-ia-fab" @click="iaChat = !iaChat" aria-label="Abrir IA">
+        <q-btn round class="ait-ia-fab animate__animated animate__zoomIn animate__slower animate__delay-3s " @click="iaChat = !iaChat" aria-label="Abrir IA">
           <q-img src="/ia.gif" width="70px" alt="IA atendimento" />
         </q-btn>
 
@@ -643,7 +643,7 @@ const navItems = [
   { label: 'Satisfação', icon: 'mdi-star-outline', type: 'scroll', target: 'satisfacao' },
   { label: 'Founders', icon: 'mdi-account-group-outline', type: 'scroll', target: 'founders' },
   { label: 'Contato', icon: 'mdi-email-fast-outline', type: 'scroll', target: 'contato' },
-  { label: 'Blog', icon: 'mdi-post-outline', type: 'route', to: '/blog' }
+  // { label: 'Blog', icon: 'mdi-post-outline', type: 'route', to: '/blog' }
 ]
 
 const steps = [
@@ -795,7 +795,7 @@ const brandItems = [
   { name: 'Coco Bambu', imgUrl: 'https://mir-s3-cdn-cf.behance.net/projects/404/a87f35210460461.Y3JvcCwxMjMxLDk2MywzNjIsNDU.png' },
   { name: 'TJGO', imgUrl: 'https://tjgo.4biz.globalweb.com.br/4biz/logoImages/44.png' },
   { name: 'ChatCar IA', imgUrl: 'https://chatcar.me/logo.jpeg' },
-  { name: 'Cast Group', imgUrl: 'https://upbase.com.br/wp-content/uploads/2023/10/maxresdefault.jpg' },
+  { name: 'AWS', imgUrl: 'https://upload.wikimedia.org/wikipedia/commons/f/fc/Amazon_Web_Services_2025.svg' },
   { name: 'Sinerji', imgUrl: 'https://media.glassdoor.com/sqll/7882017/sinerji-brazil-squarelogo-1665494683816.png' }
 ]
 
@@ -919,7 +919,7 @@ onMounted(() => {
 
 /* header */
 .ait-header {
-  background: rgba(255, 255, 255, 0.92);
+  background: rgba(255, 255, 255, 0.493);
   backdrop-filter: blur(10px);
   border-bottom: 1px solid rgba(15, 23, 42, 0.08);
   color: #0b0d12;
@@ -952,7 +952,7 @@ onMounted(() => {
 /* mobile menu */
 .ait-mobile-menu {
   border: 1px solid rgba(15, 23, 42, 0.10);
-  background: rgba(255, 255, 255, 0.96);
+  background: rgba(255, 255, 255, 0.158);
   border-radius: 10px;
   padding: 10px;
 }
