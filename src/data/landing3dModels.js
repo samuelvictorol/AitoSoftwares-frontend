@@ -1,6 +1,6 @@
 export const landing3dModels = Object.freeze({
   logo: {
-    fileName: 'aito-logo.glb',
+    fileName: 'obj1.glb',
     fallback: 'cloud'
   },
   obj2: {
@@ -16,4 +16,3 @@ export const landing3dModels = Object.freeze({
     fallback: 'orbital'
   }
 })
-

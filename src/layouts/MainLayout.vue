@@ -7,7 +7,7 @@
           <!-- Brand -->
           <div class="row items-center no-wrap ">
             <q-btn flat dense round class="animate__animated animate__fadeInLeft animate__slower animate__delay-1s" @click="scrollTo('top')" aria-label="Topo">
-              <q-img src="/favicon.png" width="60px" height="34px" style="border-radius: 6px" loading="lazy" />
+              <q-img src="/favicon.png" width="60px" height="34px" style="border-radius: 6px" loading="lazy" @click="goToHome()"/>
             </q-btn>
             <div class="column">
               <div class="row items-center no-wrap">
@@ -769,7 +769,7 @@ const founders = [
   {
     name: 'Samuel Victor',
     role: 'Founder • Comercial de Software • IA • Produto • UI/UX • Fullstack',
-    img: '/samuel.png',
+    img: '/samuel.jpg',
     summary: 'Desenvolvedor especialista em criar soluções que unem tecnologia, negócio e experiência do usuário.',
     highlights: ['Cloud', 'IA', 'Automação', 'SaaS', 'Sistemas críticos']
   },
@@ -791,10 +791,10 @@ const brandItems = [
   { name: 'VerdBank', imgUrl: 'https://static.wixstatic.com/media/8c100f_2f22249dc334447eadfc4aea1c65031a~mv2.jpg/v1/fill/w_2500,h_1454,al_c/8c100f_2f22249dc334447eadfc4aea1c65031a~mv2.jpg' },
   { name: 'GLOBO', imgUrl: 'https://s3.glbimg.com/v1/AUTH_b58693ed41d04a39826739159bf600a0/photos/logo_redes.png' },
   { name: 'Banco da Amazônia', imgUrl: 'https://play-lh.googleusercontent.com/MDcygNMjShpab7QKV4KUbd0XYZyeFklcmS9qChtA-6xCdQowETqBTG3G3fDNQCe4Qw' },
-  { name: 'AGHU – SUS', imgUrl: 'https://www.gov.br/ebserh/pt-br/hospitais-universitarios/regiao-sul/hu-furg/comunicacao/noticias/hu-furg-inicia-implantacao-do-aghu/aghubannerjpg' },
+  { name: 'AGHU – SUS', imgUrl: 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRfhEbm-egNDXdvLm6fGK30eb2dDz_cwn4DNOg4UNS_ag7Oe8-_VNzn9seC&s=10' },
   { name: 'Coco Bambu', imgUrl: 'https://mir-s3-cdn-cf.behance.net/projects/404/a87f35210460461.Y3JvcCwxMjMxLDk2MywzNjIsNDU.png' },
   { name: 'TJGO', imgUrl: 'https://tjgo.4biz.globalweb.com.br/4biz/logoImages/44.png' },
-  { name: 'ChatCar IA', imgUrl: 'https://chatcar.me/logo.jpeg' },
+  { name: 'ChatCar IA', imgUrl: 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSqyZu1rtQbx2CnvtixYgWG2ZtUUFJkpcL5bwnxn3OjDw&s' },
   { name: 'AWS', imgUrl: 'https://upload.wikimedia.org/wikipedia/commons/f/fc/Amazon_Web_Services_2025.svg' },
   { name: 'Sinerji', imgUrl: 'https://media.glassdoor.com/sqll/7882017/sinerji-brazil-squarelogo-1665494683816.png' }
 ]
@@ -881,6 +881,10 @@ function sendReferral() {
 
 function goBlog() {
   router.push('/blog')
+}
+
+function goToHome() {
+  router.push('/')
 }
 
 onMounted(() => {

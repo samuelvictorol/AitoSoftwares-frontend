@@ -41,6 +41,7 @@
         :key="section.id"
         class="landing-3d__section"
         :class="`landing-3d__section--${section.align}`"
+        data-landing-3d-section
         :aria-labelledby="`${section.id}-title`"
       >
         <div
@@ -65,14 +66,30 @@
           </h2>
           <p class="landing-3d__description">{{ section.description }}</p>
 
-          <router-link
-            v-if="section.cta"
-            class="landing-3d__cta"
-            :to="section.cta.to"
+          <div
+            v-if="section.cta || section.secondaryCta"
+            class="landing-3d__actions"
           >
-            <span>{{ section.cta.label }}</span>
-            <span aria-hidden="true">↗</span>
-          </router-link>
+            <a
+              v-if="section.cta"
+              class="landing-3d__cta landing-3d__cta--primary"
+              :href="section.cta.href"
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              <span>{{ section.cta.label }}</span>
+              <span aria-hidden="true">↗</span>
+            </a>
+
+            <router-link
+              v-if="section.secondaryCta"
+              class="landing-3d__cta landing-3d__cta--secondary"
+              :to="section.secondaryCta.to"
+            >
+              <span>{{ section.secondaryCta.label }}</span>
+              <span aria-hidden="true">→</span>
+            </router-link>
+          </div>
         </div>
 
         <div
@@ -103,6 +120,7 @@ const {
   activeSection,
   prefersReducedMotion,
   scrollProgress,
+  scrollToSection,
   sectionPosition
 } = useLandingScroll(landing3dSections.length)
 
@@ -125,28 +143,22 @@ function sectionCopyStyle(index) {
     transform: `translate3d(0, ${offset}px, 0)`
   }
 }
-
-function scrollToSection(id) {
-  document.getElementById(id)?.scrollIntoView({
-    behavior: prefersReducedMotion.value ? 'auto' : 'smooth',
-    block: 'start'
-  })
-}
 </script>
 
 <style scoped>
 .landing-3d {
-  --aito-cyan: #35d8ed;
-  --aito-green: #63f59b;
-  --aito-ink: #03070d;
-  --aito-muted: rgba(224, 237, 243, 0.68);
+  --aito-teal: #089fa5;
+  --aito-teal-secondary: #0ea794;
+  --aito-green: #1cbd6b;
+  --aito-ink: #05090c;
+  --aito-muted: rgba(220, 232, 235, 0.68);
   position: relative;
   min-height: 900vh;
   overflow: clip;
-  color: #f5fbfd;
+  color: #f6f7fb;
   background:
-    radial-gradient(circle at 18% 8%, rgba(30, 141, 161, 0.15), transparent 34rem),
-    radial-gradient(circle at 82% 66%, rgba(42, 176, 102, 0.08), transparent 32rem),
+    radial-gradient(circle at 18% 8%, rgba(8, 159, 165, 0.14), transparent 34rem),
+    radial-gradient(circle at 82% 66%, rgba(28, 189, 107, 0.07), transparent 32rem),
     var(--aito-ink);
   isolation: isolate;
 }
@@ -161,8 +173,8 @@ function scrollToSection(id) {
 
 .landing-3d__atmosphere {
   background:
-    linear-gradient(90deg, rgba(3, 7, 13, 0.35), transparent 40%, rgba(3, 7, 13, 0.18)),
-    radial-gradient(circle at 50% 50%, transparent 35%, rgba(1, 4, 8, 0.5) 100%);
+    linear-gradient(90deg, rgba(5, 9, 12, 0.42), transparent 40%, rgba(5, 9, 12, 0.2)),
+    radial-gradient(circle at 50% 50%, transparent 35%, rgba(1, 4, 6, 0.58) 100%);
 }
 
 .landing-3d__noise {
@@ -187,7 +199,7 @@ function scrollToSection(id) {
   display: inline-flex;
   align-items: center;
   gap: 0.7rem;
-  color: #f7fcfe;
+  color: #f6f7fb;
   font-family: "Tomorrow", system-ui, sans-serif;
   font-size: 0.82rem;
   font-weight: 800;
@@ -199,15 +211,15 @@ function scrollToSection(id) {
 .landing-3d__brand img {
   display: block;
   object-fit: contain;
-  filter: drop-shadow(0 0 16px rgba(53, 216, 237, 0.28));
+  filter: drop-shadow(0 0 16px rgba(8, 159, 165, 0.32));
 }
 
 .landing-3d__brand > span > span {
-  color: var(--aito-cyan);
+  color: var(--aito-teal);
 }
 
 .landing-3d__edition {
-  color: rgba(224, 237, 243, 0.45);
+  color: rgba(220, 232, 235, 0.45);
   font-size: 0.66rem;
   font-weight: 600;
   letter-spacing: 0.15em;
@@ -229,6 +241,8 @@ function scrollToSection(id) {
   padding: clamp(7rem, 12vh, 9rem) clamp(1.25rem, 7vw, 7rem);
   grid-template-columns: repeat(2, minmax(0, 1fr));
   align-items: center;
+  scroll-snap-align: start;
+  scroll-snap-stop: always;
 }
 
 .landing-3d__copy {
@@ -246,8 +260,8 @@ function scrollToSection(id) {
   content: "";
   background: radial-gradient(
     ellipse at center,
-    rgba(3, 7, 13, 0.9) 0%,
-    rgba(3, 7, 13, 0.52) 48%,
+    rgba(5, 9, 12, 0.92) 0%,
+    rgba(5, 9, 12, 0.54) 48%,
     transparent 74%
   );
   pointer-events: none;
@@ -278,7 +292,7 @@ function scrollToSection(id) {
   margin: 0 0 1.4rem;
   align-items: center;
   gap: 0.8rem;
-  color: var(--aito-cyan);
+  color: var(--aito-teal);
   font-size: clamp(0.68rem, 1vw, 0.78rem);
   font-weight: 700;
   letter-spacing: 0.16em;
@@ -326,18 +340,26 @@ function scrollToSection(id) {
   margin-inline: auto;
 }
 
+.landing-3d__actions {
+  display: flex;
+  margin-top: 2.2rem;
+  align-items: center;
+  justify-content: center;
+  gap: 0.8rem;
+  flex-wrap: wrap;
+}
+
 .landing-3d__cta {
   display: inline-flex;
   min-height: 3.8rem;
-  margin-top: 2.2rem;
   padding: 0.3rem 0.35rem 0.3rem 1.45rem;
   align-items: center;
   gap: 1.25rem;
-  border: 1px solid rgba(99, 245, 155, 0.45);
+  border: 1px solid rgba(8, 159, 165, 0.52);
   border-radius: 999px;
-  color: #f8fffb;
-  background: rgba(5, 18, 18, 0.68);
-  box-shadow: 0 16px 50px rgba(18, 161, 116, 0.16);
+  color: #f6f7fb;
+  background: rgba(5, 20, 24, 0.72);
+  box-shadow: 0 16px 50px rgba(8, 159, 165, 0.16);
   font-size: 0.86rem;
   font-weight: 700;
   letter-spacing: 0.04em;
@@ -346,14 +368,14 @@ function scrollToSection(id) {
   transition: border-color 220ms ease, box-shadow 220ms ease, transform 220ms ease;
 }
 
-.landing-3d__cta span:last-child {
+.landing-3d__cta--primary span:last-child {
   display: grid;
   width: 3rem;
   height: 3rem;
   border-radius: 50%;
   place-items: center;
-  color: #03100a;
-  background: linear-gradient(135deg, var(--aito-green), var(--aito-cyan));
+  color: #041013;
+  background: linear-gradient(135deg, var(--aito-green), var(--aito-teal-secondary));
   font-size: 1.1rem;
   transition: transform 220ms ease;
 }
@@ -362,12 +384,38 @@ function scrollToSection(id) {
 .landing-3d__cta:focus-visible {
   border-color: var(--aito-green);
   outline: none;
-  box-shadow: 0 18px 60px rgba(18, 220, 144, 0.22);
+  box-shadow: 0 18px 60px rgba(28, 189, 107, 0.22);
   transform: translateY(-2px);
 }
 
-.landing-3d__cta:hover span:last-child {
+.landing-3d__cta--primary:hover span:last-child {
   transform: rotate(45deg);
+}
+
+.landing-3d__cta--secondary {
+  padding-right: 0.35rem;
+  border-color: rgba(14, 167, 148, 0.38);
+  background: rgba(5, 16, 19, 0.52);
+  box-shadow: none;
+}
+
+.landing-3d__cta--secondary span:last-child {
+  display: grid;
+  width: 3rem;
+  height: 3rem;
+  border: 1px solid rgba(14, 167, 148, 0.4);
+  border-radius: 50%;
+  place-items: center;
+  color: var(--aito-green);
+  background: rgba(8, 159, 165, 0.09);
+  font-size: 1.1rem;
+  transition: color 220ms ease, background 220ms ease, transform 220ms ease;
+}
+
+.landing-3d__cta--secondary:hover span:last-child {
+  color: #041013;
+  background: var(--aito-green);
+  transform: translateX(2px);
 }
 
 .landing-3d__scroll-cue {
@@ -377,7 +425,7 @@ function scrollToSection(id) {
   display: flex;
   align-items: center;
   gap: 0.9rem;
-  color: rgba(224, 237, 243, 0.42);
+  color: rgba(220, 232, 235, 0.42);
   font-size: 0.64rem;
   font-weight: 700;
   letter-spacing: 0.18em;
@@ -390,14 +438,14 @@ function scrollToSection(id) {
   width: 3.5rem;
   height: 1px;
   overflow: hidden;
-  background: rgba(224, 237, 243, 0.15);
+  background: rgba(220, 232, 235, 0.15);
 }
 
 .landing-3d__scroll-cue i::after {
   position: absolute;
   inset: 0;
   content: "";
-  background: linear-gradient(90deg, transparent, var(--aito-cyan), transparent);
+  background: linear-gradient(90deg, transparent, var(--aito-teal), transparent);
   animation: scroll-cue 1.8s ease-in-out infinite;
 }
 
@@ -428,19 +476,19 @@ function scrollToSection(id) {
   width: 3px;
   height: 3px;
   border-radius: 99px;
-  background: rgba(224, 237, 243, 0.32);
+  background: rgba(220, 232, 235, 0.32);
   transition: width 220ms ease, height 220ms ease, background 220ms ease;
 }
 
 .landing-3d__progress button.is-active span {
   width: 5px;
   height: 1.5rem;
-  background: linear-gradient(var(--aito-cyan), var(--aito-green));
+  background: linear-gradient(var(--aito-green), var(--aito-teal));
 }
 
 .landing-3d__progress button:focus-visible {
   border-radius: 99px;
-  outline: 1px solid var(--aito-cyan);
+  outline: 1px solid var(--aito-teal);
 }
 
 .landing-3d__counter {
@@ -452,20 +500,20 @@ function scrollToSection(id) {
   margin: 0;
   align-items: center;
   gap: 0.65rem;
-  color: rgba(224, 237, 243, 0.42);
+  color: rgba(220, 232, 235, 0.42);
   font-family: "Tomorrow", system-ui, sans-serif;
   font-size: 0.62rem;
   letter-spacing: 0.12em;
 }
 
 .landing-3d__counter span:first-child {
-  color: var(--aito-cyan);
+  color: var(--aito-teal);
 }
 
 .landing-3d__counter i {
   width: 1.7rem;
   height: 1px;
-  background: rgba(224, 237, 243, 0.2);
+  background: rgba(220, 232, 235, 0.2);
 }
 
 @keyframes scroll-cue {
@@ -514,8 +562,8 @@ function scrollToSection(id) {
     inset: -3rem -2rem -4rem;
     background: radial-gradient(
       ellipse at top left,
-      rgba(3, 7, 13, 0.96) 0%,
-      rgba(3, 7, 13, 0.7) 48%,
+      rgba(5, 9, 12, 0.97) 0%,
+      rgba(5, 9, 12, 0.72) 48%,
       transparent 76%
     );
   }
@@ -524,8 +572,8 @@ function scrollToSection(id) {
     inset: -5rem -2rem;
     background: radial-gradient(
       ellipse at center,
-      rgba(3, 7, 13, 0.94),
-      rgba(3, 7, 13, 0.55) 52%,
+      rgba(5, 9, 12, 0.95),
+      rgba(5, 9, 12, 0.58) 52%,
       transparent 78%
     );
   }
@@ -550,6 +598,17 @@ function scrollToSection(id) {
     right: 1.2rem;
     bottom: 1.2rem;
   }
+
+  .landing-3d__actions {
+    width: 100%;
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .landing-3d__cta {
+    width: 100%;
+    justify-content: space-between;
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -562,6 +621,22 @@ function scrollToSection(id) {
 
   .landing-3d__scroll-cue i::after {
     animation: none;
+  }
+}
+</style>
+
+<style>
+html.landing-3d-scroll,
+body.landing-3d-scroll {
+  scroll-behavior: smooth;
+  scroll-snap-type: y mandatory;
+  overscroll-behavior-y: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html.landing-3d-scroll,
+  body.landing-3d-scroll {
+    scroll-behavior: auto;
   }
 }
 </style>

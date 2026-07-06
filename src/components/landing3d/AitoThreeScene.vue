@@ -31,6 +31,11 @@ const bundledModelUrls = import.meta.glob('../../3d-models/*.glb', {
   import: 'default'
 })
 
+const BRAND_TEAL = 0x089fa5
+const BRAND_TEAL_SECONDARY = 0x0ea794
+const BRAND_GREEN = 0x1cbd6b
+const BRAND_NAVY = 0x0b1220
+
 const STATE_DEFAULTS = {
   x: 0,
   y: 0,
@@ -151,8 +156,8 @@ function brandMaterial(color, options = {}) {
 
 function createCloudFallback() {
   const group = new THREE.Group()
-  const cyan = brandMaterial(0x35d8ed, { roughness: 0.18 })
-  const green = brandMaterial(0x63f59b, {
+  const teal = brandMaterial(BRAND_TEAL, { roughness: 0.18 })
+  const tealLight = brandMaterial(BRAND_GREEN, {
     metalness: 0.35,
     roughness: 0.3,
     emissiveIntensity: 0.12
@@ -168,7 +173,7 @@ function createCloudFallback() {
   lobes.forEach(({ radius, position }, index) => {
     const mesh = new THREE.Mesh(
       new THREE.IcosahedronGeometry(radius, 3),
-      index === 3 ? green : cyan
+      index === 3 ? tealLight : teal
     )
     mesh.position.set(...position)
     group.add(mesh)
@@ -176,7 +181,7 @@ function createCloudFallback() {
 
   const ring = new THREE.Mesh(
     new THREE.TorusGeometry(1.52, 0.025, 10, 120),
-    brandMaterial(0x63f59b, {
+    brandMaterial(BRAND_GREEN, {
       metalness: 0.2,
       emissiveIntensity: 0.45,
       opacity: 0.72
@@ -193,7 +198,7 @@ function createTorusKnotFallback() {
   const group = new THREE.Group()
   const knot = new THREE.Mesh(
     new THREE.TorusKnotGeometry(0.94, 0.22, 180, 24, 2, 3),
-    brandMaterial(0x35d8ed, {
+    brandMaterial(BRAND_TEAL, {
       metalness: 0.78,
       roughness: 0.16,
       emissiveIntensity: 0.12
@@ -203,7 +208,7 @@ function createTorusKnotFallback() {
 
   const wire = new THREE.Mesh(
     new THREE.TorusKnotGeometry(1.02, 0.025, 150, 8, 2, 3),
-    brandMaterial(0x63f59b, {
+    brandMaterial(BRAND_GREEN, {
       metalness: 0.25,
       emissiveIntensity: 0.6,
       opacity: 0.65
@@ -218,10 +223,10 @@ function createIcosahedronFallback() {
   const group = new THREE.Group()
   const core = new THREE.Mesh(
     new THREE.IcosahedronGeometry(0.82, 2),
-    brandMaterial(0x092b3a, {
+    brandMaterial(BRAND_NAVY, {
       metalness: 0.7,
       roughness: 0.18,
-      emissive: 0x0e9eae,
+      emissive: BRAND_TEAL_SECONDARY,
       emissiveIntensity: 0.18
     })
   )
@@ -229,7 +234,7 @@ function createIcosahedronFallback() {
 
   const shell = new THREE.Mesh(
     new THREE.IcosahedronGeometry(1.24, 1),
-    brandMaterial(0x63f59b, {
+    brandMaterial(BRAND_GREEN, {
       metalness: 0.2,
       roughness: 0.18,
       emissiveIntensity: 0.5,
@@ -247,7 +252,7 @@ function createOrbitalFallback() {
   const group = new THREE.Group()
   const core = new THREE.Mesh(
     new THREE.SphereGeometry(0.68, 48, 48),
-    brandMaterial(0x35d8ed, {
+    brandMaterial(BRAND_TEAL, {
       metalness: 0.7,
       roughness: 0.14,
       emissiveIntensity: 0.24
@@ -255,7 +260,7 @@ function createOrbitalFallback() {
   )
   group.add(core)
 
-  const ringMaterial = brandMaterial(0x63f59b, {
+  const ringMaterial = brandMaterial(BRAND_GREEN, {
     metalness: 0.3,
     roughness: 0.18,
     emissiveIntensity: 0.62,
@@ -388,27 +393,27 @@ function createStarLayer(count, size, opacity, spread, color) {
 
 function createStarField() {
   const group = new THREE.Group()
-  group.add(createStarLayer(620, 0.025, 0.48, 32, 0xa9dce5))
-  group.add(createStarLayer(260, 0.045, 0.66, 28, 0x77e8f1))
-  group.add(createStarLayer(90, 0.072, 0.78, 24, 0xb9ffd2))
+  group.add(createStarLayer(620, 0.025, 0.42, 32, 0xb8c9cc))
+  group.add(createStarLayer(260, 0.045, 0.58, 28, BRAND_TEAL_SECONDARY))
+  group.add(createStarLayer(90, 0.072, 0.68, 24, BRAND_GREEN))
   return group
 }
 
 function createLights() {
-  const ambient = new THREE.AmbientLight(0xdbeef3, 1.15)
+  const ambient = new THREE.AmbientLight(0xdce8e9, 1.05)
   scene.add(ambient)
 
-  const directional = new THREE.DirectionalLight(0xe8fbff, 3.1)
+  const directional = new THREE.DirectionalLight(0xf2f7f7, 2.8)
   directional.position.set(4, 5, 7)
   scene.add(directional)
 
-  const cyanLight = new THREE.PointLight(0x35d8ed, 32, 13, 2)
-  cyanLight.position.set(3.8, 1.5, 3.5)
-  scene.add(cyanLight)
+  const tealLight = new THREE.PointLight(BRAND_TEAL, 30, 13, 2)
+  tealLight.position.set(3.8, 1.5, 3.5)
+  scene.add(tealLight)
 
-  const greenLight = new THREE.PointLight(0x63f59b, 25, 12, 2)
-  greenLight.position.set(-3.5, -1.8, 2.8)
-  scene.add(greenLight)
+  const tealFillLight = new THREE.PointLight(BRAND_TEAL_SECONDARY, 22, 12, 2)
+  tealFillLight.position.set(-3.5, -1.8, 2.8)
+  scene.add(tealFillLight)
 }
 
 function sampleKeyframes(keyframes, sectionPosition) {
@@ -535,7 +540,7 @@ function disposeObject(root) {
 
 function initializeScene() {
   scene = new THREE.Scene()
-  scene.fog = new THREE.FogExp2(0x03070d, 0.028)
+  scene.fog = new THREE.FogExp2(0x05090c, 0.028)
 
   camera = new THREE.PerspectiveCamera(42, 1, 0.1, 100)
   camera.position.set(0, 0, 8.4)
@@ -548,7 +553,7 @@ function initializeScene() {
   })
   renderer.outputColorSpace = THREE.SRGBColorSpace
   renderer.toneMapping = THREE.ACESFilmicToneMapping
-  renderer.toneMappingExposure = 1.08
+  renderer.toneMappingExposure = 1.03
   renderer.setClearColor(0x000000, 0)
 
   starField = createStarField()

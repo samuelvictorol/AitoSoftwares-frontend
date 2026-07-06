@@ -1,18 +1,13 @@
 const routes = [
   {
     path: '/',
-    component: () => import('layouts/MainLayout.vue'),
-  },
-  {
-    path: '/comece-aqui',
-    component: () => import('layouts/DinamicLanding.vue'),
-  },
-  {
-    path: '/landing-3d',
     name: 'landing-3d',
     component: () => import('pages/AitoLanding3DPage.vue'),
   },
-
+  {
+    path: '/sobre',
+    component: () => import('layouts/MainLayout.vue'),
+  },
   // Always leave this as last one,
   // but you can also remove it
   {
