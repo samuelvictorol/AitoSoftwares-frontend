@@ -13,7 +13,7 @@
               <div class="row items-center no-wrap">
                 <div class="">{{ companyName }}</div>
                 <q-chip class="gt-xs q-ml-sm" dense outline color="grey-8" text-color="grey-9"
-                  icon="mdi-shield-check-outline">
+                  icon="mdi-shield-check-outline"> 
                   Software Studio
                 </q-chip>
               </div>
