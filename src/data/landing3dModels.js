@@ -14,5 +14,9 @@ export const landing3dModels = Object.freeze({
   obj4: {
     fileName: 'obj4.glb',
     fallback: 'orbital'
+  },
+  obj4Dance: {
+    fileName: ['obj4-dance.glb', 'obj4 - dance.glb', 'obj4_dance.glb'],
+    fallback: 'orbital'
   }
 })

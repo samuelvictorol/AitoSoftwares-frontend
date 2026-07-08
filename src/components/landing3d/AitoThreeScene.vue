@@ -20,6 +20,14 @@ const props = defineProps({
   reducedMotion: {
     type: Boolean,
     default: false
+  },
+  sectionCount: {
+    type: Number,
+    default: 9
+  },
+  danceActive: {
+    type: Boolean,
+    default: false
   }
 })
 
@@ -74,7 +82,13 @@ const MODEL_KEYFRAMES = {
     { section: 5, x: 4.5, y: 0.2, scale: 0.48, opacity: 0 },
     { section: 6, x: 2.35, y: 0.05, rx: -0.25, ry: 0.25, scale: 1, opacity: 1 },
     { section: 7, x: -2.3, y: -0.15, rx: 0.3, ry: 1.15, rz: -0.2, scale: 0.94, opacity: 1 },
-    { section: 8, x: 0, y: 0.35, z: -0.4, rx: 0.05, ry: 2.1, rz: 0, scale: 0.72, opacity: 1 }
+    { section: 8, x: 0, y: 0.35, z: -0.4, rx: 0.05, ry: 2.1, rz: 0, scale: 0.72, opacity: 1 },
+    { section: 9, x: 0, y: 0.02, z: -0.25, rx: 0.04, ry: 0, rz: 0, scale: 1.05, opacity: 1 }
+  ],
+  obj4Dance: [
+    { section: 0, x: 0, y: 0, scale: 0.48, opacity: 0 },
+    { section: 8, x: 0, y: 0.08, z: -0.3, scale: 0.76, opacity: 0 },
+    { section: 9, x: 0, y: 0.02, z: -0.22, rx: 0.02, ry: 0, rz: 0, scale: 1.08, opacity: 1 }
   ]
 }
 
@@ -91,17 +105,31 @@ let readyEmitted = false
 
 const pointerTarget = new THREE.Vector2()
 const pointerCurrent = new THREE.Vector2()
+let danceYawTarget = 0
+let danceYawCurrent = 0
 
 const clamp = (value, min, max) => Math.min(Math.max(value, min), max)
 const lerp = (start, end, amount) => start + (end - start) * amount
 const easeInOut = (value) => value * value * (3 - 2 * value)
 
-function resolveModelUrl(fileName) {
-  const match = Object.entries(bundledModelUrls).find(([path]) =>
-    path.replaceAll('\\', '/').endsWith(`/3d-models/${fileName}`)
-  )
+function modelFileNames(fileName) {
+  return Array.isArray(fileName) ? fileName : [fileName]
+}
 
-  return match?.[1]
+function describeModelFile(fileName) {
+  return modelFileNames(fileName).join(' ou ')
+}
+
+function resolveModelUrl(fileName) {
+  for (const modelFileName of modelFileNames(fileName)) {
+    const match = Object.entries(bundledModelUrls).find(([path]) =>
+      path.replaceAll('\\', '/').endsWith(`/3d-models/${modelFileName}`)
+    )
+
+    if (match?.[1]) return match[1]
+  }
+
+  return undefined
 }
 
 function prepareMaterials(root, cloneMaterials = true) {
@@ -356,7 +384,7 @@ function loadModels() {
 
     if (!url) {
       console.warn(
-        `[Landing 3D] Modelo "${config.fileName}" não encontrado em src/3d-models. ` +
+        `[Landing 3D] Modelo "${describeModelFile(config.fileName)}" não encontrado em src/3d-models. ` +
         `Usando fallback visual para "${key}".`
       )
       return Promise.resolve({ key, status: 'fallback' })
@@ -387,7 +415,7 @@ function loadModels() {
         undefined,
         (error) => {
           console.warn(
-            `[Landing 3D] Não foi possível carregar "${config.fileName}". ` +
+            `[Landing 3D] Não foi possível carregar "${describeModelFile(config.fileName)}". ` +
             `O fallback de "${key}" continuará ativo.`,
             error
           )
@@ -489,36 +517,79 @@ function updateModels(sectionPosition, elapsedTime) {
   const modelScale = isMobile ? 0.7 : window.innerWidth < 1100 ? 0.84 : 1
   const rotationFactor = props.reducedMotion ? 0.22 : 1
   const idleFactor = props.reducedMotion ? 0.06 : 1
+  const lastSection = Math.max(props.sectionCount - 1, 0)
+  const danceZoneAmount = clamp((sectionPosition - (lastSection - 0.72)) / 0.72, 0, 1)
+  const danceZoneActive = danceZoneAmount > 0.01
 
   Object.entries(modelEntries).forEach(([key, entry], index) => {
+    const keyframes = MODEL_KEYFRAMES[key]
+    if (!keyframes) return
+
     if (entry.mixer) {
       entry.mixer.timeScale = props.reducedMotion ? 0.45 : 1
     }
 
-    const state = sampleKeyframes(MODEL_KEYFRAMES[key], sectionPosition)
+    const state = sampleKeyframes(keyframes, sectionPosition)
     const idleRotation = elapsedTime * (0.075 + index * 0.012) * idleFactor
+    const isBaseDanceRobot = key === 'obj4'
+    const isDanceRobot = key === 'obj4Dance'
+    let positionY = state.y * verticalScale + mobileYOffset
+    let rotationX = state.rx * rotationFactor
+    let rotationY = state.ry * rotationFactor + idleRotation
+    let rotationZ = state.rz * rotationFactor
+    let scale = state.scale * modelScale
+    let opacity = state.opacity
+
+    if (danceZoneActive && (isBaseDanceRobot || isDanceRobot)) {
+      if (isBaseDanceRobot) {
+        opacity *= props.danceActive ? 1 - danceZoneAmount : 1
+      } else {
+        opacity *= props.danceActive ? danceZoneAmount : 0
+      }
+      positionY = state.y * verticalScale + (isMobile ? -0.1 : 0)
+      rotationY = state.ry * rotationFactor + danceYawCurrent
+      scale *= lerp(1, isMobile ? 1.28 : 1.16, danceZoneAmount)
+
+      if (props.danceActive && isDanceRobot && !props.reducedMotion) {
+        positionY += Math.sin(elapsedTime * 5.8) * 0.07 * verticalScale
+        rotationX += Math.sin(elapsedTime * 4.6) * 0.035
+        rotationY += Math.sin(elapsedTime * 3.2) * 0.16
+        rotationZ += Math.sin(elapsedTime * 6.4) * 0.075
+        scale *= 1 + Math.sin(elapsedTime * 5.2) * 0.018
+      }
+
+      if (entry.mixer) {
+        entry.mixer.timeScale = props.danceActive && isDanceRobot
+          ? props.reducedMotion ? 0.6 : 1.18
+          : isDanceRobot ? 0 : entry.mixer.timeScale
+      }
+    } else if (isDanceRobot) {
+      opacity = 0
+      if (entry.mixer) entry.mixer.timeScale = 0
+    }
 
     entry.root.position.set(
       state.x * horizontalScale,
-      state.y * verticalScale + mobileYOffset,
+      positionY,
       state.z
     )
     entry.root.rotation.set(
-      state.rx * rotationFactor,
-      state.ry * rotationFactor + idleRotation,
-      state.rz * rotationFactor
+      rotationX,
+      rotationY,
+      rotationZ
     )
-    entry.root.scale.setScalar(state.scale * modelScale)
-    setObjectOpacity(entry.root, state.opacity)
+    entry.root.scale.setScalar(scale)
+    setObjectOpacity(entry.root, opacity)
   })
 }
 
 function updateScene(elapsedTime, deltaTime) {
   const smoothing = props.reducedMotion ? 0.16 : 0.075
   smoothProgress = lerp(smoothProgress, props.scrollProgress, smoothing)
-  const sectionPosition = smoothProgress * 8
+  const sectionPosition = smoothProgress * Math.max(props.sectionCount - 1, 0)
 
   pointerCurrent.lerp(pointerTarget, props.reducedMotion ? 0.03 : 0.055)
+  danceYawCurrent = lerp(danceYawCurrent, danceYawTarget, props.reducedMotion ? 0.055 : 0.09)
 
   camera.position.x = pointerCurrent.x * (props.reducedMotion ? 0.025 : 0.16)
   camera.position.y = pointerCurrent.y * (props.reducedMotion ? 0.02 : 0.1)
@@ -560,10 +631,14 @@ function handleResize() {
 }
 
 function handlePointerMove(event) {
+  const pointerX = (event.clientX / window.innerWidth) * 2 - 1
+  const pointerY = -((event.clientY / window.innerHeight) * 2 - 1)
+
   pointerTarget.set(
-    (event.clientX / window.innerWidth) * 2 - 1,
-    -((event.clientY / window.innerHeight) * 2 - 1)
+    pointerX,
+    pointerY
   )
+  danceYawTarget = pointerX * Math.PI
 }
 
 function disposeMaterial(material) {

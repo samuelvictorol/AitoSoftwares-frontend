@@ -6,10 +6,13 @@
       'landing-3d--intro-loading': !introRevealing,
       'landing-3d--intro-complete': introRevealing
     }"
+    :style="landingPageStyle"
   >
     <AitoThreeScene
       :scroll-progress="scrollProgress"
       :reduced-motion="prefersReducedMotion"
+      :section-count="landing3dSections.length"
+      :dance-active="danceActive"
       @ready="handleSceneReady"
     />
 
@@ -56,7 +59,10 @@
         :id="section.id"
         :key="section.id"
         class="landing-3d__section"
-        :class="`landing-3d__section--${section.align}`"
+        :class="[
+          `landing-3d__section--${section.align}`,
+          { 'landing-3d__section--dance': section.dance }
+        ]"
         data-landing-3d-section
         :aria-labelledby="`${section.id}-title`"
       >
@@ -80,10 +86,10 @@
           >
             {{ section.title }}
           </h2>
-          <p class="landing-3d__description">{{ section.description }}</p>
+          <p v-if="section.description" class="landing-3d__description">{{ section.description }}</p>
 
           <div
-            v-if="section.cta || section.secondaryCta"
+            v-if="section.cta || section.secondaryCta || section.surpriseCta"
             class="landing-3d__actions"
           >
             <a
@@ -105,6 +111,44 @@
               <span>{{ section.secondaryCta.label }}</span>
               <span aria-hidden="true">→</span>
             </router-link>
+
+            <button
+              v-if="section.surpriseCta"
+              type="button"
+              class="landing-3d__cta landing-3d__cta--surprise"
+              @click="handleSurpriseClick(section.surpriseCta.targetId)"
+            >
+              <span class="text-bold">{{ section.surpriseCta.label }}</span>
+              <span class="material-icons" aria-hidden="true">auto_awesome</span>
+            </button>
+          </div>
+
+          <div v-if="section.dance" class="landing-3d__dance-panel">
+            <p class="landing-3d__speech-bubble">
+              {{ section.speech }}
+            </p>
+
+            <button
+              type="button"
+              class="landing-3d__audio-toggle"
+              :class="{ 'is-active': danceActive }"
+              :aria-pressed="danceActive"
+              :aria-label="danceActive ? 'Desativar modo dança' : 'Ativar modo dança'"
+              @click="handleDanceToggle"
+            >
+              <span class="material-icons" aria-hidden="true">
+                {{ danceActive ? 'volume_up' : 'volume_off' }}
+              </span>
+            </button>
+
+            <button
+              type="button"
+              class="landing-3d__credits-toggle"
+              aria-label="Ver creditos da musica e animacao"
+              @click="creditsDialogOpen = true"
+            >
+              ?
+            </button>
           </div>
         </div>
 
@@ -124,15 +168,60 @@
       <i></i>
       <span>{{ String(landing3dSections.length).padStart(2, '0') }}</span>
     </p>
+
+    <q-dialog v-model="creditsDialogOpen">
+      <q-card class="landing-3d__credits-card">
+        <q-card-section class="landing-3d__credits-head">
+          <p>Créditos</p>
+          <button
+            type="button"
+            class="landing-3d__credits-close"
+            aria-label="Fechar creditos"
+            @click="creditsDialogOpen = false"
+          >
+            <span class="material-icons" aria-hidden="true">close</span>
+          </button>
+        </q-card-section>
+
+        <q-card-section class="landing-3d__credits-body">
+          <p>
+            Beat e Masterização por:
+            <a
+              href="https://www.instagram.com/prodniell/"
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              @prodniell
+            </a>
+          </p>
+          <p>
+            Guitarra e Animação por:
+            <a
+              href="https://www.instagram.com/samuelvictorol/"
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              @samuelvictorol
+            </a>
+          </p>
+        </q-card-section>
+      </q-card>
+    </q-dialog>
   </main>
 </template>
 
 <script setup>
-import { ref } from 'vue'
+import { computed, onBeforeUnmount, ref } from 'vue'
 import AitoLoadingGate from 'components/landing3d/AitoLoadingGate.vue'
 import AitoThreeScene from 'components/landing3d/AitoThreeScene.vue'
 import { useLandingScroll } from 'src/composables/useLandingScroll'
 import { landing3dSections } from 'src/data/landing3dSections'
+
+const bundledDanceAudioUrls = import.meta.glob('../3d-models/*.mp3', {
+  eager: true,
+  query: '?url',
+  import: 'default'
+})
 
 const {
   activeSection,
@@ -145,8 +234,60 @@ const {
 const sceneReady = ref(false)
 const introRevealing = ref(false)
 const introComplete = ref(false)
+const danceActive = ref(false)
+const creditsDialogOpen = ref(false)
+
+const landingPageStyle = computed(() => ({
+  minHeight: `${landing3dSections.length * 100}vh`
+}))
+
+const danceAudioUrl = Object.entries(bundledDanceAudioUrls).find(([path]) =>
+  path.replaceAll('\\', '/').endsWith('/3d-models/dance.mp3')
+)?.[1]
+
+let danceAudio = null
 
 const clamp = (value, min, max) => Math.min(Math.max(value, min), max)
+
+function ensureDanceAudio() {
+  if (!danceAudioUrl) return null
+  if (danceAudio) return danceAudio
+
+  danceAudio = new Audio(danceAudioUrl)
+  danceAudio.loop = true
+  danceAudio.preload = 'auto'
+  danceAudio.volume = 0.74
+
+  return danceAudio
+}
+
+async function setDanceMode(shouldDance) {
+  danceActive.value = shouldDance
+  const audio = ensureDanceAudio()
+
+  if (!audio) return
+
+  if (!shouldDance) {
+    audio.pause()
+    audio.currentTime = 0
+    return
+  }
+
+  try {
+    await audio.play()
+  } catch (error) {
+    console.warn('[Landing 3D] O audio da danca ainda nao pode ser reproduzido.', error)
+  }
+}
+
+function handleDanceToggle() {
+  void setDanceMode(!danceActive.value)
+}
+
+function handleSurpriseClick(targetId) {
+  void setDanceMode(true)
+  scrollToSection(targetId)
+}
 
 function handleSceneReady() {
   sceneReady.value = true
@@ -177,6 +318,15 @@ function sectionCopyStyle(index) {
     transform: `translate3d(0, ${offset}px, 0)`
   }
 }
+
+onBeforeUnmount(() => {
+  if (!danceAudio) return
+
+  danceAudio.pause()
+  danceAudio.removeAttribute('src')
+  danceAudio.load()
+  danceAudio = null
+})
 </script>
 
 <style scoped>
@@ -465,8 +615,13 @@ function sectionCopyStyle(index) {
   font-weight: 700;
   letter-spacing: 0.04em;
   text-decoration: none;
+  cursor: pointer;
   backdrop-filter: blur(12px);
   transition: border-color 220ms ease, box-shadow 220ms ease, transform 220ms ease;
+}
+
+button.landing-3d__cta {
+  font: inherit;
 }
 
 .landing-3d__cta--primary span:last-child {
@@ -517,6 +672,257 @@ function sectionCopyStyle(index) {
   color: #041013;
   background: var(--aito-green);
   transform: translateX(2px);
+}
+
+.landing-3d__cta--surprise {
+  width: min(100%, 18rem);
+  max-width: 18rem;
+  margin-inline: auto;
+  flex-basis: 100%;
+  justify-content: center;
+  border-color: rgba(19, 188, 157, 0.78);
+  color: #031211;
+  background: linear-gradient(135deg, var(--aito-teal), var(--aito-teal-secondary));
+  box-shadow: 0 18px 58px rgba(19, 188, 157, 0.28);
+}
+
+.landing-3d__cta--surprise span:last-child {
+  display: grid;
+  width: 3rem;
+  height: 3rem;
+  border-radius: 50%;
+  place-items: center;
+  color: #dffff8;
+  background: rgba(2, 13, 13, 0.72);
+  font-size: 1.2rem;
+  transition: transform 220ms ease, background 220ms ease;
+}
+
+.landing-3d__cta--surprise:hover span:last-child,
+.landing-3d__cta--surprise:focus-visible span:last-child {
+  background: rgba(2, 13, 13, 0.9);
+  transform: rotate(18deg) scale(1.05);
+}
+
+.landing-3d__section--dance {
+  align-items: end;
+  padding-bottom: clamp(2rem, 5vh, 4rem);
+}
+
+.landing-3d__section--dance .landing-3d__copy {
+  width: min(100%, 34rem);
+  padding-bottom: 0;
+  align-self: end;
+}
+
+.landing-3d__section--dance .landing-3d__copy::before {
+  inset: -4rem -5rem -5rem;
+  background: radial-gradient(
+    ellipse at center,
+    rgba(5, 22, 24, 0.82) 0%,
+    rgba(5, 9, 12, 0.5) 52%,
+    transparent 78%
+  );
+}
+
+.landing-3d__section--dance .landing-3d__title {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+}
+
+.landing-3d__section--dance .landing-3d__eyebrow {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+}
+
+.landing-3d__dance-panel {
+  display: flex;
+  margin-top: 0;
+  align-items: center;
+  justify-content: center;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+.landing-3d__speech-bubble {
+  position: relative;
+  max-width: min(100%, 25rem);
+  margin: 0;
+  padding: 1rem 1.15rem;
+  border: 1px solid rgba(19, 188, 157, 0.48);
+  border-radius: 1.15rem;
+  color: #effffb;
+  background:
+    linear-gradient(135deg, rgba(19, 188, 157, 0.22), rgba(18, 173, 137, 0.08)),
+    rgba(3, 17, 19, 0.76);
+  box-shadow:
+    0 18px 54px rgba(0, 0, 0, 0.34),
+    inset 0 1px 0 rgba(255, 255, 255, 0.12);
+  font-size: clamp(0.96rem, 1.6vw, 1.16rem);
+  font-weight: 800;
+  line-height: 1.35;
+  backdrop-filter: blur(16px);
+}
+
+.landing-3d__speech-bubble::after {
+  position: absolute;
+  right: 2.1rem;
+  top: -0.64rem;
+  width: 1.1rem;
+  height: 1.1rem;
+  border-top: 1px solid rgba(19, 188, 157, 0.42);
+  border-left: 1px solid rgba(19, 188, 157, 0.42);
+  content: "";
+  background: rgba(4, 24, 25, 0.9);
+  transform: rotate(45deg);
+}
+
+.landing-3d__audio-toggle {
+  display: grid;
+  width: 3.65rem;
+  height: 3.65rem;
+  padding: 0;
+  border: 1px solid rgba(19, 188, 157, 0.48);
+  border-radius: 50%;
+  place-items: center;
+  color: #041013;
+  background: linear-gradient(135deg, var(--aito-teal), var(--aito-teal-secondary));
+  box-shadow: 0 18px 52px rgba(19, 188, 157, 0.24);
+  cursor: pointer;
+  transition: transform 220ms ease, box-shadow 220ms ease, filter 220ms ease;
+}
+
+.landing-3d__audio-toggle .material-icons {
+  font-size: 1.55rem;
+}
+
+.landing-3d__audio-toggle:hover,
+.landing-3d__audio-toggle:focus-visible {
+  outline: none;
+  filter: saturate(1.16);
+  box-shadow: 0 20px 64px rgba(19, 188, 157, 0.32);
+  transform: translateY(-2px);
+}
+
+.landing-3d__audio-toggle.is-active {
+  color: #dffff8;
+  background:
+    radial-gradient(circle at 30% 20%, rgba(255, 255, 255, 0.32), transparent 32%),
+    linear-gradient(135deg, rgba(19, 188, 157, 0.96), rgba(7, 70, 68, 0.95));
+}
+
+.landing-3d__credits-toggle {
+  display: grid;
+  width: 2.45rem;
+  height: 2.45rem;
+  padding: 0;
+  border: 1px solid rgba(19, 188, 157, 0.4);
+  border-radius: 50%;
+  place-items: center;
+  color: #dffff8;
+  background: rgba(3, 17, 19, 0.74);
+  box-shadow: 0 14px 42px rgba(0, 0, 0, 0.24);
+  font: inherit;
+  font-size: 1rem;
+  font-weight: 900;
+  cursor: pointer;
+  backdrop-filter: blur(14px);
+  transition: transform 220ms ease, border-color 220ms ease, background 220ms ease;
+}
+
+.landing-3d__credits-toggle:hover,
+.landing-3d__credits-toggle:focus-visible {
+  border-color: var(--aito-teal);
+  outline: none;
+  background: rgba(19, 188, 157, 0.18);
+  transform: translateY(-2px);
+}
+
+.landing-3d__credits-card {
+  width: min(92vw, 28rem);
+  border: 1px solid rgba(19, 188, 157, 0.38);
+  border-radius: 1rem;
+  color: #effffb;
+  background:
+    radial-gradient(circle at 18% 0%, rgba(19, 188, 157, 0.2), transparent 15rem),
+    linear-gradient(145deg, rgba(3, 20, 23, 0.98), rgba(1, 9, 11, 0.98));
+  box-shadow: 0 28px 90px rgba(0, 0, 0, 0.5);
+  overflow: hidden;
+}
+
+.landing-3d__credits-head {
+  display: flex;
+  padding: 1.15rem 1.2rem 0.5rem;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.landing-3d__credits-head p {
+  margin: 0;
+  color: #ffffff;
+  font-family: "Tomorrow", "Montserrat", system-ui, sans-serif;
+  font-size: 1rem;
+  font-weight: 900;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.landing-3d__credits-close {
+  display: grid;
+  width: 2.4rem;
+  height: 2.4rem;
+  padding: 0;
+  border: 1px solid rgba(19, 188, 157, 0.28);
+  border-radius: 50%;
+  place-items: center;
+  color: #dffff8;
+  background: rgba(255, 255, 255, 0.04);
+  cursor: pointer;
+}
+
+.landing-3d__credits-close .material-icons {
+  font-size: 1.2rem;
+}
+
+.landing-3d__credits-close:hover,
+.landing-3d__credits-close:focus-visible {
+  outline: none;
+  background: rgba(19, 188, 157, 0.16);
+}
+
+.landing-3d__credits-body {
+  display: grid;
+  padding: 0.55rem 1.2rem 1.35rem;
+  gap: 0.85rem;
+}
+
+.landing-3d__credits-body p {
+  margin: 0;
+  color: rgba(239, 255, 251, 0.82);
+  font-size: 0.96rem;
+  line-height: 1.55;
+}
+
+.landing-3d__credits-body a {
+  color: var(--aito-teal);
+  font-weight: 900;
+  text-decoration: none;
+}
+
+.landing-3d__credits-body a:hover,
+.landing-3d__credits-body a:focus-visible {
+  color: #57d6be;
+  outline: none;
+  text-decoration: underline;
 }
 
 .landing-3d__scroll-cue {
@@ -721,6 +1127,49 @@ function sectionCopyStyle(index) {
   .landing-3d__cta {
     width: 100%;
     justify-content: space-between;
+  }
+
+  .landing-3d__cta--surprise {
+    width: 100%;
+    max-width: none;
+    flex-basis: auto;
+  }
+
+  .landing-3d__section--dance {
+    align-items: end;
+    padding-bottom: 4.5rem;
+  }
+
+  .landing-3d__section--dance .landing-3d__copy {
+    width: 100%;
+    padding-bottom: 0;
+  }
+
+  .landing-3d__section--dance .landing-3d__title {
+    font-size: clamp(1.75rem, 8vw, 2.55rem);
+  }
+
+  .landing-3d__dance-panel {
+    align-items: flex-end;
+    gap: 0.8rem;
+  }
+
+  .landing-3d__speech-bubble {
+    flex: 1 1 13rem;
+    padding: 0.9rem 1rem;
+    font-size: 0.94rem;
+  }
+
+  .landing-3d__audio-toggle {
+    width: 3.25rem;
+    height: 3.25rem;
+    flex: 0 0 auto;
+  }
+
+  .landing-3d__credits-toggle {
+    width: 2.45rem;
+    height: 2.45rem;
+    flex: 0 0 auto;
   }
 }
 
