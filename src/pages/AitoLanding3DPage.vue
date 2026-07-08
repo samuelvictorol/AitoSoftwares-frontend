@@ -134,7 +134,7 @@
               class="landing-3d__audio-toggle"
               :class="{ 'is-active': danceActive }"
               :aria-pressed="danceActive"
-              :aria-label="danceActive ? 'Desativar modo dança' : 'Ativar modo dança'"
+              :aria-label="danceActive ? 'Pausar musica' : 'Tocar musica'"
               @click="handleDanceToggle"
             >
               <span class="material-icons" aria-hidden="true">
@@ -335,8 +335,8 @@ watch(activeSection, (sectionIndex) => {
 function sectionCopyStyle(index) {
   if (window.innerWidth < 768) {
     return {
-      opacity: activeSection.value === index ? 1 : 0.22,
-      transform: activeSection.value === index ? 'none' : 'translate3d(0, 10px, 0)'
+      opacity: 1,
+      transform: 'none'
     }
   }
 
@@ -1151,6 +1151,7 @@ button.landing-3d__cta {
   .landing-3d__title {
     max-width: 12ch;
     font-size: clamp(2.25rem, 12vw, 4rem);
+    text-shadow: 0 2px 22px rgba(0, 0, 0, 0.72);
   }
 
   .landing-3d__description {
@@ -1158,6 +1159,11 @@ button.landing-3d__cta {
     font-size: 0.94rem;
     backdrop-filter: none;
     line-height: 1.65;
+    text-shadow: 0 2px 18px rgba(0, 0, 0, 0.76);
+  }
+
+  .landing-3d__eyebrow {
+    text-shadow: 0 2px 16px rgba(0, 0, 0, 0.72);
   }
 
   .landing-3d__scroll-cue {
@@ -1179,6 +1185,45 @@ button.landing-3d__cta {
   .landing-3d__cta {
     width: 100%;
     justify-content: space-between;
+  }
+
+  #consultoria.landing-3d__section {
+    padding-top: 5.35rem;
+    padding-bottom: 4.2rem;
+    align-items: center;
+  }
+
+  #consultoria .landing-3d__copy {
+    padding-top: 0;
+    transform: none !important;
+  }
+
+  #consultoria .landing-3d__eyebrow {
+    margin-bottom: 0.9rem;
+  }
+
+  #consultoria .landing-3d__title {
+    max-width: 14ch;
+    font-size: clamp(1.92rem, 8.4vw, 3.05rem);
+    line-height: 1;
+  }
+
+  #consultoria .landing-3d__description {
+    max-width: 22rem;
+    margin-top: 0.95rem;
+    font-size: 0.88rem;
+    line-height: 1.48;
+  }
+
+  #consultoria .landing-3d__actions {
+    margin-top: 1.18rem;
+    gap: 0.62rem;
+  }
+
+  #consultoria .landing-3d__cta {
+    min-height: 3.18rem;
+    padding-left: 1.1rem;
+    font-size: 0.78rem;
   }
 
   .landing-3d__cta--surprise {

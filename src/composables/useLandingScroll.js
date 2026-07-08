@@ -4,6 +4,7 @@ const clamp = (value, min, max) => Math.min(Math.max(value, min), max)
 
 export function useLandingScroll(sectionCount = 1) {
   const scrollProgress = ref(0)
+  const sectionPosition = ref(0)
   const viewportHeight = ref(0)
   const prefersReducedMotion = ref(false)
 
@@ -16,24 +17,57 @@ export function useLandingScroll(sectionCount = 1) {
   let wheelLocked = false
   let lastWheelAt = 0
 
-  const sectionPosition = computed(
-    () => scrollProgress.value * Math.max(sectionCount - 1, 0)
-  )
-
   const activeSection = computed(() =>
     clamp(Math.round(sectionPosition.value), 0, Math.max(sectionCount - 1, 0))
   )
 
   const measure = () => {
     measurementFrame = 0
+    viewportHeight.value = window.innerHeight
+
+    const sections = getSections()
+
+    if (sections.length) {
+      const viewportCenter = window.scrollY + window.innerHeight / 2
+      const centers = sections.map((section) => {
+        const rect = section.getBoundingClientRect()
+        return window.scrollY + rect.top + rect.height / 2
+      })
+
+      const nextIndex = centers.findIndex((center) => center >= viewportCenter)
+      let measuredPosition = 0
+
+      if (nextIndex <= 0) {
+        measuredPosition = 0
+      } else if (nextIndex === -1) {
+        measuredPosition = sections.length - 1
+      } else {
+        const previousIndex = nextIndex - 1
+        const range = Math.max(centers[nextIndex] - centers[previousIndex], 1)
+        const amount = clamp((viewportCenter - centers[previousIndex]) / range, 0, 1)
+        measuredPosition = previousIndex + amount
+      }
+
+      sectionPosition.value = clamp(
+        measuredPosition,
+        0,
+        Math.max(sections.length - 1, 0)
+      )
+      scrollProgress.value = clamp(
+        sectionPosition.value / Math.max(sections.length - 1, 1),
+        0,
+        1
+      )
+      return
+    }
 
     const scrollableHeight = Math.max(
       document.documentElement.scrollHeight - window.innerHeight,
       1
     )
 
-    viewportHeight.value = window.innerHeight
     scrollProgress.value = clamp(window.scrollY / scrollableHeight, 0, 1)
+    sectionPosition.value = scrollProgress.value * Math.max(sectionCount - 1, 0)
   }
 
   const scheduleMeasurement = () => {
