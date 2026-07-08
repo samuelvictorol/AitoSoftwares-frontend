@@ -27,7 +27,7 @@
 
         <section class="aito-dance__panel" :class="{ 'is-ready': sceneReady }">
           <p class="aito-dance__speech">
-            Bom... Talvez isso faca voce fechar com a gente :)
+            Bom... Talvez isso faça você fechar com a gente 😎🔊
           </p>
 
           <div class="aito-dance__controls" aria-label="Controles da surpresa">

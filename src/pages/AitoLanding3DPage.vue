@@ -32,7 +32,7 @@
         <span>AITO<span>SOFTWARES</span></span>
       </router-link>
 
-      <router-link class="landing-3d__about-link" to="/sobre">
+      <router-link v-if="showAboutHeader" class="landing-3d__about-link" to="/sobre">
         <span>Quem somos</span>
         <span aria-hidden="true">→</span>
       </router-link>
@@ -107,6 +107,7 @@
               v-if="section.secondaryCta"
               class="landing-3d__cta landing-3d__cta--secondary"
               :to="section.secondaryCta.to"
+              @click="handleAboutCtaClick"
             >
               <span>{{ section.secondaryCta.label }}</span>
               <span aria-hidden="true">→</span>
@@ -211,7 +212,7 @@
 </template>
 
 <script setup>
-import { computed, onBeforeUnmount, ref, watch } from 'vue'
+import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import AitoLoadingGate from 'components/landing3d/AitoLoadingGate.vue'
 import AitoThreeScene from 'components/landing3d/AitoThreeScene.vue'
 import { useLandingScroll } from 'src/composables/useLandingScroll'
@@ -223,6 +224,8 @@ const bundledDanceAudioUrls = import.meta.glob('../3d-models/*.mp3', {
   query: '?url',
   import: 'default'
 })
+
+const ABOUT_HEADER_STORAGE_KEY = 'aito_about_header_unlocked'
 
 const {
   activeSection,
@@ -240,6 +243,7 @@ const introComplete = ref(false)
 const danceActive = ref(false)
 const surpriseUnlocked = ref(false)
 const creditsDialogOpen = ref(false)
+const showAboutHeader = ref(false)
 
 const landingPageStyle = computed(() => ({
   minHeight: `${landing3dSections.length * 100}vh`
@@ -301,6 +305,20 @@ function handleSurpriseClick(to) {
   if (to) void router.push(to)
 }
 
+function unlockAboutHeader() {
+  showAboutHeader.value = true
+
+  try {
+    window.localStorage.setItem(ABOUT_HEADER_STORAGE_KEY, '1')
+  } catch (error) {
+    console.warn('[Landing 3D] Nao foi possivel salvar a liberacao do Quem somos.', error)
+  }
+}
+
+function handleAboutCtaClick() {
+  unlockAboutHeader()
+}
+
 function handleSectionNav(section) {
   if (section.dance && !surpriseUnlocked.value) return
   scrollToSection(section.id)
@@ -356,6 +374,14 @@ function sectionCopyStyle(index) {
     transform: `translate3d(0, ${offset}px, 0)`
   }
 }
+
+onMounted(() => {
+  try {
+    showAboutHeader.value = window.localStorage.getItem(ABOUT_HEADER_STORAGE_KEY) === '1'
+  } catch (error) {
+    showAboutHeader.value = false
+  }
+})
 
 onBeforeUnmount(() => {
   if (!danceAudio) return
@@ -716,12 +742,15 @@ button.landing-3d__cta {
   width: min(100%, 18rem);
   max-width: 18rem;
   margin-inline: auto;
-  flex-basis: 100%;
+  flex: 0 1 18rem;
+  order: 3;
   justify-content: center;
-  border-color: rgba(19, 188, 157, 0.78);
+  border-color: rgba(87, 214, 190, 0.78);
   color: #031211;
-  background: linear-gradient(135deg, var(--aito-teal), var(--aito-teal-secondary));
-  box-shadow: 0 18px 58px rgba(19, 188, 157, 0.28);
+  background:
+    radial-gradient(circle at 20% 10%, rgba(255, 255, 255, 0.34), transparent 28%),
+    linear-gradient(135deg, var(--aito-teal) 0%, var(--aito-teal-secondary) 48%, var(--aito-green) 100%);
+  box-shadow: 0 18px 58px rgba(19, 188, 157, 0.34);
 }
 
 .landing-3d__cta--surprise span:last-child {
@@ -1227,9 +1256,11 @@ button.landing-3d__cta {
   }
 
   .landing-3d__cta--surprise {
-    width: 100%;
-    max-width: none;
+    width: min(100%, 18rem);
+    max-width: 18rem;
+    align-self: center;
     flex-basis: auto;
+    justify-content: center;
   }
 
   .landing-3d__section--dance {

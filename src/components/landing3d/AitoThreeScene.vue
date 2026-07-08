@@ -189,6 +189,95 @@ function brandMaterial(color, options = {}) {
   return material
 }
 
+function aquaMaterial(color, options = {}) {
+  const material = new THREE.MeshPhysicalMaterial({
+    color,
+    metalness: options.metalness ?? 0.16,
+    roughness: options.roughness ?? 0.08,
+    transmission: options.transmission ?? 0.36,
+    thickness: options.thickness ?? 0.65,
+    transparent: true,
+    opacity: options.opacity ?? 0.78,
+    clearcoat: 1,
+    clearcoatRoughness: 0.08,
+    emissive: options.emissive ?? color,
+    emissiveIntensity: options.emissiveIntensity ?? 0.24,
+    side: THREE.DoubleSide
+  })
+
+  material.userData.baseOpacity = material.opacity
+  return material
+}
+
+function createLoaderObjectFallback() {
+  const group = new THREE.Group()
+
+  const core = new THREE.Mesh(
+    new THREE.IcosahedronGeometry(1.02, 5),
+    aquaMaterial(0x13bc9d, {
+      opacity: 0.72,
+      emissive: 0x0b6f63,
+      emissiveIntensity: 0.22
+    })
+  )
+  group.add(core)
+
+  const inner = new THREE.Mesh(
+    new THREE.TorusKnotGeometry(0.58, 0.085, 150, 18, 2, 5),
+    aquaMaterial(0x12ad89, {
+      metalness: 0.34,
+      roughness: 0.12,
+      transmission: 0.08,
+      opacity: 0.82,
+      emissiveIntensity: 0.5
+    })
+  )
+  inner.rotation.set(0.45, -0.24, 0.12)
+  group.add(inner)
+
+  const ringMaterial = new THREE.MeshStandardMaterial({
+    color: 0x13bc9d,
+    metalness: 0.42,
+    roughness: 0.16,
+    emissive: 0x12ad89,
+    emissiveIntensity: 0.45,
+    transparent: true,
+    opacity: 0.72
+  })
+  ringMaterial.userData.baseOpacity = ringMaterial.opacity
+
+  const ringAngles = [
+    [1.42, Math.PI / 2.2, 0.16],
+    [1.58, Math.PI / 2.8, -0.92],
+    [1.74, Math.PI / 1.78, 0.64]
+  ]
+
+  ringAngles.forEach(([radius, x, y]) => {
+    const ring = new THREE.Mesh(
+      new THREE.TorusGeometry(radius, 0.022, 10, 180),
+      ringMaterial.clone()
+    )
+    ring.material.userData.baseOpacity = ring.material.opacity
+    ring.rotation.set(x, y, 0)
+    group.add(ring)
+  })
+
+  const shell = new THREE.Mesh(
+    new THREE.IcosahedronGeometry(1.34, 1),
+    new THREE.MeshBasicMaterial({
+      color: 0x13bc9d,
+      wireframe: true,
+      transparent: true,
+      opacity: 0.18
+    })
+  )
+  shell.material.userData.baseOpacity = shell.material.opacity
+  shell.rotation.set(0.22, 0.12, -0.08)
+  group.add(shell)
+
+  return group
+}
+
 function createCloudFallback() {
   const group = new THREE.Group()
   const teal = brandMaterial(BRAND_TEAL, { roughness: 0.18 })
@@ -319,6 +408,7 @@ function createOrbitalFallback() {
 }
 
 function createFallback(type) {
+  if (type === 'loader-object') return createLoaderObjectFallback()
   if (type === 'torus-knot') return createTorusKnotFallback()
   if (type === 'icosahedron') return createIcosahedronFallback()
   if (type === 'orbital') return createOrbitalFallback()

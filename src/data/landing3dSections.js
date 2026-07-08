@@ -80,15 +80,15 @@ export const landing3dSections = Object.freeze([
     modelKey: 'obj4',
     cta: {
       label: 'Quero minha consultoria gratuita',
-      href: 'https://wa.me/5561981748795?text=Ol%C3%A1%21%20Vim%20pela%20experi%C3%AAncia%203D%20da%20AitoSoftwares%20e%20quero%20solicitar%20uma%20consultoria%20gratuita.'
+      href: 'https://wa.me/5561981748795?text=Olá%2C+gostaria+de+uma+consultoria+gratuita+para+saber+como+evoluir+minha+empresa+com+AitoSoftwares.',
+    },
+    surpriseCta: {
+      label: 'Surpreenda-me',
+      to: '/surpresa'
     },
     secondaryCta: {
       label: 'Saiba quem somos',
       to: '/sobre'
     },
-    surpriseCta: {
-      label: 'Surpreenda-me',
-      to: '/surpresa'
-    }
   }
 ])
