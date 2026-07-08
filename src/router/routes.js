@@ -8,6 +8,11 @@ const routes = [
     path: '/sobre',
     component: () => import('layouts/MainLayout.vue'),
   },
+  {
+    path: '/surpresa',
+    name: 'dance-surprise',
+    component: () => import('pages/AitoDancePage.vue'),
+  },
   // Always leave this as last one,
   // but you can also remove it
   {

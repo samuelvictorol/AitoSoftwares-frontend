@@ -12,7 +12,6 @@
       :scroll-progress="scrollProgress"
       :reduced-motion="prefersReducedMotion"
       :section-count="landing3dSections.length"
-      :dance-active="surpriseUnlocked"
       @ready="handleSceneReady"
     />
 
@@ -117,7 +116,7 @@
               v-if="section.surpriseCta"
               type="button"
               class="landing-3d__cta landing-3d__cta--surprise"
-              @click="handleSurpriseClick(section.surpriseCta.targetId)"
+              @click="handleSurpriseClick(section.surpriseCta.to)"
             >
               <span class="text-bold">{{ section.surpriseCta.label }}</span>
               <span class="material-icons" aria-hidden="true">auto_awesome</span>
@@ -217,6 +216,7 @@ import AitoLoadingGate from 'components/landing3d/AitoLoadingGate.vue'
 import AitoThreeScene from 'components/landing3d/AitoThreeScene.vue'
 import { useLandingScroll } from 'src/composables/useLandingScroll'
 import { landing3dSections } from 'src/data/landing3dSections'
+import { useRouter } from 'vue-router'
 
 const bundledDanceAudioUrls = import.meta.glob('../3d-models/*.mp3', {
   eager: true,
@@ -231,6 +231,8 @@ const {
   scrollToSection,
   sectionPosition
 } = useLandingScroll(landing3dSections.length)
+
+const router = useRouter()
 
 const sceneReady = ref(false)
 const introRevealing = ref(false)
@@ -295,10 +297,8 @@ function handleDanceToggle() {
   void setAudioMode(!danceActive.value)
 }
 
-function handleSurpriseClick(targetId) {
-  surpriseUnlocked.value = true
-  void setAudioMode(true, { restart: true })
-  scrollToSection(targetId)
+function handleSurpriseClick(to) {
+  if (to) void router.push(to)
 }
 
 function handleSectionNav(section) {

@@ -88,18 +88,7 @@ export const landing3dSections = Object.freeze([
     },
     surpriseCta: {
       label: 'Surpreenda-me',
-      targetId: 'surpresa'
+      to: '/surpresa'
     }
-  },
-  {
-    id: 'surpresa',
-    eyebrow: '10 · Modo surpresa',
-    title: 'Aito em modo dança.',
-    description: '',
-    align: 'center',
-    modelKey: 'obj4Dance',
-    cta: null,
-    dance: true,
-    speech: 'Bom... Talvez isso faça você fechar com a gente 😎🔊'
   }
 ])

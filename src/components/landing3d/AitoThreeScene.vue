@@ -28,6 +28,10 @@ const props = defineProps({
   danceActive: {
     type: Boolean,
     default: false
+  },
+  soloDance: {
+    type: Boolean,
+    default: false
   }
 })
 
@@ -346,6 +350,10 @@ function createModelRoots() {
     root.add(fallback)
     scene.add(root)
 
+    if (props.soloDance && key !== 'obj4Dance') {
+      setObjectOpacity(root, 0)
+    }
+
     modelEntries[key] = {
       root,
       content: fallback,
@@ -540,6 +548,40 @@ function updateModels(sectionPosition, elapsedTime) {
     let scale = state.scale * modelScale
     let opacity = state.opacity
 
+    if (props.soloDance) {
+      if (!isDanceRobot) {
+        setObjectOpacity(entry.root, 0)
+        if (entry.mixer) entry.mixer.timeScale = 0
+        return
+      }
+
+      const soloScale = isMobile ? 0.96 : window.innerWidth < 1100 ? 1.02 : 1.08
+      positionY = isMobile ? -0.16 : 0.02
+      rotationX = 0.02
+      rotationY = danceYawCurrent
+      rotationZ = 0
+      scale = soloScale
+      opacity = 1
+
+      if (!props.reducedMotion) {
+        positionY += Math.sin(elapsedTime * 5.8) * (isMobile ? 0.035 : 0.07)
+        rotationX += Math.sin(elapsedTime * 4.6) * 0.035
+        rotationY += Math.sin(elapsedTime * 3.2) * 0.16
+        rotationZ += Math.sin(elapsedTime * 6.4) * 0.075
+        scale *= 1 + Math.sin(elapsedTime * 5.2) * 0.018
+      }
+
+      if (entry.mixer) {
+        entry.mixer.timeScale = props.reducedMotion ? 0.6 : 1.18
+      }
+
+      entry.root.position.set(0, positionY, -0.22)
+      entry.root.rotation.set(rotationX, rotationY, rotationZ)
+      entry.root.scale.setScalar(scale)
+      setObjectOpacity(entry.root, opacity)
+      return
+    }
+
     if (danceZoneActive && (isBaseDanceRobot || isDanceRobot)) {
       if (isBaseDanceRobot) {
         opacity *= props.danceActive ? 1 - danceZoneAmount : 1
@@ -586,7 +628,9 @@ function updateModels(sectionPosition, elapsedTime) {
 function updateScene(elapsedTime, deltaTime) {
   const smoothing = props.reducedMotion ? 0.16 : 0.075
   smoothProgress = lerp(smoothProgress, props.scrollProgress, smoothing)
-  const sectionPosition = smoothProgress * Math.max(props.sectionCount - 1, 0)
+  const sectionPosition = props.soloDance
+    ? Math.max(props.sectionCount - 1, 9)
+    : smoothProgress * Math.max(props.sectionCount - 1, 0)
 
   pointerCurrent.lerp(pointerTarget, props.reducedMotion ? 0.03 : 0.055)
   danceYawCurrent = lerp(danceYawCurrent, danceYawTarget, props.reducedMotion ? 0.055 : 0.09)
@@ -597,7 +641,9 @@ function updateScene(elapsedTime, deltaTime) {
 
   starField.rotation.y += deltaTime * (props.reducedMotion ? 0.0008 : 0.004)
   starField.rotation.x = pointerCurrent.y * 0.018
-  starField.position.y = -smoothProgress * (props.reducedMotion ? 0.25 : 1.35)
+  starField.position.y = props.soloDance
+    ? 0
+    : -smoothProgress * (props.reducedMotion ? 0.25 : 1.35)
   starField.position.x = pointerCurrent.x * -0.22
 
   Object.values(modelEntries).forEach((entry) => {
