@@ -1,11 +1,24 @@
 <template>
   <main
     class="landing-3d"
-    :class="{ 'landing-3d--reduced-motion': prefersReducedMotion }"
+    :class="{
+      'landing-3d--reduced-motion': prefersReducedMotion,
+      'landing-3d--intro-loading': !introRevealing,
+      'landing-3d--intro-complete': introRevealing
+    }"
   >
     <AitoThreeScene
       :scroll-progress="scrollProgress"
       :reduced-motion="prefersReducedMotion"
+      @ready="handleSceneReady"
+    />
+
+    <AitoLoadingGate
+      v-if="!introComplete"
+      :ready="sceneReady"
+      :reduced-motion="prefersReducedMotion"
+      @reveal="handleIntroReveal"
+      @complete="handleIntroComplete"
     />
 
     <div class="landing-3d__atmosphere" aria-hidden="true"></div>
@@ -17,7 +30,10 @@
         <span>AITO<span>SOFTWARES</span></span>
       </router-link>
 
-      <span class="landing-3d__edition">Experiência digital · 2026</span>
+      <router-link class="landing-3d__about-link" to="/sobre">
+        <span>Quem somos</span>
+        <span aria-hidden="true">→</span>
+      </router-link>
     </header>
 
     <nav class="landing-3d__progress" aria-label="Navegação entre seções">
@@ -112,6 +128,8 @@
 </template>
 
 <script setup>
+import { ref } from 'vue'
+import AitoLoadingGate from 'components/landing3d/AitoLoadingGate.vue'
 import AitoThreeScene from 'components/landing3d/AitoThreeScene.vue'
 import { useLandingScroll } from 'src/composables/useLandingScroll'
 import { landing3dSections } from 'src/data/landing3dSections'
@@ -124,7 +142,23 @@ const {
   sectionPosition
 } = useLandingScroll(landing3dSections.length)
 
+const sceneReady = ref(false)
+const introRevealing = ref(false)
+const introComplete = ref(false)
+
 const clamp = (value, min, max) => Math.min(Math.max(value, min), max)
+
+function handleSceneReady() {
+  sceneReady.value = true
+}
+
+function handleIntroReveal() {
+  introRevealing.value = true
+}
+
+function handleIntroComplete() {
+  introComplete.value = true
+}
 
 function sectionCopyStyle(index) {
   if (prefersReducedMotion.value) {
@@ -147,11 +181,11 @@ function sectionCopyStyle(index) {
 
 <style scoped>
 .landing-3d {
-  --aito-teal: #089fa5;
-  --aito-teal-secondary: #0ea794;
-  --aito-green: #1cbd6b;
+  --aito-teal: #13BC9D;
+  --aito-teal-secondary: #12AD89;
+  --aito-green: #57d6be;
   --aito-ink: #05090c;
-  --aito-muted: rgba(220, 232, 235, 0.68);
+  --aito-muted: rgba(220, 232, 235, 0.979);
   position: relative;
   min-height: 900vh;
   overflow: clip;
@@ -161,6 +195,35 @@ function sectionCopyStyle(index) {
     radial-gradient(circle at 82% 66%, rgba(28, 189, 107, 0.07), transparent 32rem),
     var(--aito-ink);
   isolation: isolate;
+}
+
+.landing-3d__header,
+.landing-3d__content,
+.landing-3d__progress,
+.landing-3d__counter {
+  transition:
+    opacity 900ms cubic-bezier(0.2, 0.8, 0.2, 1),
+    transform 900ms cubic-bezier(0.2, 0.8, 0.2, 1),
+    filter 900ms cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+.landing-3d--intro-loading .landing-3d__header,
+.landing-3d--intro-loading .landing-3d__content,
+.landing-3d--intro-loading .landing-3d__progress,
+.landing-3d--intro-loading .landing-3d__counter {
+  opacity: 0;
+  filter: blur(12px);
+  pointer-events: none;
+  transform: translate3d(0, 18px, 0);
+}
+
+.landing-3d--intro-complete .landing-3d__header,
+.landing-3d--intro-complete .landing-3d__content,
+.landing-3d--intro-complete .landing-3d__progress,
+.landing-3d--intro-complete .landing-3d__counter {
+  opacity: 1;
+  filter: blur(0);
+  transform: translate3d(0, 0, 0);
 }
 
 .landing-3d__atmosphere,
@@ -218,12 +281,49 @@ function sectionCopyStyle(index) {
   color: var(--aito-teal);
 }
 
-.landing-3d__edition {
-  color: rgba(220, 232, 235, 0.45);
-  font-size: 0.66rem;
-  font-weight: 600;
-  letter-spacing: 0.15em;
+.landing-3d__about-link {
+  display: inline-flex;
+  min-height: 2.75rem;
+  padding: 0.28rem 0.32rem 0.28rem 1rem;
+  align-items: center;
+  gap: 0.76rem;
+  border: 1px solid rgba(19, 188, 157, 0.44);
+  border-radius: 999px;
+  color: #f6fffd;
+  background: rgba(5, 20, 24, 0.74);
+  box-shadow: 0 14px 44px rgba(18, 173, 137, 0.16);
+  font-size: 0.74rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-decoration: none;
   text-transform: uppercase;
+  pointer-events: auto;
+  backdrop-filter: blur(14px);
+  transition: border-color 220ms ease, box-shadow 220ms ease, transform 220ms ease;
+}
+
+.landing-3d__about-link span:last-child {
+  display: grid;
+  width: 2.1rem;
+  height: 2.1rem;
+  border-radius: 50%;
+  place-items: center;
+  color: #03110f;
+  background: linear-gradient(135deg, var(--aito-teal), var(--aito-teal-secondary));
+  font-size: 0.98rem;
+  transition: transform 220ms ease;
+}
+
+.landing-3d__about-link:hover,
+.landing-3d__about-link:focus-visible {
+  border-color: var(--aito-teal);
+  outline: none;
+  box-shadow: 0 18px 58px rgba(19, 188, 157, 0.26);
+  transform: translateY(-2px);
+}
+
+.landing-3d__about-link:hover span:last-child {
+  transform: translateX(2px);
 }
 
 .landing-3d__content {
@@ -332,6 +432,7 @@ function sectionCopyStyle(index) {
   color: var(--aito-muted);
   font-size: clamp(0.95rem, 1.35vw, 1.12rem);
   font-weight: 400;
+  backdrop-filter: blur(12px);
   line-height: 1.75;
   text-wrap: pretty;
 }
@@ -530,9 +631,21 @@ function sectionCopyStyle(index) {
     padding: 1.1rem 1.15rem;
   }
 
-  .landing-3d__edition,
   .landing-3d__progress {
     display: none;
+  }
+
+  .landing-3d__about-link {
+    min-height: 2.45rem;
+    padding-left: 0.86rem;
+    gap: 0.56rem;
+    font-size: 0.64rem;
+    letter-spacing: 0.05em;
+  }
+
+  .landing-3d__about-link span:last-child {
+    width: 1.86rem;
+    height: 1.86rem;
   }
 
   .landing-3d__section {
@@ -613,6 +726,10 @@ function sectionCopyStyle(index) {
 
 @media (prefers-reduced-motion: reduce) {
   .landing-3d__copy,
+  .landing-3d__header,
+  .landing-3d__content,
+  .landing-3d__counter,
+  .landing-3d__about-link,
   .landing-3d__cta,
   .landing-3d__cta span:last-child,
   .landing-3d__progress button span {

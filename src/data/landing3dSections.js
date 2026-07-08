@@ -2,7 +2,7 @@ export const landing3dSections = Object.freeze([
   {
     id: 'visao',
     eyebrow: '01 · A nova operação',
-    title: 'Existe uma versão da sua empresa que vende mais, erra menos e opera com mais inteligência.',
+    title: 'Existe uma versão da sua empresa que vende mais e erra menos.',
     description: 'Por trás de toda empresa que cresce rápido, existe uma operação que quase ninguém vê.',
     align: 'left',
     modelKey: 'logo',

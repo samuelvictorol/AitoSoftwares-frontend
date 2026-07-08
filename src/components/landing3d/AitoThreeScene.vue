@@ -23,6 +23,8 @@ const props = defineProps({
   }
 })
 
+const emit = defineEmits(['ready'])
+
 const canvasElement = ref(null)
 
 const bundledModelUrls = import.meta.glob('../../3d-models/*.glb', {
@@ -85,6 +87,7 @@ let smoothProgress = 0
 let starField
 let modelEntries = {}
 let lastFrameTime = 0
+let readyEmitted = false
 
 const pointerTarget = new THREE.Vector2()
 const pointerCurrent = new THREE.Vector2()
@@ -317,15 +320,38 @@ function createModelRoots() {
 
     modelEntries[key] = {
       root,
-      content: fallback
+      content: fallback,
+      mixer: null,
+      mixerRoot: null
     }
   })
+}
+
+function clearModelAnimation(entry) {
+  if (!entry?.mixer) return
+
+  entry.mixer.stopAllAction()
+  if (entry.mixerRoot) entry.mixer.uncacheRoot(entry.mixerRoot)
+  entry.mixer = null
+  entry.mixerRoot = null
+}
+
+function playModelAnimations(entry, mixerRoot, clips) {
+  if (!clips?.length) return
+
+  const mixer = new THREE.AnimationMixer(mixerRoot)
+  clips.forEach((clip) => {
+    mixer.clipAction(clip).reset().play()
+  })
+
+  entry.mixer = mixer
+  entry.mixerRoot = mixerRoot
 }
 
 function loadModels() {
   const loader = new GLTFLoader()
 
-  Object.entries(landing3dModels).forEach(([key, config]) => {
+  return Promise.all(Object.entries(landing3dModels).map(([key, config]) => {
     const url = resolveModelUrl(config.fileName)
 
     if (!url) {
@@ -333,36 +359,49 @@ function loadModels() {
         `[Landing 3D] Modelo "${config.fileName}" não encontrado em src/3d-models. ` +
         `Usando fallback visual para "${key}".`
       )
-      return
+      return Promise.resolve({ key, status: 'fallback' })
     }
 
-    loader.load(
-      url,
-      (gltf) => {
-        if (destroyed) {
-          disposeObject(gltf.scene)
-          return
+    return new Promise((resolve) => {
+      loader.load(
+        url,
+        (gltf) => {
+          if (destroyed) {
+            disposeObject(gltf.scene)
+            resolve({ key, status: 'disposed' })
+            return
+          }
+
+          prepareMaterials(gltf.scene)
+          const normalizedModel = normalizeModel(gltf.scene)
+          const entry = modelEntries[key]
+
+          clearModelAnimation(entry)
+          disposeObject(entry.content)
+          entry.root.clear()
+          entry.root.add(normalizedModel)
+          entry.content = normalizedModel
+          playModelAnimations(entry, gltf.scene, gltf.animations)
+          resolve({ key, status: 'loaded' })
+        },
+        undefined,
+        (error) => {
+          console.warn(
+            `[Landing 3D] Não foi possível carregar "${config.fileName}". ` +
+            `O fallback de "${key}" continuará ativo.`,
+            error
+          )
+          resolve({ key, status: 'fallback' })
         }
+      )
+    })
+  }))
+}
 
-        prepareMaterials(gltf.scene)
-        const normalizedModel = normalizeModel(gltf.scene)
-        const entry = modelEntries[key]
-
-        disposeObject(entry.content)
-        entry.root.clear()
-        entry.root.add(normalizedModel)
-        entry.content = normalizedModel
-      },
-      undefined,
-      (error) => {
-        console.warn(
-          `[Landing 3D] Não foi possível carregar "${config.fileName}". ` +
-          `O fallback de "${key}" continuará ativo.`,
-          error
-        )
-      }
-    )
-  })
+function emitSceneReady() {
+  if (readyEmitted) return
+  readyEmitted = true
+  emit('ready')
 }
 
 function createStarLayer(count, size, opacity, spread, color) {
@@ -452,6 +491,10 @@ function updateModels(sectionPosition, elapsedTime) {
   const idleFactor = props.reducedMotion ? 0.06 : 1
 
   Object.entries(modelEntries).forEach(([key, entry], index) => {
+    if (entry.mixer) {
+      entry.mixer.timeScale = props.reducedMotion ? 0.45 : 1
+    }
+
     const state = sampleKeyframes(MODEL_KEYFRAMES[key], sectionPosition)
     const idleRotation = elapsedTime * (0.075 + index * 0.012) * idleFactor
 
@@ -485,6 +528,10 @@ function updateScene(elapsedTime, deltaTime) {
   starField.rotation.x = pointerCurrent.y * 0.018
   starField.position.y = -smoothProgress * (props.reducedMotion ? 0.25 : 1.35)
   starField.position.x = pointerCurrent.x * -0.22
+
+  Object.values(modelEntries).forEach((entry) => {
+    entry.mixer?.update(deltaTime)
+  })
 
   updateModels(sectionPosition, elapsedTime)
 }
@@ -561,6 +608,15 @@ function initializeScene() {
   createLights()
   createModelRoots()
   loadModels()
+    .then(() => {
+      window.requestAnimationFrame(() => {
+        if (!destroyed) emitSceneReady()
+      })
+    })
+    .catch((error) => {
+      console.warn('[Landing 3D] Houve uma falha ao preparar os objetos 3D.', error)
+      emitSceneReady()
+    })
   handleResize()
 }
 
@@ -572,6 +628,7 @@ onMounted(() => {
       '[Landing 3D] WebGL não pôde ser inicializado. O conteúdo HTML continuará disponível.',
       error
     )
+    window.setTimeout(emitSceneReady, 300)
     return
   }
 
@@ -586,6 +643,7 @@ onBeforeUnmount(() => {
   window.removeEventListener('resize', handleResize)
   window.removeEventListener('pointermove', handlePointerMove)
 
+  Object.values(modelEntries).forEach(clearModelAnimation)
   disposeObject(scene)
   renderer?.renderLists?.dispose()
   renderer?.dispose()
