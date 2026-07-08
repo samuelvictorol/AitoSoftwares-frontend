@@ -12,7 +12,7 @@
       :scroll-progress="scrollProgress"
       :reduced-motion="prefersReducedMotion"
       :section-count="landing3dSections.length"
-      :dance-active="danceActive"
+      :dance-active="surpriseUnlocked"
       @ready="handleSceneReady"
     />
 
@@ -45,9 +45,10 @@
         :key="section.id"
         type="button"
         :class="{ 'is-active': activeSection === index }"
+        :disabled="section.dance && !surpriseUnlocked"
         :aria-label="`Ir para a seção ${index + 1}: ${section.title}`"
         :aria-current="activeSection === index ? 'step' : undefined"
-        @click="scrollToSection(section.id)"
+        @click="handleSectionNav(section)"
       >
         <span></span>
       </button>
@@ -211,7 +212,7 @@
 </template>
 
 <script setup>
-import { computed, onBeforeUnmount, ref } from 'vue'
+import { computed, onBeforeUnmount, ref, watch } from 'vue'
 import AitoLoadingGate from 'components/landing3d/AitoLoadingGate.vue'
 import AitoThreeScene from 'components/landing3d/AitoThreeScene.vue'
 import { useLandingScroll } from 'src/composables/useLandingScroll'
@@ -235,6 +236,7 @@ const sceneReady = ref(false)
 const introRevealing = ref(false)
 const introComplete = ref(false)
 const danceActive = ref(false)
+const surpriseUnlocked = ref(false)
 const creditsDialogOpen = ref(false)
 
 const landingPageStyle = computed(() => ({
@@ -244,6 +246,15 @@ const landingPageStyle = computed(() => ({
 const danceAudioUrl = Object.entries(bundledDanceAudioUrls).find(([path]) =>
   path.replaceAll('\\', '/').endsWith('/3d-models/dance.mp3')
 )?.[1]
+
+const surpriseSectionIndex = computed(() =>
+  landing3dSections.findIndex((section) => section.dance)
+)
+
+const fallbackSectionId = computed(() => {
+  const surpriseIndex = surpriseSectionIndex.value
+  return landing3dSections[Math.max(surpriseIndex - 1, 0)]?.id ?? landing3dSections[0]?.id
+})
 
 let danceAudio = null
 
@@ -261,19 +272,19 @@ function ensureDanceAudio() {
   return danceAudio
 }
 
-async function setDanceMode(shouldDance) {
-  danceActive.value = shouldDance
+async function setAudioMode(shouldPlay, options = {}) {
+  danceActive.value = shouldPlay
   const audio = ensureDanceAudio()
 
   if (!audio) return
 
-  if (!shouldDance) {
+  if (!shouldPlay) {
     audio.pause()
-    audio.currentTime = 0
     return
   }
 
   try {
+    if (options.restart) audio.currentTime = 0
     await audio.play()
   } catch (error) {
     console.warn('[Landing 3D] O audio da danca ainda nao pode ser reproduzido.', error)
@@ -281,12 +292,18 @@ async function setDanceMode(shouldDance) {
 }
 
 function handleDanceToggle() {
-  void setDanceMode(!danceActive.value)
+  void setAudioMode(!danceActive.value)
 }
 
 function handleSurpriseClick(targetId) {
-  void setDanceMode(true)
+  surpriseUnlocked.value = true
+  void setAudioMode(true, { restart: true })
   scrollToSection(targetId)
+}
+
+function handleSectionNav(section) {
+  if (section.dance && !surpriseUnlocked.value) return
+  scrollToSection(section.id)
 }
 
 function handleSceneReady() {
@@ -301,7 +318,28 @@ function handleIntroComplete() {
   introComplete.value = true
 }
 
+watch(activeSection, (sectionIndex) => {
+  const surpriseIndex = surpriseSectionIndex.value
+
+  if (
+    surpriseIndex >= 0 &&
+    sectionIndex >= surpriseIndex &&
+    !surpriseUnlocked.value
+  ) {
+    window.requestAnimationFrame(() => {
+      scrollToSection(fallbackSectionId.value)
+    })
+  }
+})
+
 function sectionCopyStyle(index) {
+  if (window.innerWidth < 768) {
+    return {
+      opacity: activeSection.value === index ? 1 : 0.22,
+      transform: activeSection.value === index ? 'none' : 'translate3d(0, 10px, 0)'
+    }
+  }
+
   if (prefersReducedMotion.value) {
     return {
       opacity: activeSection.value === index ? 1 : 0.42,
@@ -998,6 +1036,11 @@ button.landing-3d__cta {
   outline: 1px solid var(--aito-teal);
 }
 
+.landing-3d__progress button:disabled {
+  cursor: not-allowed;
+  opacity: 0.28;
+}
+
 .landing-3d__counter {
   position: fixed;
   right: clamp(1.25rem, 5vw, 5rem);
@@ -1033,6 +1076,12 @@ button.landing-3d__cta {
 }
 
 @media (max-width: 767px) {
+  .landing-3d__atmosphere {
+    background:
+      linear-gradient(90deg, rgba(5, 9, 12, 0.18), transparent 48%, rgba(5, 9, 12, 0.12)),
+      radial-gradient(circle at 50% 50%, transparent 46%, rgba(1, 4, 6, 0.34) 100%);
+  }
+
   .landing-3d__header {
     padding: 1.1rem 1.15rem;
   }
@@ -1079,20 +1128,22 @@ button.landing-3d__cta {
 
   .landing-3d__copy::before {
     inset: -3rem -2rem -4rem;
+    opacity: 0.68;
     background: radial-gradient(
       ellipse at top left,
-      rgba(5, 9, 12, 0.97) 0%,
-      rgba(5, 9, 12, 0.72) 48%,
+      rgba(5, 9, 12, 0.82) 0%,
+      rgba(5, 9, 12, 0.48) 48%,
       transparent 76%
     );
   }
 
   .landing-3d__section--center .landing-3d__copy::before {
     inset: -5rem -2rem;
+    opacity: 0.62;
     background: radial-gradient(
       ellipse at center,
-      rgba(5, 9, 12, 0.95),
-      rgba(5, 9, 12, 0.58) 52%,
+      rgba(5, 9, 12, 0.78),
+      rgba(5, 9, 12, 0.42) 52%,
       transparent 78%
     );
   }
@@ -1105,6 +1156,7 @@ button.landing-3d__cta {
   .landing-3d__description {
     max-width: 26rem;
     font-size: 0.94rem;
+    backdrop-filter: none;
     line-height: 1.65;
   }
 

@@ -661,6 +661,11 @@ function disposeObject(root) {
 }
 
 function initializeScene() {
+  pointerTarget.set(0, 0)
+  pointerCurrent.set(0, 0)
+  danceYawTarget = 0
+  danceYawCurrent = 0
+
   scene = new THREE.Scene()
   scene.fog = new THREE.FogExp2(0x05090c, 0.028)
 
