@@ -20,14 +20,6 @@
         <i><b :style="{ transform: `scaleX(${progress})` }"></b></i>
       </div>
 
-      <button
-        v-if="ready && !starting"
-        type="button"
-        class="aito-loader__start"
-        @click.stop="startExperience"
-      >
-        Iniciar
-      </button>
     </section>
   </Transition>
 </template>
@@ -54,7 +46,7 @@ const visible = ref(true)
 const starting = ref(false)
 const progress = ref(0.18)
 
-const MIN_VISIBLE_TIME = 1500
+const MIN_VISIBLE_TIME = 5000
 const START_EXIT_DELAY = 520
 const SPIN_DURATION = 860
 
@@ -65,6 +57,7 @@ let objectRoot
 let lightOrb
 let animationFrame = 0
 let destroyed = false
+let autoStartTimer = 0
 let exitTimer = 0
 let startedAt = 0
 let currentSpin = 0
@@ -75,6 +68,7 @@ let spinActive = false
 
 const easeInOut = (value) => value * value * (3 - 2 * value)
 const lerp = (start, end, amount) => start + (end - start) * amount
+const clamp = (value, min, max) => Math.min(Math.max(value, min), max)
 
 function aquaMaterial(color, options = {}) {
   return new THREE.MeshPhysicalMaterial({
@@ -236,26 +230,51 @@ function renderFrame(time) {
     lightOrb.position.y = Math.cos(time * 0.0009) * 1.4
   }
 
-  progress.value = props.ready
-    ? lerp(progress.value, 1, 0.12)
-    : Math.min(0.88, progress.value + 0.0025)
+  const elapsedProgress = startedAt
+    ? clamp((performance.now() - startedAt) / MIN_VISIBLE_TIME, 0.18, 1)
+    : 0.18
+  const progressTarget = props.ready
+    ? elapsedProgress
+    : Math.min(0.88, elapsedProgress)
+
+  progress.value = lerp(progress.value, progressTarget, props.ready ? 0.08 : 0.04)
 
   renderer.render(scene, camera)
   animationFrame = window.requestAnimationFrame(renderFrame)
 }
 
-function startExperience() {
+function startExitAnimation() {
   if (!props.ready || exitTimer || !visible.value) return
 
   starting.value = true
   progress.value = 1
   spinOnce()
-  const elapsed = performance.now() - startedAt
-  const wait = Math.max(MIN_VISIBLE_TIME - elapsed, props.reducedMotion ? 60 : START_EXIT_DELAY)
 
   exitTimer = window.setTimeout(() => {
     emit('reveal')
     visible.value = false
+  }, props.reducedMotion ? 60 : START_EXIT_DELAY)
+}
+
+function scheduleAutoStart() {
+  if (
+    !props.ready ||
+    destroyed ||
+    starting.value ||
+    autoStartTimer ||
+    exitTimer ||
+    !visible.value ||
+    !startedAt
+  ) {
+    return
+  }
+
+  const elapsed = performance.now() - startedAt
+  const wait = Math.max(MIN_VISIBLE_TIME - elapsed, 0)
+
+  autoStartTimer = window.setTimeout(() => {
+    autoStartTimer = 0
+    startExitAnimation()
   }, wait)
 }
 
@@ -281,7 +300,7 @@ function disposeObject(root) {
 watch(
   () => props.ready,
   (isReady) => {
-    if (isReady) progress.value = 1
+    if (isReady) scheduleAutoStart()
   },
   { immediate: true }
 )
@@ -293,14 +312,16 @@ onMounted(() => {
     createScene()
     animationFrame = window.requestAnimationFrame(renderFrame)
     window.addEventListener('resize', handleResize, { passive: true })
+    scheduleAutoStart()
   } catch (error) {
     console.warn('[Landing Loader] WebGL não pôde ser inicializado.', error)
-    if (props.ready) progress.value = 1
+    scheduleAutoStart()
   }
 })
 
 onBeforeUnmount(() => {
   destroyed = true
+  window.clearTimeout(autoStartTimer)
   window.clearTimeout(exitTimer)
   window.cancelAnimationFrame(animationFrame)
   window.removeEventListener('resize', handleResize)
@@ -419,43 +440,6 @@ onBeforeUnmount(() => {
   transition: transform 180ms ease;
 }
 
-.aito-loader__start {
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  z-index: 3;
-  display: inline-flex;
-  min-height: 3rem;
-  padding: 0 1.7rem;
-  align-items: center;
-  justify-content: center;
-  border: 1px solid rgba(214, 255, 249, 0.34);
-  border-radius: 999px;
-  color: #effffb;
-  background:
-    linear-gradient(135deg, rgba(19, 188, 157, 0.88), rgba(18, 173, 137, 0.72)),
-    rgba(1, 12, 11, 0.72);
-  box-shadow:
-    0 18px 54px rgba(19, 188, 157, 0.32),
-    inset 0 1px 0 rgba(255, 255, 255, 0.2);
-  backdrop-filter: blur(16px) saturate(1.35);
-  font: inherit;
-  font-size: 0.72rem;
-  font-weight: 900;
-  letter-spacing: 0.16em;
-  text-transform: uppercase;
-  cursor: pointer;
-  transform: translate(-50%, -50%);
-  transition: transform 220ms ease, box-shadow 220ms ease, opacity 220ms ease;
-}
-
-.aito-loader__start:hover,
-.aito-loader__start:focus-visible {
-  outline: none;
-  box-shadow: 0 18px 54px rgba(19, 188, 157, 0.42);
-  transform: translate(-50%, calc(-50% - 2px));
-}
-
 .aito-loader-fade-leave-active {
   transition:
     opacity 900ms cubic-bezier(0.2, 0.8, 0.2, 1),
@@ -483,7 +467,6 @@ onBeforeUnmount(() => {
 
 @media (prefers-reduced-motion: reduce) {
   .aito-loader-fade-leave-active,
-  .aito-loader__start,
   .aito-loader__hud b {
     transition-duration: 0.01ms;
   }
