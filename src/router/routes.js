@@ -5,6 +5,11 @@ const routes = [
     component: () => import('pages/AitoLanding3DPage.vue'),
   },
   {
+    path: '/auth/google/callback',
+    name: 'google-auth-callback',
+    component: () => import('pages/GoogleAuthCallbackPage.vue'),
+  },
+  {
     path: '/surpresa',
     name: 'dance-surprise',
     component: () => import('pages/AitoDancePage.vue'),
@@ -12,6 +17,7 @@ const routes = [
   {
     path: '/app',
     name: 'user-app',
+    meta: { requiresAuth: 'user' },
     component: () => import('pages/UserHomePage.vue'),
   },
   {
@@ -22,6 +28,7 @@ const routes = [
   {
     path: '/admin',
     name: 'admin-panel',
+    meta: { requiresAuth: 'admin' },
     component: () => import('pages/AdminPanelPage.vue'),
   },
   {

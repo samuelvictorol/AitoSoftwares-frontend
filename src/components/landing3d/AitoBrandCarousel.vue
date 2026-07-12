@@ -175,7 +175,9 @@ function createCoin(brand, index) {
 function updateCoins(time, delta) {
   const center = (coins.length - 1) / 2
   const mobile = window.innerWidth < 768
-  const spacing = mobile ? 1.24 : 1.48
+  const spacing = mobile ? 1.84 : 1.9
+  const diagonalSlope = mobile ? 0.12 : 0.11
+  const depthStep = mobile ? 0.72 : 0.8
   const hoverIndex = coins.findIndex((coin) => coin.userData.hovered)
   const smoothAmount = 1 - Math.pow(0.0008, Math.max(delta, 0.001))
 
@@ -186,7 +188,7 @@ function updateCoins(time, delta) {
     const distanceFromHover = hoverIndex >= 0 ? index - hoverIndex : 0
     const pushDirection = Math.sign(distanceFromHover)
     const pushStrength = hoverIndex >= 0 && !hovered
-      ? 0.28 * Math.exp(-Math.abs(distanceFromHover) * 0.82)
+      ? 0.38 * Math.exp(-Math.abs(distanceFromHover) * 0.9)
       : 0
     const hoverLiftTarget = hovered ? 0.28 : 0
     const hoverPushTarget = pushDirection * pushStrength
@@ -197,12 +199,12 @@ function updateCoins(time, delta) {
     coin.userData.hoverTilt = lerp(coin.userData.hoverTilt, hoverTiltTarget, smoothAmount)
 
     coin.position.x = offset * spacing + coin.userData.hoverPush
-    coin.position.y = 0.18 + Math.min(distance, 3) * 0.075 + coin.userData.hoverLift
-    coin.position.z = -0.42 - Math.min(distance, 4) * 0.34 + coin.userData.hoverLift * 0.22
+    coin.position.y = 0.16 - offset * diagonalSlope + coin.userData.hoverLift
+    coin.position.z = -0.36 - Math.min(distance, 4) * depthStep + coin.userData.hoverLift * 0.22
     coin.rotation.y = Math.sin(offset * 0.44) * 0.32 + pointerX * 0.08
-    coin.rotation.x = coin.userData.hoverTilt
+    coin.rotation.x = coin.userData.hoverTilt + offset * 0.035
     coin.rotation.z = Math.sin(time * 0.6 + index) * 0.012
-    const scale = Math.max(0.64, 1.06 - distance * 0.13)
+    const scale = Math.max(0.5, 1.04 - distance * 0.2)
     const focused = distance < 0.46
     coin.scale.setScalar(focused ? scale * 1.08 : scale)
     coin.children[0].material.emissiveIntensity = focused ? 0.56 : 0.22

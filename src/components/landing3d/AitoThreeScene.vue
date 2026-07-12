@@ -2,6 +2,9 @@
   <canvas
     ref="canvasElement"
     class="aito-three-scene"
+    :class="{ 'is-interactive': surpriseStage }"
+    @pointerdown="handlePointerDown"
+    @click="handlePointerDown"
     aria-hidden="true"
   ></canvas>
 </template>
@@ -32,10 +35,18 @@ const props = defineProps({
   soloDance: {
     type: Boolean,
     default: false
+  },
+  surpriseStage: {
+    type: Boolean,
+    default: false
+  },
+  surpriseFocus: {
+    type: String,
+    default: 'obj4Dance'
   }
 })
 
-const emit = defineEmits(['ready'])
+const emit = defineEmits(['ready', 'model-select'])
 
 const canvasElement = ref(null)
 
@@ -93,6 +104,12 @@ const MODEL_KEYFRAMES = {
   obj4Dance: [
     { section: 0, x: 0, y: 0, scale: 0.48, opacity: 0 }
   ],
+  samuelDance: [
+    { section: 0, x: 4.2, y: 0, scale: 0.42, opacity: 0 }
+  ],
+  dionDance: [
+    { section: 0, x: 4.2, y: 0, scale: 0.42, opacity: 0 }
+  ],
   samuel: [
     { section: 0, x: 4.2, y: 0, scale: 0.42, opacity: 0 },
     { section: 4, x: 4.2, y: 0, scale: 0.42, opacity: 0 },
@@ -118,9 +135,14 @@ let starFieldIsDesktop = false
 let modelEntries = {}
 let lastFrameTime = 0
 let readyEmitted = false
+let surpriseFocusFrom = 'obj4Dance'
+let surpriseFocusTarget = 'obj4Dance'
+let surpriseFocusMix = 1
 
 const pointerTarget = new THREE.Vector2()
 const pointerCurrent = new THREE.Vector2()
+const raycaster = new THREE.Raycaster()
+const raycastPointer = new THREE.Vector2()
 let danceYawTarget = 0
 let danceYawCurrent = 0
 
@@ -772,36 +794,182 @@ function sampleKeyframes(keyframes, sectionPosition) {
   return result
 }
 
+function mouseFacingRotation(rotationX, rotationY, rotationZ, strength = 1) {
+  return {
+    x: rotationX - pointerCurrent.y * 0.42 * strength,
+    y: rotationY + pointerCurrent.x * 0.82 * strength,
+    z: rotationZ + pointerCurrent.x * pointerCurrent.y * 0.26 * strength
+  }
+}
+
+function updateSurpriseStageModels(elapsedTime, isMobile) {
+  const danceKeys = ['obj4Dance', 'samuelDance', 'dionDance']
+  const requestedFocus = danceKeys.includes(props.surpriseFocus)
+    ? props.surpriseFocus
+    : 'obj4Dance'
+
+  if (requestedFocus !== surpriseFocusTarget) {
+    surpriseFocusFrom = surpriseFocusTarget
+    surpriseFocusTarget = requestedFocus
+    surpriseFocusMix = 0
+  }
+
+  surpriseFocusMix = lerp(surpriseFocusMix, 1, props.reducedMotion ? 0.18 : 0.085)
+
+  const getSlotMap = (focus) => {
+    const ordered = [focus, ...danceKeys.filter((key) => key !== focus)]
+    return {
+      [ordered[0]]: 0,
+      [ordered[1]]: 1,
+      [ordered[2]]: 2
+    }
+  }
+
+  const fromSlots = getSlotMap(surpriseFocusFrom)
+  const toSlots = getSlotMap(surpriseFocusTarget)
+  const getSlotPosition = (slot) => {
+    const sideX = isMobile ? 1.12 : 2.12
+    const sideY = isMobile ? -1.03 : -0.92
+
+    if (slot === 0) {
+      return { x: 0, y: isMobile ? -0.06 : 0.02, z: -0.22 }
+    }
+
+    return {
+      x: slot === 1 ? -sideX : sideX,
+      y: sideY,
+      z: -0.08
+    }
+  }
+
+  Object.entries(modelEntries).forEach(([key, entry]) => {
+    const isHero = key === 'obj4Dance'
+    const isCloud = key === 'obj4'
+    const isSamuel = key === 'samuelDance'
+    const isDion = key === 'dionDance'
+
+    if (!isHero && !isCloud && !isSamuel && !isDion) {
+      setObjectOpacity(entry.root, 0)
+      if (entry.mixer) entry.mixer.timeScale = 0
+      return
+    }
+
+    let positionX = 0
+    let positionY = 0
+    let positionZ = -0.22
+    let rotationX = 0
+    let rotationY = 0
+    let rotationZ = 0
+    let scale = 1
+
+    if (isHero || isSamuel || isDion) {
+      const fromSlot = fromSlots[key]
+      const toSlot = toSlots[key]
+      const transition = easeInOut(surpriseFocusMix)
+      const fromPosition = getSlotPosition(fromSlot)
+      const toPosition = getSlotPosition(toSlot)
+      const centerAmount = lerp(fromSlot === 0 ? 1 : 0, toSlot === 0 ? 1 : 0, transition)
+
+      if (isHero) {
+        const sideScale = isMobile ? 0.39 : 0.56
+        const centerScale = isMobile ? 0.72 : window.innerWidth < 1100 ? 0.94 : 1.04
+        scale = lerp(sideScale, centerScale, centerAmount)
+      } else {
+        const sideScale = isMobile ? 0.39 : 0.56
+        scale = lerp(sideScale, sideScale * (isMobile ? 1.08 : 1.12), centerAmount)
+      }
+
+      positionX = lerp(fromPosition.x, toPosition.x, transition)
+      positionY = lerp(fromPosition.y, toPosition.y, transition)
+      positionZ = lerp(fromPosition.z, toPosition.z, transition)
+
+      const sideDirection = positionX < 0 ? -1 : 1
+      const baseRotationY = lerp(sideDirection * 0.1, 0, centerAmount)
+      const baseRotationZ = lerp(-sideDirection * 0.035, 0, centerAmount)
+      const facing = mouseFacingRotation(
+        0,
+        baseRotationY,
+        baseRotationZ,
+        lerp(0.82, 1, centerAmount)
+      )
+      rotationX = facing.x
+      rotationY = facing.y
+      rotationZ = facing.z
+
+      if (!props.reducedMotion) {
+        const phase = isHero ? 0 : key === 'samuelDance' ? 0.8 : 1.6
+        positionY += Math.sin(elapsedTime * 5.2 + phase) * lerp(0.075, 0.07, centerAmount)
+        rotationX += Math.sin(elapsedTime * 4.6 + phase) * lerp(0.06, 0.035, centerAmount)
+        rotationY += Math.sin(elapsedTime * 3.2 + phase) * lerp(0.1, 0.12, centerAmount)
+        rotationZ += Math.sin(elapsedTime * 6.4 + phase) * lerp(0.08, 0.075, centerAmount)
+        scale *= 1 + Math.sin(elapsedTime * 5.2 + phase) * 0.018
+      }
+
+      if (entry.mixer) entry.mixer.timeScale = props.reducedMotion
+        ? lerp(0.55, 0.6, centerAmount)
+        : lerp(1.12, 1.18, centerAmount)
+    } else if (isCloud) {
+      positionY = isMobile ? 1.45 : 1.65
+      positionZ = -0.78
+      scale = isMobile ? 0.42 : 0.54
+      const facing = mouseFacingRotation(0, 0, 0, 0.5)
+      rotationX = facing.x
+      rotationY = facing.y
+      rotationZ = facing.z
+
+      if (!props.reducedMotion) {
+        positionY += Math.sin(elapsedTime * 1.6) * (isMobile ? 0.035 : 0.06)
+        rotationZ += Math.sin(elapsedTime * 1.1) * 0.035
+      }
+      if (entry.mixer) entry.mixer.timeScale = props.reducedMotion ? 0.25 : 0.55
+    }
+
+    entry.root.position.set(positionX, positionY, positionZ)
+    entry.root.rotation.set(rotationX, rotationY, rotationZ)
+    entry.root.scale.setScalar(scale)
+    setObjectOpacity(entry.root, 1)
+  })
+}
+
 function updateModels(sectionPosition, elapsedTime) {
   const isMobile = window.innerWidth < 768
+
+  if (props.surpriseStage) {
+    updateSurpriseStageModels(elapsedTime, isMobile)
+    return
+  }
+
   const horizontalScale = isMobile ? 0.28 : 1
   const verticalScale = isMobile ? 0.54 : 1
   const mobileYOffset = isMobile ? -0.72 : 0
   const modelScale = isMobile ? 0.7 : window.innerWidth < 1100 ? 0.84 : 1
   const rotationFactor = props.reducedMotion ? 0.22 : 1
-  const idleFactor = props.reducedMotion ? 0.06 : 1
   const lastSection = Math.max(props.sectionCount - 1, 0)
   const danceZoneAmount = clamp((sectionPosition - (lastSection - 0.72)) / 0.72, 0, 1)
   const danceZoneActive = danceZoneAmount > 0.01
 
-  Object.entries(modelEntries).forEach(([key, entry], index) => {
+  Object.entries(modelEntries).forEach(([key, entry]) => {
     const keyframes = MODEL_KEYFRAMES[key]
     if (!keyframes) return
 
-    if (entry.mixer) {
-      entry.mixer.timeScale = props.reducedMotion ? 0.45 : 1
-    }
+    if (entry.mixer) entry.mixer.timeScale = props.reducedMotion ? 0.45 : 1
 
     const state = sampleKeyframes(keyframes, sectionPosition)
-    const idleRotation = elapsedTime * (0.075 + index * 0.012) * idleFactor
     const isBaseDanceRobot = key === 'obj4'
     const isDanceRobot = key === 'obj4Dance'
     let positionY = state.y * verticalScale + mobileYOffset
     let rotationX = state.rx * rotationFactor
-    let rotationY = state.ry * rotationFactor + idleRotation
+    let rotationY = state.ry * rotationFactor
     let rotationZ = state.rz * rotationFactor
     let scale = state.scale * modelScale
     let opacity = state.opacity
+
+    if (!props.soloDance) {
+      const facing = mouseFacingRotation(rotationX, rotationY, rotationZ, rotationFactor)
+      rotationX = facing.x
+      rotationY = facing.y
+      rotationZ = facing.z
+    }
 
     if (props.soloDance) {
       if (!isDanceRobot) {
@@ -826,9 +994,7 @@ function updateModels(sectionPosition, elapsedTime) {
         scale *= 1 + Math.sin(elapsedTime * 5.2) * 0.018
       }
 
-      if (entry.mixer) {
-        entry.mixer.timeScale = props.reducedMotion ? 0.6 : 1.18
-      }
+      if (entry.mixer) entry.mixer.timeScale = props.reducedMotion ? 0.6 : 1.18
 
       entry.root.position.set(0, positionY, -0.22)
       entry.root.rotation.set(rotationX, rotationY, rotationZ)
@@ -844,7 +1010,6 @@ function updateModels(sectionPosition, elapsedTime) {
         opacity *= props.danceActive ? danceZoneAmount : 0
       }
       positionY = state.y * verticalScale + (isMobile ? -0.1 : 0)
-      rotationY = state.ry * rotationFactor + danceYawCurrent
       scale *= lerp(1, isMobile ? 1.28 : 1.16, danceZoneAmount)
 
       if (props.danceActive && isDanceRobot && !props.reducedMotion) {
@@ -865,16 +1030,8 @@ function updateModels(sectionPosition, elapsedTime) {
       if (entry.mixer) entry.mixer.timeScale = 0
     }
 
-    entry.root.position.set(
-      state.x * horizontalScale,
-      positionY,
-      state.z
-    )
-    entry.root.rotation.set(
-      rotationX,
-      rotationY,
-      rotationZ
-    )
+    entry.root.position.set(state.x * horizontalScale, positionY, state.z)
+    entry.root.rotation.set(rotationX, rotationY, rotationZ)
     entry.root.scale.setScalar(scale)
     setObjectOpacity(entry.root, opacity)
   })
@@ -959,6 +1116,64 @@ function handlePointerMove(event) {
   danceYawTarget = pointerX * Math.PI
 }
 
+function modelKeyFromObject(object) {
+  let current = object
+
+  while (current) {
+    const entry = Object.entries(modelEntries).find(([, modelEntry]) => modelEntry.root === current)
+    if (entry) return entry[0]
+    current = current.parent
+  }
+
+  return null
+}
+
+function handlePointerDown(event) {
+  if (
+    !props.surpriseStage ||
+    !readyEmitted ||
+    (event.button !== undefined && event.button > 1)
+  ) return
+
+  const target = event.target
+  if (target?.closest?.('button, a, input, textarea, select, [role="button"], .q-dialog')) return
+
+  const width = Math.max(window.innerWidth, 1)
+  const height = Math.max(window.innerHeight, 1)
+  raycastPointer.set(
+    (event.clientX / width) * 2 - 1,
+    -((event.clientY / height) * 2 - 1)
+  )
+  raycaster.setFromCamera(raycastPointer, camera)
+
+  const clickableRoots = ['obj4Dance', 'samuelDance', 'dionDance']
+    .map((key) => modelEntries[key]?.root)
+    .filter(Boolean)
+  const intersections = raycaster.intersectObjects(clickableRoots, true)
+  let selectedKey = intersections
+    .map(({ object }) => modelKeyFromObject(object))
+    .find((key) => ['obj4Dance', 'samuelDance', 'dionDance'].includes(key))
+
+  if (!selectedKey) {
+    const focus = ['obj4Dance', 'samuelDance', 'dionDance'].includes(props.surpriseFocus)
+      ? props.surpriseFocus
+      : 'obj4Dance'
+    const orderedKeys = [
+      focus,
+      ...['obj4Dance', 'samuelDance', 'dionDance'].filter((key) => key !== focus)
+    ]
+    const normalizedX = event.clientX / width
+    const normalizedY = event.clientY / height
+
+    if (normalizedY > 0.3 && normalizedY < 0.8) {
+      const slot = normalizedX < 0.33 ? 1 : normalizedX > 0.67 ? 2 : 0
+      selectedKey = orderedKeys[slot]
+    }
+  }
+
+  if (selectedKey) emit('model-select', selectedKey)
+}
+
 function disposeMaterial(material) {
   Object.values(material).forEach((value) => {
     if (value?.isTexture) value.dispose()
@@ -1032,6 +1247,7 @@ onMounted(() => {
 
   window.addEventListener('resize', handleResize, { passive: true })
   window.addEventListener('pointermove', handlePointerMove, { passive: true })
+  window.addEventListener('pointerdown', handlePointerDown, { passive: true })
   animationFrame = window.requestAnimationFrame(renderFrame)
 })
 
@@ -1040,7 +1256,7 @@ onBeforeUnmount(() => {
   window.cancelAnimationFrame(animationFrame)
   window.removeEventListener('resize', handleResize)
   window.removeEventListener('pointermove', handlePointerMove)
-
+  window.removeEventListener('pointerdown', handlePointerDown)
   Object.values(modelEntries).forEach(clearModelAnimation)
   disposeObject(scene)
   renderer?.renderLists?.dispose()
@@ -1064,5 +1280,10 @@ onBeforeUnmount(() => {
   width: 100%;
   height: 100%;
   pointer-events: none;
+}
+
+.aito-three-scene.is-interactive {
+  pointer-events: auto;
+  touch-action: manipulation;
 }
 </style>

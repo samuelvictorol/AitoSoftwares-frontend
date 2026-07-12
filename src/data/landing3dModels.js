@@ -23,6 +23,14 @@ export const landing3dModels = Object.freeze({
     fileName: ['obj4-dance.glb', 'obj4 - dance.glb', 'obj4_dance.glb'],
     fallback: 'loader-object'
   },
+  samuelDance: {
+    fileName: ['obj-samuel-dance.glb', 'obj-samuel - dance.glb', 'obj_samuel_dance.glb'],
+    fallback: 'founder-samuel'
+  },
+  dionDance: {
+    fileName: ['obj-dion-dance.glb', 'obj-dion - dance.glb', 'obj_dion_dance.glb'],
+    fallback: 'founder-dion'
+  },
   samuel: {
     fileName: ['obj-samuel.glb', 'obj_samuel.glb'],
     fallback: 'founder-samuel'

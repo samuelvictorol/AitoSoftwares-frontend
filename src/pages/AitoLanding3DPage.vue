@@ -3,7 +3,8 @@
     class="landing-3d"
     :class="{
       'landing-3d--intro-loading': !introRevealing,
-      'landing-3d--intro-complete': introRevealing
+      'landing-3d--intro-complete': introRevealing,
+      'landing-3d--intro-object-only': introRevealing && !introTextVisible
     }"
     :style="landingPageStyle"
   >
@@ -32,14 +33,20 @@
       </button>
 
       <div class="landing-3d__header-actions">
-        <button v-if="showAboutHeader" class="landing-3d__about-link" type="button" @click="scrollToSection('marcas')">
-          Quem somos
-          <span aria-hidden="true">&rarr;</span>
-        </button>
         <button class="landing-3d__account-link" type="button" aria-label="Abrir area do cliente" @click="openAuth()">
           <q-icon name="mdi-account-outline" aria-hidden="true" />
           <span class="landing-3d__account-label">Area do cliente</span>
         </button>
+        <a
+          class="landing-3d__instagram-link"
+          href="https://www.instagram.com/aitosoftwares/"
+          target="_blank"
+          rel="noopener noreferrer"
+          aria-label="Instagram da AitoSoftwares"
+          title="Instagram da AitoSoftwares"
+        >
+          <q-icon name="mdi-instagram" aria-hidden="true" />
+        </a>
       </div>
     </header>
 
@@ -75,7 +82,7 @@
             <p class="landing-3d__eyebrow">{{ section.eyebrow }}</p>
             <h1 v-if="index === 0" :id="`${section.id}-title`" class="landing-3d__title">{{ section.title }}</h1>
             <h2 v-else :id="`${section.id}-title`" class="landing-3d__title">{{ section.title }}</h2>
-            <p v-if="section.description" class="landing-3d__description">{{ section.description }}</p>
+            <!-- <p v-if="section.description && !isMobile" class="landing-3d__description">{{ section.description }}</p> -->
 
             <div v-if="section.id === 'inicio'" class="landing-3d__hero-actions">
               <a class="landing-3d__cta landing-3d__cta--primary" :href="section.cta.href" target="_blank" rel="noopener noreferrer">
@@ -192,7 +199,7 @@
                   <q-input v-model="lead.message" class="landing-3d__form-full" outlined dense type="textarea" autogrow label="O que precisa acontecer?" />
                 </div>
                 <div class="landing-3d__form-actions">
-                  <q-btn unelevated no-caps type="submit" class="landing-3d__form-submit" icon="mdi-whatsapp" label="Enviar e abrir WhatsApp" />
+                  <q-btn unelevated no-caps type="submit" class="landing-3d__form-submit text-black" icon="mdi-whatsapp" label="Enviar e abrir WhatsApp" />
                   <button type="button" class="landing-3d__referral-button" @click="referralDialogOpen = true">
                     <q-icon name="mdi-gift-outline" size="18px" aria-hidden="true" />
                     Indique e ganhe
@@ -210,7 +217,7 @@
         </div>
 
         <div v-if="index === 0" class="landing-3d__scroll-cue" aria-hidden="true">
-          <span>Role para comecar</span><i></i>
+          <span>Explore</span><i></i>
         </div>
       </section>
     </div>
@@ -286,10 +293,10 @@
 </template>
 
 <script setup>
-import { computed, onBeforeUnmount, onMounted, reactive, ref } from 'vue'
+import { computed, onBeforeUnmount, reactive, ref } from 'vue'
 import { useQuasar } from 'quasar'
 import { useRouter } from 'vue-router'
-import { api } from 'boot/axios'
+import { api, apiBaseURL } from 'boot/axios'
 import AitoLoadingGate from 'components/landing3d/AitoLoadingGate.vue'
 import AitoThreeScene from 'components/landing3d/AitoThreeScene.vue'
 import AitoBrandCarousel from 'components/landing3d/AitoBrandCarousel.vue'
@@ -303,10 +310,9 @@ import {
   institutionalServices,
   institutionalTestimonials
 } from 'src/data/landingInstitutional'
-
+const isMobile = computed(() => window.innerWidth < 768)
 const $q = useQuasar()
 const router = useRouter()
-const ABOUT_HEADER_STORAGE_KEY = 'aito_about_header_unlocked'
 const USER_TOKEN_KEY = 'aito_user_token'
 
 const { activeSection, prefersReducedMotion, scrollProgress, scrollToSection: scrollTo, sectionPosition } = useLandingScroll(landing3dSections.length)
@@ -314,7 +320,7 @@ const { activeSection, prefersReducedMotion, scrollProgress, scrollToSection: sc
 const sceneReady = ref(false)
 const introRevealing = ref(false)
 const introComplete = ref(false)
-const showAboutHeader = ref(false)
+const introTextVisible = ref(false)
 const brandDialogOpen = ref(false)
 const selectedBrand = ref(null)
 const authDialogOpen = ref(false)
@@ -322,6 +328,7 @@ const authMode = ref('login')
 const authLoading = ref(false)
 const referralDialogOpen = ref(false)
 const iaChat = ref(false)
+let introTextTimer
 
 const lead = reactive({ name: '', phone: '', email: '', company: '', message: '' })
 const referral = reactive({ name: '', phone: '', leadName: '', notes: '' })
@@ -345,16 +352,16 @@ function sectionCopyStyle(index) {
 }
 
 function handleSceneReady() { sceneReady.value = true }
-function handleIntroReveal() { introRevealing.value = true }
+function handleIntroReveal() {
+  introRevealing.value = true
+  window.clearTimeout(introTextTimer)
+  introTextTimer = window.setTimeout(() => {
+    introTextVisible.value = true
+  }, prefersReducedMotion.value ? 420 : 980)
+}
 function handleIntroComplete() { introComplete.value = true }
 
-function unlockAboutHeader() {
-  showAboutHeader.value = true
-  try { window.localStorage.setItem(ABOUT_HEADER_STORAGE_KEY, '1') } catch (error) { console.warn('[Landing 3D] Nao foi possivel salvar o acesso a Quem somos.', error) }
-}
-
 function handleAboutCtaClick() {
-  unlockAboutHeader()
   scrollTo('marcas')
 }
 
@@ -402,12 +409,7 @@ async function submitAuth() {
 }
 
 function continueWithGoogle() {
-  const clientId = import.meta.env.VITE_GOOGLE_CLIENT_ID
-  if (!clientId) {
-    $q.notify({ type: 'info', message: 'Configure VITE_GOOGLE_CLIENT_ID para ativar o Google.' })
-    return
-  }
-  $q.notify({ type: 'info', message: 'O provedor Google esta pronto para receber o client ID configurado.' })
+  window.location.assign(`${apiBaseURL.replace(/\/$/, '')}/auth/google`)
 }
 
 function buildWhatsappUrl(message) {
@@ -431,11 +433,9 @@ function sendReferral() {
   referralDialogOpen.value = false
 }
 
-onMounted(() => {
-  try { showAboutHeader.value = window.localStorage.getItem(ABOUT_HEADER_STORAGE_KEY) === '1' } catch (error) { showAboutHeader.value = false }
+onBeforeUnmount(() => {
+  window.clearTimeout(introTextTimer)
 })
-
-onBeforeUnmount(() => {})
 </script>
 
 <style scoped>
@@ -457,7 +457,8 @@ onBeforeUnmount(() => {})
 .landing-3d__content,
 .landing-3d__progress,
 .landing-3d__counter,
-.landing-3d__ai-float {
+.landing-3d__ai-float,
+.landing-3d__instagram-link {
   transition: opacity 850ms cubic-bezier(0.2, 0.8, 0.2, 1), transform 850ms cubic-bezier(0.2, 0.8, 0.2, 1), filter 850ms cubic-bezier(0.2, 0.8, 0.2, 1);
 }
 
@@ -465,11 +466,28 @@ onBeforeUnmount(() => {})
 .landing-3d--intro-loading .landing-3d__content,
 .landing-3d--intro-loading .landing-3d__progress,
 .landing-3d--intro-loading .landing-3d__counter,
-.landing-3d--intro-loading .landing-3d__ai-float {
+.landing-3d--intro-loading .landing-3d__ai-float,
+.landing-3d--intro-loading .landing-3d__instagram-link {
   opacity: 0;
   filter: blur(10px);
   pointer-events: none;
   transform: translateY(14px);
+}
+
+.landing-3d--intro-object-only .landing-3d__header,
+.landing-3d--intro-object-only .landing-3d__content,
+.landing-3d--intro-object-only .landing-3d__progress,
+.landing-3d--intro-object-only .landing-3d__counter,
+.landing-3d--intro-object-only .landing-3d__ai-float,
+.landing-3d--intro-object-only .landing-3d__instagram-link {
+  opacity: 0;
+  filter: blur(10px);
+  pointer-events: none;
+  transform: translateY(10px);
+}
+
+.landing-3d--intro-object-only .landing-3d__section--inicio .landing-3d__copy {
+  transform: translateX(-2.4rem) !important;
 }
 
 .landing-3d__atmosphere,
@@ -503,7 +521,6 @@ onBeforeUnmount(() => {})
 }
 
 .landing-3d__brand,
-.landing-3d__about-link,
 .landing-3d__account-link {
   border: 0;
   cursor: pointer;
@@ -526,7 +543,6 @@ onBeforeUnmount(() => {})
 
 .landing-3d__header-actions { display: flex; align-items: center; gap: 0.65rem; }
 
-.landing-3d__about-link,
 .landing-3d__account-link {
   display: inline-flex;
   min-height: 2.55rem;
@@ -544,21 +560,8 @@ onBeforeUnmount(() => {})
   backdrop-filter: blur(14px);
 }
 
-.landing-3d__about-link span:last-child {
-  display: grid;
-  width: 2.08rem;
-  height: 2.08rem;
-  border-radius: 50%;
-  place-items: center;
-  color: #03120f;
-  background: linear-gradient(135deg, var(--aito-teal), var(--aito-teal-dark));
-  font-size: 1rem;
-}
-
 .landing-3d__account-link { padding: 0.2rem 0.82rem; color: var(--aito-aqua); }
 .landing-3d__account-link .q-icon { font-size: 1.08rem; }
-.landing-3d__about-link:hover,
-.landing-3d__about-link:focus-visible,
 .landing-3d__account-link:hover,
 .landing-3d__account-link:focus-visible { border-color: var(--aito-teal); outline: none; box-shadow: 0 18px 52px rgba(19, 188, 157, 0.24); }
 
@@ -597,7 +600,7 @@ onBeforeUnmount(() => {})
 
 .landing-3d__visual { position: relative; z-index: 2; min-width: 0; }
 .landing-3d__hero-actions { display: flex; margin-top: 2rem; gap: 0.7rem; flex-wrap: wrap; }
-.landing-3d__cta { display: inline-flex; min-height: 3.25rem; padding: 0.28rem 0.32rem 0.28rem 1.1rem; align-items: center; gap: 0.85rem; border: 1px solid rgba(19, 188, 157, 0.45); border-radius: 999px; color: #effffb; background: rgba(4, 24, 25, 0.68); box-shadow: 0 16px 48px rgba(0, 0, 0, 0.24); font: 800 0.74rem/1 system-ui, sans-serif; text-decoration: none; cursor: pointer; backdrop-filter: blur(12px); transition: transform 220ms ease, border-color 220ms ease, box-shadow 220ms ease; }
+.landing-3d__cta { display: inline-flex; min-height: 3.25rem; padding: 0.28rem 0.32rem 0.28rem 1.1rem; align-items: center; gap: 0.85rem; border: 1px solid rgba(19, 188, 157, 0.45); border-radius: 999px; color: #effffb; background: rgba(4, 24, 25, 0.68); box-shadow: 0 16px 48px rgba(0, 0, 0, 0.24); font: 700 0.76rem/1.2 'Montserrat', system-ui, sans-serif; letter-spacing: 0.01em; text-decoration: none; cursor: pointer; backdrop-filter: blur(12px); transition: transform 220ms ease, border-color 220ms ease, box-shadow 220ms ease; }
 .landing-3d__cta:hover, .landing-3d__cta:focus-visible { border-color: var(--aito-aqua); outline: none; transform: translateY(-2px); box-shadow: 0 18px 58px rgba(19, 188, 157, 0.25); }
 .landing-3d__cta .q-icon { display: grid; width: 2.55rem; height: 2.55rem; border-radius: 50%; place-items: center; color: #02100e; background: linear-gradient(135deg, var(--aito-teal), var(--aito-aqua)); font-size: 1.02rem; }
 .landing-3d__cta--secondary { background: rgba(3, 16, 18, 0.42); }
@@ -679,8 +682,10 @@ onBeforeUnmount(() => {})
 .landing-3d__counter { position: fixed; right: 3.8rem; bottom: 1.65rem; z-index: 7; display: flex; margin: 0; align-items: center; gap: 0.6rem; color: rgba(220, 250, 244, 0.44); font: 0.62rem/1 system-ui, sans-serif; letter-spacing: 0.12em; }
 .landing-3d__counter span:first-child { color: var(--aito-aqua); }
 .landing-3d__counter i { width: 1.45rem; height: 1px; background: rgba(220, 250, 244, 0.22); }
-.landing-3d__ai-float { position: fixed; right: 1.3rem; bottom: 4.5rem; z-index: 8; display: grid; width: 3.5rem; height: 3.5rem; padding: 0; border: 1px solid rgba(19, 188, 157, 0.55); border-radius: 1rem; place-items: center; background: linear-gradient(135deg, var(--aito-teal), var(--aito-teal-dark)); box-shadow: 0 15px 40px rgba(19, 188, 157, 0.34); cursor: pointer; }
-.landing-3d__ai-float img { width: 2.45rem; height: 2.45rem; object-fit: contain; }
+.landing-3d__ai-float { position: fixed; right: 1.3rem; bottom: 4.5rem; z-index: 8; display: grid; width: 4.15rem; height: 4.15rem; padding: 0; border: 1px solid rgba(19, 188, 157, 0.55); border-radius: 1.15rem; place-items: center; background: linear-gradient(135deg, var(--aito-teal), var(--aito-teal-dark)); box-shadow: 0 15px 40px rgba(19, 188, 157, 0.34); cursor: pointer; }
+.landing-3d__ai-float img { width: 3rem; height: 3rem; object-fit: contain; }
+.landing-3d__instagram-link { display: grid; width: 2.55rem; height: 2.55rem; border: 1px solid rgba(143, 255, 238, 0.46); border-radius: 50%; place-items: center; color: #03120f; background: linear-gradient(135deg, var(--aito-aqua), var(--aito-teal)); box-shadow: 0 14px 36px rgba(19, 188, 157, 0.28); font-size: 1.3rem; text-decoration: none; pointer-events: auto; transition: transform 200ms ease, filter 200ms ease, box-shadow 200ms ease; }
+.landing-3d__instagram-link:hover, .landing-3d__instagram-link:focus-visible { outline: none; filter: saturate(1.14) brightness(1.06); box-shadow: 0 16px 42px rgba(19, 188, 157, 0.36); transform: translateY(-2px); }
 
 .landing-3d__dialog-card { width: min(92vw, 30rem); border: 1px solid rgba(19, 188, 157, 0.42); border-radius: 0.95rem; color: #effffb; background: radial-gradient(circle at 10% 0%, rgba(19, 188, 157, 0.2), transparent 14rem), linear-gradient(145deg, rgba(3, 23, 24, 0.98), rgba(1, 10, 12, 0.98)); box-shadow: 0 30px 100px rgba(0, 0, 0, 0.55); }
 .landing-3d__dialog-card :deep(.q-field__control) { min-height: 2.85rem; color: #f0fffc; background: rgba(5, 33, 34, 0.86); }
@@ -719,8 +724,6 @@ onBeforeUnmount(() => {})
   .landing-3d__header { padding: 1rem 0.9rem; }
   .landing-3d__account-label { display: none; }
   .landing-3d__account-link { padding: 0.25rem 0.62rem; }
-  .landing-3d__about-link { min-height: 2.35rem; padding-left: 0.7rem; font-size: 0.6rem; }
-  .landing-3d__about-link span:last-child { width: 1.8rem; height: 1.8rem; }
   .landing-3d__progress { display: none; }
   .landing-3d__section { padding: 5.7rem 0.9rem 4.6rem; align-items: flex-start; }
   .landing-3d__section-inner, .landing-3d__section--right .landing-3d__section-inner { display: flex; flex-direction: column; gap: 1rem; }
@@ -746,7 +749,9 @@ onBeforeUnmount(() => {})
   .landing-3d__form-submit, .landing-3d__referral-button { width: 100%; justify-content: center; }
   .landing-3d__scroll-cue { bottom: 1.25rem; left: 0.9rem; }
   .landing-3d__counter { right: 0.9rem; bottom: 1.25rem; }
-  .landing-3d__ai-float { right: 0.75rem; bottom: 4.4rem; width: 3.2rem; height: 3.2rem; }
+  .landing-3d__ai-float { right: 0.75rem; bottom: 4.4rem; width: 3.75rem; height: 3.75rem; }
+  .landing-3d__ai-float img { width: 2.75rem; height: 2.75rem; }
+  .landing-3d__instagram-link { width: 2.35rem; height: 2.35rem; font-size: 1.18rem; }
 }
 
 @media (prefers-reduced-motion: reduce) {

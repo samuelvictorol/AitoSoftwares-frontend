@@ -26,5 +26,19 @@ export default defineRouter(function (/* { store, ssrContext } */) {
     history: createHistory(process.env.VUE_ROUTER_BASE)
   })
 
+  Router.beforeEach((to) => {
+    if (process.env.SERVER) return true
+
+    if (to.meta?.requiresAuth === 'user' && !localStorage.getItem('aito_user_token')) {
+      return '/'
+    }
+
+    if (to.meta?.requiresAuth === 'admin' && !localStorage.getItem('aito_admin_token')) {
+      return '/admin/login'
+    }
+
+    return true
+  })
+
   return Router
 })

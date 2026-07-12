@@ -18,6 +18,12 @@ export const institutionalBrands = Object.freeze([
     href: 'https://www.onicloud.io'
   },
   {
+    name: 'Flávia Kamila App',
+    imgUrl: 'fk.png',
+    summary: 'Produto digital com formulário inteligentes, CRM, integração com pagamentos.',
+    href: 'https://www.eletronogueira.com.br'
+  },
+  {
     name: 'CAIXA',
     imgUrl: 'caixa.jfif',
     summary: 'Interfaces e operacoes digitais em ambientes que exigem confiabilidade.',
@@ -30,10 +36,16 @@ export const institutionalBrands = Object.freeze([
     href: 'https://www.eletronogueira.com.br'
   },
   {
-    name: 'Flávia Kamila App',
-    imgUrl: 'fk.png',
-    summary: 'Produto digital com formulário inteligentes, CRM, integração com pagamentos.',
-    href: 'https://www.eletronogueira.com.br'
+    name: 'GLOBO',
+    imgUrl: 'globo.png',
+    summary: 'Arquitetura escalavel, automacao de rotinas e performance para ambientes de alto trafego.',
+    href: 'https://www.globo.com'
+  },
+  {
+    name: 'Coco Bambu',
+    imgUrl: 'coco.jfif',
+    summary: 'Experiencias digitais que valorizam conversao, velocidade e consistencia de marca.',
+    href: 'https://cocobambu.com'
   },
   {
     name: 'PROJUDI',
@@ -48,12 +60,6 @@ export const institutionalBrands = Object.freeze([
     href: 'https://www.verdebank.com.br'
   },
   {
-    name: 'GLOBO',
-    imgUrl: 'globo.png',
-    summary: 'Arquitetura escalavel, automacao de rotinas e performance para ambientes de alto trafego.',
-    href: 'https://www.globo.com'
-  },
-  {
     name: 'Banco da Amazonia',
     imgUrl: 'ba.webp',
     summary: 'Solucoes digitais desenhadas com cuidado para diferentes jornadas e perfis.',
@@ -65,12 +71,6 @@ export const institutionalBrands = Object.freeze([
     summary: 'Tecnologia aplicada a processos criticos, com rastreabilidade e foco em quem usa.',
     href: 'https://aghu.ebserh.gov.br'
   },
-  {
-    name: 'Coco Bambu',
-    imgUrl: 'coco.jfif',
-    summary: 'Experiencias digitais que valorizam conversao, velocidade e consistencia de marca.',
-    href: 'https://cocobambu.com'
-  }
 ])
 
 export const institutionalServices = Object.freeze([

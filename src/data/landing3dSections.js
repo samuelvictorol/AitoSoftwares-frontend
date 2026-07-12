@@ -1,7 +1,7 @@
 export const landing3dSections = Object.freeze([
   {
     id: 'inicio',
-    eyebrow: 'AITO SOFTWARES / SOFTWARE STUDIO',
+    eyebrow: 'SOFTWARE STUDIO',
     title: 'Tecnologia sob medida para empresas de alto padrão.',
     description: 'Software sob medida, IA, cloud e automação trabalhando juntos para transformar complexidade em movimento.',
     align: 'left',

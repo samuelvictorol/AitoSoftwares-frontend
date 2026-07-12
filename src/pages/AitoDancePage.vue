@@ -4,11 +4,65 @@
       <q-page class="aito-dance">
         <AitoThreeScene
           solo-dance
+          surprise-stage
+          :surprise-focus="focusedDanceModel"
           :scroll-progress="1"
           :section-count="10"
           :reduced-motion="prefersReducedMotion"
-          @ready="sceneReady = true"
+          @ready="handleSceneReady"
+          @model-select="handleStageModelSelect"
         />
+
+        <Transition name="dance-loader">
+          <div
+            v-if="!sceneReady"
+            class="aito-dance__loader"
+            role="status"
+            aria-live="polite"
+          >
+            <div class="aito-dance__loader-orb" aria-hidden="true">
+              <span></span>
+            </div>
+            <span>Preparando...</span>
+          </div>
+        </Transition>
+
+        <div
+          v-if="sceneReady"
+          class="aito-dance__hotspots"
+          aria-label="Selecione um personagem"
+        >
+          <button
+            v-for="slot in [0, 1, 2]"
+            :key="slot"
+            type="button"
+            class="aito-dance__hotspot"
+            :class="`aito-dance__hotspot--${slot === 0 ? 'center' : slot === 1 ? 'left' : 'right'}`"
+            :aria-label="stageSlotLabel(slot)"
+            @click="handleStageSlotSelect(slot)"
+          ></button>
+        </div>
+
+        <div v-if="sceneReady" class="aito-dance__switchers" aria-label="Trocar personagem">
+          <button
+            type="button"
+            class="aito-dance__switcher aito-dance__switcher--previous"
+            aria-label="Mostrar personagem anterior"
+            title="Personagem anterior"
+            @click="moveFocus(-1)"
+          >
+            <q-icon name="mdi-chevron-left" aria-hidden="true" />
+          </button>
+          <button
+            type="button"
+            class="aito-dance__switcher aito-dance__switcher--next"
+            aria-label="Mostrar próximo personagem"
+            title="Próximo personagem"
+            @click="moveFocus(1)"
+          >
+            <q-icon name="mdi-chevron-right" aria-hidden="true" />
+          </button>
+        </div>
 
         <div class="aito-dance__atmosphere" aria-hidden="true"></div>
         <div class="aito-dance__noise" aria-hidden="true"></div>
@@ -25,7 +79,7 @@
           </button>
         </header>
 
-        <section class="aito-dance__panel" :class="{ 'is-ready': sceneReady }">
+        <section class="aito-dance__panel">
           <p class="aito-dance__speech">
             Bom... Talvez isso faça você fechar com a gente 😎🔊
           </p>
@@ -118,6 +172,15 @@ const sceneReady = ref(false)
 const audioActive = ref(false)
 const creditsDialogOpen = ref(false)
 const prefersReducedMotion = ref(false)
+const focusedDanceModel = ref('obj4Dance')
+
+const clickableDanceModels = new Set(['obj4Dance', 'samuelDance', 'dionDance'])
+const danceModelOrder = ['obj4Dance', 'samuelDance', 'dionDance']
+const danceModelLabels = {
+  obj4Dance: 'o robo Aito',
+  samuelDance: 'Samuel',
+  dionDance: 'Dion'
+}
 
 const danceAudioUrl = Object.entries(bundledDanceAudioUrls).find(([path]) =>
   path.replaceAll('\\', '/').endsWith('/3d-models/dance.mp3')
@@ -166,6 +229,42 @@ function handleAudioToggle() {
   void setAudioMode(!audioActive.value)
 }
 
+function handleSceneReady() {
+  sceneReady.value = true
+  window.requestAnimationFrame(() => {
+    void setAudioMode(true, { restart: true })
+  })
+}
+
+function handleStageModelSelect(modelKey) {
+  if (clickableDanceModels.has(modelKey)) focusedDanceModel.value = modelKey
+}
+
+function stageSlotKey(slot) {
+  const orderedKeys = [
+    focusedDanceModel.value,
+    ...['obj4Dance', 'samuelDance', 'dionDance'].filter(
+      (key) => key !== focusedDanceModel.value
+    )
+  ]
+
+  return orderedKeys[slot]
+}
+
+function stageSlotLabel(slot) {
+  return `Colocar ${danceModelLabels[stageSlotKey(slot)]} no centro`
+}
+
+function handleStageSlotSelect(slot) {
+  handleStageModelSelect(stageSlotKey(slot))
+}
+
+function moveFocus(direction) {
+  const currentIndex = danceModelOrder.indexOf(focusedDanceModel.value)
+  const nextIndex = (currentIndex + direction + danceModelOrder.length) % danceModelOrder.length
+  focusedDanceModel.value = danceModelOrder[nextIndex]
+}
+
 function goBack() {
   void router.push('/')
 }
@@ -178,10 +277,6 @@ onMounted(() => {
   mediaQuery = window.matchMedia('(prefers-reduced-motion: reduce)')
   prefersReducedMotion.value = mediaQuery.matches
   mediaQuery.addEventListener?.('change', updateMotionPreference)
-
-  window.requestAnimationFrame(() => {
-    void setAudioMode(true, { restart: true })
-  })
 })
 
 onBeforeUnmount(() => {
@@ -219,6 +314,200 @@ onBeforeUnmount(() => {
   inset: 0;
   z-index: 1;
   pointer-events: none;
+}
+
+.aito-dance__loader {
+  position: fixed;
+  inset: 0;
+  z-index: 8;
+  display: grid;
+  place-content: center;
+  justify-items: center;
+  gap: 0.55rem;
+  color: #effffb;
+  background:
+    radial-gradient(circle at 50% 42%, rgba(19, 188, 157, 0.1), transparent 20rem),
+    rgba(3, 9, 12, 0.94);
+  text-align: center;
+  pointer-events: auto;
+}
+
+.aito-dance__loader-orb {
+  position: relative;
+  width: 4.6rem;
+  height: 4.6rem;
+  margin-bottom: 0.65rem;
+  border: 1px solid rgba(143, 255, 238, 0.28);
+  border-radius: 50%;
+  box-shadow:
+    0 0 0 0.55rem rgba(19, 188, 157, 0.06),
+    0 0 3.4rem rgba(19, 188, 157, 0.28);
+  animation: dance-loader-pulse 1.7s ease-in-out infinite;
+}
+
+.aito-dance__loader-orb::before,
+.aito-dance__loader-orb::after,
+.aito-dance__loader-orb span {
+  position: absolute;
+  inset: 0.46rem;
+  border: 1px solid transparent;
+  border-top-color: #8fffee;
+  border-right-color: rgba(31, 182, 148, 0.82);
+  border-radius: 50%;
+  content: "";
+  animation: dance-loader-spin 1.25s linear infinite;
+}
+
+.aito-dance__loader-orb::after {
+  inset: 0.85rem;
+  border-top-color: #50dcc4;
+  border-right-color: transparent;
+  animation-duration: 0.9s;
+  animation-direction: reverse;
+}
+
+.aito-dance__loader-orb span {
+  inset: 1.4rem;
+  border: 0;
+  background: radial-gradient(circle, #8fffee, #13bc9d 55%, transparent 72%);
+  animation: none;
+}
+
+.aito-dance__loader p,
+.aito-dance__loader > span {
+  margin: 0;
+}
+
+.aito-dance__loader p {
+  font-family: "Tomorrow", system-ui, sans-serif;
+  font-size: 0.96rem;
+  font-weight: 800;
+  letter-spacing: 0.05em;
+}
+
+.aito-dance__loader > span {
+  color: rgba(239, 255, 251, 0.62);
+  font-size: 0.78rem;
+}
+
+.aito-dance__hotspots {
+  position: fixed;
+  inset: 0;
+  z-index: 3;
+  pointer-events: none;
+}
+
+.aito-dance__hotspot {
+  position: absolute;
+  display: block;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  cursor: pointer;
+  pointer-events: auto;
+}
+
+.aito-dance__hotspot:focus-visible {
+  outline: 1px solid rgba(143, 255, 238, 0.52);
+  outline-offset: -0.35rem;
+}
+
+.aito-dance__hotspot--center {
+  top: 22%;
+  left: 29%;
+  width: 42%;
+  height: 47%;
+}
+
+.aito-dance__hotspot--left,
+.aito-dance__hotspot--right {
+  top: 42%;
+  width: 29%;
+  height: 37%;
+}
+
+.aito-dance__hotspot--left {
+  left: 0;
+}
+
+.aito-dance__hotspot--right {
+  right: 0;
+}
+
+.aito-dance__switchers {
+  position: fixed;
+  inset: 0;
+  z-index: 4;
+  pointer-events: none;
+}
+
+.aito-dance__switcher {
+  position: absolute;
+  top: 50%;
+  display: grid;
+  width: 3.1rem;
+  height: 3.1rem;
+  padding: 0;
+  border: 1px solid rgba(143, 255, 238, 0.48);
+  border-radius: 50%;
+  place-items: center;
+  color: #dffff8;
+  background:
+    linear-gradient(135deg, rgba(19, 188, 157, 0.84), rgba(18, 173, 137, 0.42)),
+    rgba(3, 28, 29, 0.34);
+  box-shadow:
+    0 12px 34px rgba(0, 0, 0, 0.22),
+    0 0 24px rgba(19, 188, 157, 0.2);
+  cursor: pointer;
+  pointer-events: auto;
+  backdrop-filter: blur(7px);
+  transform: translateY(-50%);
+  transition: transform 220ms ease, filter 220ms ease, border-color 220ms ease;
+}
+
+.aito-dance__switcher--previous {
+  left: clamp(0.85rem, 3vw, 3.25rem);
+}
+
+.aito-dance__switcher--next {
+  right: clamp(0.85rem, 3vw, 3.25rem);
+}
+
+.aito-dance__switcher .q-icon {
+  font-size: 1.65rem;
+}
+
+.aito-dance__switcher:hover,
+.aito-dance__switcher:focus-visible {
+  border-color: #8fffee;
+  outline: none;
+  filter: brightness(1.14) saturate(1.12);
+  transform: translateY(-50%) scale(1.08);
+}
+
+@keyframes dance-loader-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes dance-loader-pulse {
+  50% {
+    transform: scale(1.05);
+    box-shadow:
+      0 0 0 0.8rem rgba(19, 188, 157, 0.04),
+      0 0 4rem rgba(19, 188, 157, 0.38);
+  }
+}
+
+.dance-loader-enter-active,
+.dance-loader-leave-active {
+  transition: opacity 420ms ease;
+}
+
+.dance-loader-enter-from,
+.dance-loader-leave-to {
+  opacity: 0;
 }
 
 .aito-dance__atmosphere {
@@ -322,15 +611,9 @@ onBeforeUnmount(() => {
   align-items: center;
   justify-content: center;
   gap: 1rem;
-  opacity: 0;
-  transform: translate3d(0, 12px, 0);
-  transition: opacity 420ms ease, transform 420ms ease;
-  pointer-events: none;
-}
-
-.aito-dance__panel.is-ready {
   opacity: 1;
   transform: translate3d(0, 0, 0);
+  pointer-events: none;
 }
 
 .aito-dance__speech,
@@ -558,6 +841,40 @@ onBeforeUnmount(() => {
     left: 1.25rem;
     align-items: flex-end;
     gap: 0.8rem;
+  }
+
+  .aito-dance__hotspot--center {
+    top: 34%;
+    left: 27%;
+    width: 46%;
+    height: 33%;
+  }
+
+  .aito-dance__hotspot--left,
+  .aito-dance__hotspot--right {
+    top: 51%;
+    width: 27%;
+    height: 28%;
+  }
+
+  .aito-dance__switcher {
+    width: 2.45rem;
+    height: 2.45rem;
+    background:
+      linear-gradient(135deg, rgba(19, 188, 157, 0.78), rgba(18, 173, 137, 0.34)),
+      rgba(3, 28, 29, 0.3);
+  }
+
+  .aito-dance__switcher--previous {
+    left: 0.55rem;
+  }
+
+  .aito-dance__switcher--next {
+    right: 0.55rem;
+  }
+
+  .aito-dance__switcher .q-icon {
+    font-size: 1.35rem;
   }
 
   .aito-dance__speech {

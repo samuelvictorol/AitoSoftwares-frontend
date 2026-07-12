@@ -5,7 +5,13 @@
         <div class="user-app__shell">
           <header class="user-app__header">
             <div class="user-app__brand"><img src="/favicon.png" alt="" /><span>AITO<span>SOFTWARES</span></span></div>
-            <q-btn flat no-caps icon="mdi-logout" label="Sair" @click="logout" />
+            <div class="user-app__session">
+              <div>
+                <strong>{{ sessionUser.name || 'Cliente Aito' }}</strong>
+                <small>{{ sessionUser.email }}</small>
+              </div>
+              <q-btn flat no-caps icon="mdi-logout" label="Sair" @click="logout" />
+            </div>
           </header>
           <main class="user-app__main">
             <span class="user-app__eyebrow">Area do cliente</span>
@@ -24,9 +30,19 @@
 </template>
 
 <script setup>
+import { onMounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
 
 const router = useRouter()
+const sessionUser = ref({})
+
+onMounted(() => {
+  try {
+    sessionUser.value = JSON.parse(localStorage.getItem('aito_user') || '{}')
+  } catch (error) {
+    sessionUser.value = {}
+  }
+})
 
 function logout() {
   localStorage.removeItem('aito_user_token')
@@ -40,6 +56,10 @@ function logout() {
 .user-app__page { min-height: 100vh; background: radial-gradient(circle at 70% 18%, rgba(19, 188, 157, 0.16), transparent 25rem), #03090b; }
 .user-app__shell { width: min(1100px, calc(100% - 2rem)); margin: 0 auto; }
 .user-app__header { display: flex; padding: 1.1rem 0; align-items: center; justify-content: space-between; border-bottom: 1px solid rgba(19, 188, 157, 0.18); }
+.user-app__session { display: flex; align-items: center; gap: 0.8rem; }
+.user-app__session > div { display: grid; gap: 0.12rem; text-align: right; }
+.user-app__session strong { color: #effffb; font-size: 0.72rem; }
+.user-app__session small { color: rgba(230, 255, 250, 0.58); font-size: 0.62rem; }
 .user-app__brand { display: flex; align-items: center; gap: 0.65rem; font-size: 0.78rem; font-weight: 800; letter-spacing: 0.12em; }
 .user-app__brand img { width: 34px; height: 34px; }
 .user-app__brand span span { color: #13bc9d; }
@@ -53,4 +73,7 @@ function logout() {
 .user-app__grid span { color: rgba(230, 255, 250, 0.58); font-size: 0.75rem; }
 .user-app__grid .q-icon { color: #13bc9d; }
 @media (max-width: 650px) { .user-app__grid { grid-template-columns: 1fr; } }
+@media (max-width: 520px) {
+  .user-app__session > div { display: none; }
+}
 </style>
