@@ -2,7 +2,6 @@
   <main
     class="landing-3d"
     :class="{
-      'landing-3d--reduced-motion': prefersReducedMotion,
       'landing-3d--intro-loading': !introRevealing,
       'landing-3d--intro-complete': introRevealing
     }"
@@ -27,27 +26,32 @@
     <div class="landing-3d__noise" aria-hidden="true"></div>
 
     <header class="landing-3d__header">
-      <router-link class="landing-3d__brand" to="/" aria-label="AitoSoftwares — início">
+      <button class="landing-3d__brand" type="button" aria-label="Voltar ao inicio" @click="scrollToSection('inicio')">
         <img src="/favicon.png" alt="" width="34" height="34" />
         <span>AITO<span>SOFTWARES</span></span>
-      </router-link>
+      </button>
 
-      <router-link v-if="showAboutHeader" class="landing-3d__about-link" to="/sobre">
-        <span>Quem somos</span>
-        <span aria-hidden="true">→</span>
-      </router-link>
+      <div class="landing-3d__header-actions">
+        <button v-if="showAboutHeader" class="landing-3d__about-link" type="button" @click="scrollToSection('marcas')">
+          Quem somos
+          <span aria-hidden="true">&rarr;</span>
+        </button>
+        <button class="landing-3d__account-link" type="button" aria-label="Abrir area do cliente" @click="openAuth()">
+          <q-icon name="mdi-account-outline" aria-hidden="true" />
+          <span class="landing-3d__account-label">Area do cliente</span>
+        </button>
+      </div>
     </header>
 
-    <nav class="landing-3d__progress" aria-label="Navegação entre seções">
+    <nav class="landing-3d__progress" aria-label="Navegacao entre secoes">
       <button
         v-for="(section, index) in landing3dSections"
         :key="section.id"
         type="button"
         :class="{ 'is-active': activeSection === index }"
-        :disabled="section.dance && !surpriseUnlocked"
-        :aria-label="`Ir para a seção ${index + 1}: ${section.title}`"
+        :aria-label="`Ir para a secao ${index + 1}: ${section.title}`"
         :aria-current="activeSection === index ? 'step' : undefined"
-        @click="handleSectionNav(section)"
+        @click="scrollToSection(section.id)"
       >
         <span></span>
       </button>
@@ -61,383 +65,411 @@
         class="landing-3d__section"
         :class="[
           `landing-3d__section--${section.align}`,
-          { 'landing-3d__section--dance': section.dance }
+          `landing-3d__section--${section.id}`
         ]"
         data-landing-3d-section
         :aria-labelledby="`${section.id}-title`"
       >
-        <div
-          class="landing-3d__copy"
-          :class="{ 'is-active': activeSection === index }"
-          :style="sectionCopyStyle(index)"
-        >
-          <p class="landing-3d__eyebrow">{{ section.eyebrow }}</p>
-          <h1
-            v-if="index === 0"
-            :id="`${section.id}-title`"
-            class="landing-3d__title"
-          >
-            {{ section.title }}
-          </h1>
-          <h2
-            v-else
-            :id="`${section.id}-title`"
-            class="landing-3d__title"
-          >
-            {{ section.title }}
-          </h2>
-          <p v-if="section.description" class="landing-3d__description">{{ section.description }}</p>
+        <div class="landing-3d__section-inner">
+          <div class="landing-3d__copy" :style="sectionCopyStyle(index)">
+            <p class="landing-3d__eyebrow">{{ section.eyebrow }}</p>
+            <h1 v-if="index === 0" :id="`${section.id}-title`" class="landing-3d__title">{{ section.title }}</h1>
+            <h2 v-else :id="`${section.id}-title`" class="landing-3d__title">{{ section.title }}</h2>
+            <p v-if="section.description" class="landing-3d__description">{{ section.description }}</p>
 
-          <div
-            v-if="section.cta || section.secondaryCta || section.surpriseCta"
-            class="landing-3d__actions"
-          >
-            <a
-              v-if="section.cta"
-              class="landing-3d__cta landing-3d__cta--primary"
-              :href="section.cta.href"
-              target="_blank"
-              rel="noopener noreferrer"
-            >
-              <span>{{ section.cta.label }}</span>
-              <span aria-hidden="true">↗</span>
-            </a>
+            <div v-if="section.id === 'inicio'" class="landing-3d__hero-actions">
+              <a class="landing-3d__cta landing-3d__cta--primary" :href="section.cta.href" target="_blank" rel="noopener noreferrer">
+                <span>{{ section.cta.label }}</span>
+                <q-icon name="mdi-arrow-top-right" aria-hidden="true" />
+              </a>
+              <button class="landing-3d__cta landing-3d__cta--secondary" type="button" @click="handleAboutCtaClick">
+                <span>{{ section.secondaryCta.label }}</span>
+                <q-icon name="mdi-arrow-down" aria-hidden="true" />
+              </button>
+              <button class="landing-3d__cta landing-3d__cta--surprise" type="button" @click="router.push(section.surpriseCta.to)">
+                <span>{{ section.surpriseCta.label }}</span>
+                <q-icon name="mdi-auto-fix" aria-hidden="true" />
+              </button>
+            </div>
 
-            <router-link
-              v-if="section.secondaryCta"
-              class="landing-3d__cta landing-3d__cta--secondary"
-              :to="section.secondaryCta.to"
-              @click="handleAboutCtaClick"
-            >
-              <span>{{ section.secondaryCta.label }}</span>
-              <span aria-hidden="true">→</span>
-            </router-link>
+            <div v-if="section.id === 'inicio'" class="landing-3d__proof-row">
+              <span><strong>50+</strong> operacoes atendidas</span>
+              <span><strong>200+</strong> entregas</span>
+              <span><strong>98%</strong> satisfacao</span>
+            </div>
 
-            <button
-              v-if="section.surpriseCta"
-              type="button"
-              class="landing-3d__cta landing-3d__cta--surprise"
-              @click="handleSurpriseClick(section.surpriseCta.to)"
-            >
-              <span class="text-bold">{{ section.surpriseCta.label }}</span>
-              <span class="material-icons" aria-hidden="true">auto_awesome</span>
-            </button>
+            <div v-if="section.id === 'contato'" class="landing-3d__contact-copy">
+              <button type="button" class="landing-3d__text-link" @click="openAuth('register')">
+                <q-icon name="mdi-account-plus-outline" aria-hidden="true" />
+                Criar acesso para acompanhar o projeto
+              </button>
+            </div>
           </div>
 
-          <div v-if="section.dance" class="landing-3d__dance-panel">
-            <p class="landing-3d__speech-bubble">
-              {{ section.speech }}
-            </p>
+          <div class="landing-3d__visual">
+            <template v-if="section.id === 'marcas'">
+              <AitoBrandCarousel :brands="institutionalBrands" @select="handleBrandSelect" />
+            </template>
 
-            <button
-              type="button"
-              class="landing-3d__audio-toggle"
-              :class="{ 'is-active': danceActive }"
-              :aria-pressed="danceActive"
-              :aria-label="danceActive ? 'Pausar musica' : 'Tocar musica'"
-              @click="handleDanceToggle"
-            >
-              <span class="material-icons" aria-hidden="true">
-                {{ danceActive ? 'volume_up' : 'volume_off' }}
-              </span>
-            </button>
+            <template v-else-if="section.id === 'solucoes'">
+              <div class="landing-3d__service-grid">
+                <article v-for="service in institutionalServices" :key="service.title" class="landing-3d__service-card">
+                  <span class="landing-3d__icon-bubble"><q-icon :name="service.icon" size="21px" aria-hidden="true" /></span>
+                  <h3>{{ service.title }}</h3>
+                  <p>{{ service.text }}</p>
+                  <ul>
+                    <li v-for="item in service.items" :key="item">{{ item }}</li>
+                  </ul>
+                </article>
+              </div>
+            </template>
 
-            <button
-              type="button"
-              class="landing-3d__credits-toggle"
-              aria-label="Ver creditos da musica e animacao"
-              @click="creditsDialogOpen = true"
-            >
-              ?
-            </button>
+            <template v-else-if="section.id === 'cases'">
+              <div class="landing-3d__case-grid">
+                <article v-for="item in institutionalCases" :key="item.title" class="landing-3d__case-card">
+                  <div class="landing-3d__case-icon"><q-icon :name="item.icon" size="21px" aria-hidden="true" /></div>
+                  <p class="landing-3d__case-kicker">{{ item.subtitle }}</p>
+                  <h3>{{ item.title }}</h3>
+                  <p>{{ item.text }}</p>
+                  <div class="landing-3d__tag-row">
+                    <span v-for="tag in item.tags" :key="tag">{{ tag }}</span>
+                  </div>
+                  <a :href="item.href" target="_blank" rel="noopener noreferrer" class="landing-3d__case-link">
+                    Conhecer projeto <q-icon name="mdi-arrow-top-right" aria-hidden="true" />
+                  </a>
+                </article>
+              </div>
+            </template>
+
+            <template v-else-if="section.id === 'satisfacao'">
+              <div class="landing-3d__satisfaction-grid">
+                <div class="landing-3d__satisfaction-meter">
+                  <q-icon name="mdi-heart" size="31px" aria-hidden="true" />
+                  <strong>98%</strong>
+                  <span>de satisfacao</span>
+                  <small>Relacoes que continuam depois do go-live.</small>
+                </div>
+                <article v-for="item in institutionalTestimonials" :key="item.name" class="landing-3d__testimonial">
+                  <div class="landing-3d__testimonial-head">
+                    <img v-if="item.img" :src="item.img" :alt="item.name" />
+                    <span v-else class="landing-3d__avatar-placeholder">+</span>
+                    <div><strong>{{ item.name }}</strong><small>{{ item.role }}</small></div>
+                  </div>
+                  <p>&ldquo;{{ item.quote }}&rdquo;</p>
+                </article>
+              </div>
+            </template>
+
+            <template v-else-if="section.id === 'founder-samuel' || section.id === 'founder-dion'">
+              <div class="landing-3d__founder-card">
+                <img :src="founderForSection(section.id).image" :alt="founderForSection(section.id).name" class="landing-3d__founder-image" />
+                <div>
+                  <span class="landing-3d__founder-role">{{ founderForSection(section.id).role }}</span>
+                  <p>{{ founderForSection(section.id).summary }}</p>
+                </div>
+                <div class="landing-3d__founder-socials">
+                  <a :href="founderForSection(section.id).instagram" target="_blank" rel="noopener noreferrer" aria-label="Instagram">
+                    <q-icon name="mdi-instagram" size="18px" aria-hidden="true" />
+                  </a>
+                  <a :href="founderForSection(section.id).portfolio" target="_blank" rel="noopener noreferrer" aria-label="Portfolio">
+                    <q-icon name="mdi-web" size="18px" aria-hidden="true" />
+                  </a>
+                </div>
+              </div>
+            </template>
+
+            <template v-else-if="section.id === 'contato'">
+              <q-form class="landing-3d__lead-form" @submit.prevent="sendLead">
+                <div class="landing-3d__form-heading">
+                  <q-icon name="mdi-rocket-launch-outline" size="19px" aria-hidden="true" />
+                  <span>Falar com a Aito</span>
+                </div>
+                <div class="landing-3d__form-grid">
+                  <q-input v-model="lead.name" outlined dense lazy-rules label="Seu nome" :rules="[requiredRule]" />
+                  <q-input v-model="lead.phone" outlined dense lazy-rules label="WhatsApp" :rules="[requiredRule]" />
+                  <q-input v-model="lead.email" outlined dense label="E-mail" type="email" />
+                  <q-input v-model="lead.company" outlined dense label="Empresa ou projeto" />
+                  <q-input v-model="lead.message" class="landing-3d__form-full" outlined dense type="textarea" autogrow label="O que precisa acontecer?" />
+                </div>
+                <div class="landing-3d__form-actions">
+                  <q-btn unelevated no-caps type="submit" class="landing-3d__form-submit" icon="mdi-whatsapp" label="Enviar e abrir WhatsApp" />
+                  <button type="button" class="landing-3d__referral-button" @click="referralDialogOpen = true">
+                    <q-icon name="mdi-gift-outline" size="18px" aria-hidden="true" />
+                    Indique e ganhe
+                  </button>
+                </div>
+              </q-form>
+            </template>
+
+            <!-- <div v-else class="landing-3d__ambient-panel">
+              <q-icon name="mdi-infinity" size="40px" aria-hidden="true" />
+              <strong>Diagnostico, produto e evolucao.</strong>
+              <span>Uma conversa boa ja organiza o proximo passo.</span>
+            </div> -->
           </div>
         </div>
 
-        <div
-          v-if="index === 0"
-          class="landing-3d__scroll-cue"
-          aria-hidden="true"
-        >
-          <span>Explore</span>
-          <i></i>
+        <div v-if="index === 0" class="landing-3d__scroll-cue" aria-hidden="true">
+          <span>Role para comecar</span><i></i>
         </div>
       </section>
     </div>
 
     <p class="landing-3d__counter" aria-live="polite">
-      <span>{{ String(activeSection + 1).padStart(2, '0') }}</span>
-      <i></i>
-      <span>{{ String(landing3dSections.length).padStart(2, '0') }}</span>
+      <span>{{ String(activeSection + 1).padStart(2, '0') }}</span><i></i><span>{{ String(landing3dSections.length).padStart(2, '0') }}</span>
     </p>
 
-    <q-dialog v-model="creditsDialogOpen">
-      <q-card class="landing-3d__credits-card">
-        <q-card-section class="landing-3d__credits-head">
-          <p>Créditos</p>
-          <button
-            type="button"
-            class="landing-3d__credits-close"
-            aria-label="Fechar creditos"
-            @click="creditsDialogOpen = false"
-          >
-            <span class="material-icons" aria-hidden="true">close</span>
-          </button>
-        </q-card-section>
+    <button class="landing-3d__ai-float" type="button" aria-label="Abrir IA da Aito" @click="iaChat = true">
+      <img src="/ia.gif" alt="" />
+    </button>
 
-        <q-card-section class="landing-3d__credits-body">
-          <p>
-            Beat e Masterização por:
-            <a
-              href="https://www.instagram.com/prodniell/"
-              target="_blank"
-              rel="noopener noreferrer"
-            >
-              @prodniell
-            </a>
-          </p>
-          <p>
-            Guitarra e Animação por:
-            <a
-              href="https://www.instagram.com/samuelvictorol/"
-              target="_blank"
-              rel="noopener noreferrer"
-            >
-              @samuelvictorol
-            </a>
-          </p>
+    <q-dialog v-model="brandDialogOpen">
+      <q-card class="landing-3d__dialog-card">
+        <q-card-section class="landing-3d__dialog-head">
+          <div><span class="landing-3d__dialog-kicker">Case</span><h3>{{ selectedBrand?.name }}</h3></div>
+          <q-btn flat round dense icon="mdi-close" aria-label="Fechar" @click="brandDialogOpen = false" />
+        </q-card-section>
+        <q-card-section class="landing-3d__dialog-body">
+          <p>{{ selectedBrand?.summary }}</p>
+          <a v-if="selectedBrand?.href" :href="selectedBrand.href" target="_blank" rel="noopener noreferrer" class="landing-3d__dialog-link">Visitar projeto <q-icon name="mdi-arrow-top-right" aria-hidden="true" /></a>
         </q-card-section>
       </q-card>
+    </q-dialog>
+
+    <q-dialog v-model="authDialogOpen" persistent>
+      <q-card class="landing-3d__dialog-card landing-3d__auth-card">
+        <q-card-section class="landing-3d__dialog-head">
+          <div><div class="text-h6">Area do cliente</div></div>
+          <q-btn flat round dense icon="mdi-close" aria-label="Fechar" @click="authDialogOpen = false" />
+        </q-card-section>
+        <q-card-section class="landing-3d__auth-tabs">
+          <button type="button" class="text-grey-6" :class="{ 'is-active': authMode === 'login' }" @click="authMode = 'login'">Entrar</button>
+          <button type="button" class="text-grey-6" :class="{ 'is-active': authMode === 'register' }" @click="authMode = 'register'">Criar acesso</button>
+        </q-card-section>
+        <q-card-section class="landing-3d__dialog-body">
+          <q-form @submit.prevent="submitAuth">
+            <q-input v-if="authMode === 'login'" v-model="authForm.identifier" outlined dense lazy-rules label="E-mail ou telefone" autocomplete="username" :rules="[requiredRule]" />
+            <q-input v-if="authMode === 'register'" v-model="authForm.name" outlined dense lazy-rules label="Nome" autocomplete="name" :rules="[requiredRule]" />
+            <q-input v-if="authMode === 'register'" v-model="authForm.email" outlined dense lazy-rules label="E-mail" type="email" autocomplete="email" class="q-mt-sm" :rules="[requiredRule]" />
+            <q-input v-if="authMode === 'register'" v-model="authForm.phone" outlined dense lazy-rules label="Telefone unico" autocomplete="tel" class="q-mt-sm" :rules="[requiredRule]" />
+            <q-input v-model="authForm.password" outlined dense lazy-rules label="Senha" type="password" autocomplete="current-password" class="q-mt-sm" :rules="[requiredRule]" />
+            <q-btn unelevated no-caps class="landing-3d__auth-submit full-width q-mt-md" type="submit" :loading="authLoading" icon-right="mdi-login" :label="authMode === 'login' ? 'Entrar' : 'Cadastre-se'" />
+          </q-form>
+          <div class="landing-3d__auth-separator"><span>ou</span></div>
+          <button type="button" class="landing-3d__google-button" @click="continueWithGoogle">
+            <q-icon name="mdi-google" size="18px" aria-hidden="true" />
+            Continuar com Google
+          </button>
+        </q-card-section>
+      </q-card>
+    </q-dialog>
+
+    <q-dialog v-model="referralDialogOpen">
+      <q-card class="landing-3d__dialog-card">
+        <q-card-section class="landing-3d__dialog-head"><div><span class="landing-3d__dialog-kicker">Indique e ganhe</span><h3>Uma boa conexao merece retorno.</h3></div><q-btn flat round dense icon="mdi-close" aria-label="Fechar" @click="referralDialogOpen = false" /></q-card-section>
+        <q-card-section class="landing-3d__dialog-body">
+          <q-form @submit.prevent="sendReferral">
+            <q-input v-model="referral.name" outlined dense lazy-rules label="Seu nome" :rules="[requiredRule]" />
+            <q-input v-model="referral.phone" outlined dense lazy-rules label="Seu WhatsApp" class="q-mt-sm" :rules="[requiredRule]" />
+            <q-input v-model="referral.leadName" outlined dense label="Nome do indicado" class="q-mt-sm" />
+            <q-input v-model="referral.notes" outlined dense type="textarea" autogrow label="O que ele precisa?" class="q-mt-sm" />
+            <q-btn unelevated no-caps class="landing-3d__auth-submit full-width q-mt-md" type="submit" icon="mdi-whatsapp" label="Enviar indicacao" />
+          </q-form>
+        </q-card-section>
+      </q-card>
+    </q-dialog>
+
+    <q-dialog v-model="iaChat" persistent>
+      <IAChatComponent class="landing-3d__ai-dialog" @close="iaChat = false" />
     </q-dialog>
   </main>
 </template>
 
 <script setup>
-import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
+import { computed, onBeforeUnmount, onMounted, reactive, ref } from 'vue'
+import { useQuasar } from 'quasar'
+import { useRouter } from 'vue-router'
+import { api } from 'boot/axios'
 import AitoLoadingGate from 'components/landing3d/AitoLoadingGate.vue'
 import AitoThreeScene from 'components/landing3d/AitoThreeScene.vue'
+import AitoBrandCarousel from 'components/landing3d/AitoBrandCarousel.vue'
+import IAChatComponent from 'components/IAChatComponent.vue'
 import { useLandingScroll } from 'src/composables/useLandingScroll'
 import { landing3dSections } from 'src/data/landing3dSections'
-import { useRouter } from 'vue-router'
+import {
+  institutionalBrands,
+  institutionalCases,
+  institutionalFounders,
+  institutionalServices,
+  institutionalTestimonials
+} from 'src/data/landingInstitutional'
 
-const bundledDanceAudioUrls = import.meta.glob('../3d-models/*.mp3', {
-  eager: true,
-  query: '?url',
-  import: 'default'
-})
-
-const ABOUT_HEADER_STORAGE_KEY = 'aito_about_header_unlocked'
-
-const {
-  activeSection,
-  prefersReducedMotion,
-  scrollProgress,
-  scrollToSection,
-  sectionPosition
-} = useLandingScroll(landing3dSections.length)
-
+const $q = useQuasar()
 const router = useRouter()
+const ABOUT_HEADER_STORAGE_KEY = 'aito_about_header_unlocked'
+const USER_TOKEN_KEY = 'aito_user_token'
+
+const { activeSection, prefersReducedMotion, scrollProgress, scrollToSection: scrollTo, sectionPosition } = useLandingScroll(landing3dSections.length)
 
 const sceneReady = ref(false)
 const introRevealing = ref(false)
 const introComplete = ref(false)
-const danceActive = ref(false)
-const surpriseUnlocked = ref(false)
-const creditsDialogOpen = ref(false)
 const showAboutHeader = ref(false)
+const brandDialogOpen = ref(false)
+const selectedBrand = ref(null)
+const authDialogOpen = ref(false)
+const authMode = ref('login')
+const authLoading = ref(false)
+const referralDialogOpen = ref(false)
+const iaChat = ref(false)
 
-const landingPageStyle = computed(() => ({
-  minHeight: `${landing3dSections.length * 100}vh`
-}))
+const lead = reactive({ name: '', phone: '', email: '', company: '', message: '' })
+const referral = reactive({ name: '', phone: '', leadName: '', notes: '' })
+const authForm = reactive({ identifier: '', name: '', email: '', phone: '', password: '' })
 
-const danceAudioUrl = Object.entries(bundledDanceAudioUrls).find(([path]) =>
-  path.replaceAll('\\', '/').endsWith('/3d-models/dance.mp3')
-)?.[1]
+const landingPageStyle = computed(() => ({ minHeight: `${landing3dSections.length * 100}vh` }))
+const requiredRule = (value) => Boolean(String(value || '').trim()) || 'Preencha este campo.'
 
-const surpriseSectionIndex = computed(() =>
-  landing3dSections.findIndex((section) => section.dance)
-)
-
-const fallbackSectionId = computed(() => {
-  const surpriseIndex = surpriseSectionIndex.value
-  return landing3dSections[Math.max(surpriseIndex - 1, 0)]?.id ?? landing3dSections[0]?.id
-})
-
-let danceAudio = null
-
-const clamp = (value, min, max) => Math.min(Math.max(value, min), max)
-
-function ensureDanceAudio() {
-  if (!danceAudioUrl) return null
-  if (danceAudio) return danceAudio
-
-  danceAudio = new Audio(danceAudioUrl)
-  danceAudio.loop = true
-  danceAudio.preload = 'auto'
-  danceAudio.volume = 0.74
-
-  return danceAudio
+function founderForSection(sectionId) {
+  return institutionalFounders.find((founder) => sectionId.endsWith(founder.id)) || institutionalFounders[0]
 }
 
-async function setAudioMode(shouldPlay, options = {}) {
-  danceActive.value = shouldPlay
-  const audio = ensureDanceAudio()
-
-  if (!audio) return
-
-  if (!shouldPlay) {
-    audio.pause()
-    return
-  }
-
-  try {
-    if (options.restart) audio.currentTime = 0
-    await audio.play()
-  } catch (error) {
-    console.warn('[Landing 3D] O audio da danca ainda nao pode ser reproduzido.', error)
+function sectionCopyStyle(index) {
+  if (window.innerWidth < 768) return { opacity: 1, transform: 'none' }
+  if (prefersReducedMotion.value) return { opacity: activeSection.value === index ? 1 : 0.58, transform: 'none' }
+  const distance = Math.abs(sectionPosition.value - index)
+  return {
+    opacity: Math.max(0.46, 1 - distance * 0.35),
+    transform: `translate3d(0, ${Math.min(distance * 18, 18)}px, 0)`
   }
 }
 
-function handleDanceToggle() {
-  void setAudioMode(!danceActive.value)
-}
-
-function handleSurpriseClick(to) {
-  if (to) void router.push(to)
-}
+function handleSceneReady() { sceneReady.value = true }
+function handleIntroReveal() { introRevealing.value = true }
+function handleIntroComplete() { introComplete.value = true }
 
 function unlockAboutHeader() {
   showAboutHeader.value = true
-
-  try {
-    window.localStorage.setItem(ABOUT_HEADER_STORAGE_KEY, '1')
-  } catch (error) {
-    console.warn('[Landing 3D] Nao foi possivel salvar a liberacao do Quem somos.', error)
-  }
+  try { window.localStorage.setItem(ABOUT_HEADER_STORAGE_KEY, '1') } catch (error) { console.warn('[Landing 3D] Nao foi possivel salvar o acesso a Quem somos.', error) }
 }
 
 function handleAboutCtaClick() {
   unlockAboutHeader()
+  scrollTo('marcas')
 }
 
-function handleSectionNav(section) {
-  if (section.dance && !surpriseUnlocked.value) return
-  scrollToSection(section.id)
+function handleBrandSelect(brand) {
+  selectedBrand.value = brand
+  brandDialogOpen.value = true
 }
 
-function handleSceneReady() {
-  sceneReady.value = true
+function openAuth(mode = 'login') {
+  authMode.value = mode
+  authDialogOpen.value = true
 }
 
-function handleIntroReveal() {
-  introRevealing.value = true
+function persistAuth(data) {
+  const role = data.user?.role === 'admin' ? 'admin' : 'user'
+  const tokenKey = role === 'admin' ? 'aito_admin_token' : USER_TOKEN_KEY
+  const userKey = role === 'admin' ? 'aito_admin_user' : 'aito_user'
+  localStorage.setItem(tokenKey, data.token)
+  localStorage.setItem(userKey, JSON.stringify(data.user))
 }
 
-function handleIntroComplete() {
-  introComplete.value = true
-}
-
-watch(activeSection, (sectionIndex) => {
-  const surpriseIndex = surpriseSectionIndex.value
-
-  if (
-    surpriseIndex >= 0 &&
-    sectionIndex >= surpriseIndex &&
-    !surpriseUnlocked.value
-  ) {
-    window.requestAnimationFrame(() => {
-      scrollToSection(fallbackSectionId.value)
-    })
+async function submitAuth() {
+  authLoading.value = true
+  try {
+    const response = authMode.value === 'register'
+      ? await api.post('/auth/register', {
+          name: authForm.name,
+          email: authForm.email,
+          phone: authForm.phone,
+          password: authForm.password
+        })
+      : await api.post('/auth/login', {
+          identifier: authForm.identifier,
+          password: authForm.password
+        })
+    persistAuth(response.data)
+    authDialogOpen.value = false
+    $q.notify({ type: 'positive', message: 'Acesso realizado.' })
+    router.push(response.data.user?.role === 'admin' ? '/admin' : '/app')
+  } catch (error) {
+    $q.notify({ type: 'negative', message: error.response?.data?.message || 'Nao foi possivel concluir o acesso.' })
+  } finally {
+    authLoading.value = false
   }
-})
+}
 
-function sectionCopyStyle(index) {
-  if (window.innerWidth < 768) {
-    return {
-      opacity: 1,
-      transform: 'none'
-    }
+function continueWithGoogle() {
+  const clientId = import.meta.env.VITE_GOOGLE_CLIENT_ID
+  if (!clientId) {
+    $q.notify({ type: 'info', message: 'Configure VITE_GOOGLE_CLIENT_ID para ativar o Google.' })
+    return
   }
+  $q.notify({ type: 'info', message: 'O provedor Google esta pronto para receber o client ID configurado.' })
+}
 
-  if (prefersReducedMotion.value) {
-    return {
-      opacity: activeSection.value === index ? 1 : 0.42,
-      transform: 'none'
-    }
+function buildWhatsappUrl(message) {
+  return `https://wa.me/5561981748795?text=${encodeURIComponent(message)}`
+}
+
+async function sendLead() {
+  const message = `Ola! Quero falar com a AitoSoftwares.\n\nNome: ${lead.name}\nWhatsApp: ${lead.phone}\nE-mail: ${lead.email}\nEmpresa: ${lead.company}\nContexto: ${lead.message}`
+  try {
+    await api.post('/leads', { ...lead, source: 'landing-3d' })
+  } catch (error) {
+    console.warn('[Landing 3D] Nao foi possivel registrar o lead na API.', error)
   }
+  window.open(buildWhatsappUrl(message), '_blank', 'noopener,noreferrer')
+  if (!localStorage.getItem(USER_TOKEN_KEY)) openAuth('register')
+}
 
-  const distance = Math.abs(sectionPosition.value - index)
-  const opacity = clamp(1 - distance * 0.72, 0.18, 1)
-  const offset = clamp(distance * 22, 0, 28)
-
-  return {
-    opacity,
-    transform: `translate3d(0, ${offset}px, 0)`
-  }
+function sendReferral() {
+  const message = `Ola! Quero indicar uma oportunidade para a AitoSoftwares.\n\nIndicador: ${referral.name}\nWhatsApp: ${referral.phone}\nIndicado: ${referral.leadName}\nContexto: ${referral.notes}`
+  window.open(buildWhatsappUrl(message), '_blank', 'noopener,noreferrer')
+  referralDialogOpen.value = false
 }
 
 onMounted(() => {
-  try {
-    showAboutHeader.value = window.localStorage.getItem(ABOUT_HEADER_STORAGE_KEY) === '1'
-  } catch (error) {
-    showAboutHeader.value = false
-  }
+  try { showAboutHeader.value = window.localStorage.getItem(ABOUT_HEADER_STORAGE_KEY) === '1' } catch (error) { showAboutHeader.value = false }
 })
 
-onBeforeUnmount(() => {
-  if (!danceAudio) return
-
-  danceAudio.pause()
-  danceAudio.removeAttribute('src')
-  danceAudio.load()
-  danceAudio = null
-})
+onBeforeUnmount(() => {})
 </script>
 
 <style scoped>
 .landing-3d {
-  --aito-teal: #13BC9D;
-  --aito-teal-secondary: #12AD89;
-  --aito-green: #57d6be;
-  --aito-ink: #05090c;
-  --aito-muted: rgba(220, 232, 235, 0.979);
+  --aito-teal: #13bc9d;
+  --aito-teal-dark: #12ad89;
+  --aito-aqua: #8fffee;
+  --aito-ink: #03090b;
+  --aito-panel: rgba(4, 24, 25, 0.72);
   position: relative;
-  min-height: 900vh;
+  min-height: 800vh;
   overflow: clip;
-  color: #f6f7fb;
-  background:
-    radial-gradient(circle at 18% 8%, rgba(8, 159, 165, 0.14), transparent 34rem),
-    radial-gradient(circle at 82% 66%, rgba(28, 189, 107, 0.07), transparent 32rem),
-    var(--aito-ink);
+  color: #effffb;
+  background: #03090b;
   isolation: isolate;
 }
 
 .landing-3d__header,
 .landing-3d__content,
 .landing-3d__progress,
-.landing-3d__counter {
-  transition:
-    opacity 900ms cubic-bezier(0.2, 0.8, 0.2, 1),
-    transform 900ms cubic-bezier(0.2, 0.8, 0.2, 1),
-    filter 900ms cubic-bezier(0.2, 0.8, 0.2, 1);
+.landing-3d__counter,
+.landing-3d__ai-float {
+  transition: opacity 850ms cubic-bezier(0.2, 0.8, 0.2, 1), transform 850ms cubic-bezier(0.2, 0.8, 0.2, 1), filter 850ms cubic-bezier(0.2, 0.8, 0.2, 1);
 }
 
 .landing-3d--intro-loading .landing-3d__header,
 .landing-3d--intro-loading .landing-3d__content,
 .landing-3d--intro-loading .landing-3d__progress,
-.landing-3d--intro-loading .landing-3d__counter {
+.landing-3d--intro-loading .landing-3d__counter,
+.landing-3d--intro-loading .landing-3d__ai-float {
   opacity: 0;
-  filter: blur(12px);
+  filter: blur(10px);
   pointer-events: none;
-  transform: translate3d(0, 18px, 0);
-}
-
-.landing-3d--intro-complete .landing-3d__header,
-.landing-3d--intro-complete .landing-3d__content,
-.landing-3d--intro-complete .landing-3d__progress,
-.landing-3d--intro-complete .landing-3d__counter {
-  opacity: 1;
-  filter: blur(0);
-  transform: translate3d(0, 0, 0);
+  transform: translateY(14px);
 }
 
 .landing-3d__atmosphere,
@@ -449,13 +481,11 @@ onBeforeUnmount(() => {
 }
 
 .landing-3d__atmosphere {
-  background:
-    linear-gradient(90deg, rgba(5, 9, 12, 0.42), transparent 40%, rgba(5, 9, 12, 0.2)),
-    radial-gradient(circle at 50% 50%, transparent 35%, rgba(1, 4, 6, 0.58) 100%);
+  background: radial-gradient(circle at 52% 28%, rgba(19, 188, 157, 0.11), transparent 32rem), linear-gradient(90deg, rgba(3, 9, 11, 0.24), transparent 46%, rgba(3, 9, 11, 0.32));
 }
 
 .landing-3d__noise {
-  opacity: 0.035;
+  opacity: 0.025;
   background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 180 180' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='.8'/%3E%3C/svg%3E");
 }
 
@@ -463,874 +493,263 @@ onBeforeUnmount(() => {
   position: fixed;
   top: 0;
   left: 0;
-  z-index: 5;
+  z-index: 8;
   display: flex;
   width: 100%;
+  padding: 1.35rem clamp(1rem, 5vw, 5rem);
   align-items: center;
   justify-content: space-between;
-  padding: clamp(1.25rem, 3vw, 2.5rem) clamp(1.25rem, 5vw, 5rem);
   pointer-events: none;
+}
+
+.landing-3d__brand,
+.landing-3d__about-link,
+.landing-3d__account-link {
+  border: 0;
+  cursor: pointer;
+  pointer-events: auto;
 }
 
 .landing-3d__brand {
   display: inline-flex;
+  padding: 0;
   align-items: center;
-  gap: 0.7rem;
-  color: #f6f7fb;
-  font-family: "Tomorrow", system-ui, sans-serif;
-  font-size: 0.82rem;
-  font-weight: 800;
-  letter-spacing: 0.1em;
-  text-decoration: none;
-  pointer-events: auto;
+  gap: 0.65rem;
+  color: #f5fffd;
+  background: transparent;
+  font: 800 0.78rem/1 system-ui, sans-serif;
+  letter-spacing: 0.12em;
 }
 
-.landing-3d__brand img {
-  display: block;
-  object-fit: contain;
-  filter: drop-shadow(0 0 16px rgba(8, 159, 165, 0.32));
-}
+.landing-3d__brand img { filter: drop-shadow(0 0 16px rgba(19, 188, 157, 0.34)); }
+.landing-3d__brand > span > span { color: var(--aito-teal); }
 
-.landing-3d__brand > span > span {
-  color: var(--aito-teal);
-}
+.landing-3d__header-actions { display: flex; align-items: center; gap: 0.65rem; }
 
-.landing-3d__about-link {
+.landing-3d__about-link,
+.landing-3d__account-link {
   display: inline-flex;
-  min-height: 2.75rem;
-  padding: 0.28rem 0.32rem 0.28rem 1rem;
+  min-height: 2.55rem;
+  padding: 0.22rem 0.28rem 0.22rem 0.9rem;
   align-items: center;
-  gap: 0.76rem;
-  border: 1px solid rgba(19, 188, 157, 0.44);
+  gap: 0.55rem;
+  border: 1px solid rgba(19, 188, 157, 0.36);
   border-radius: 999px;
-  color: #f6fffd;
-  background: rgba(5, 20, 24, 0.74);
-  box-shadow: 0 14px 44px rgba(18, 173, 137, 0.16);
-  font-size: 0.74rem;
-  font-weight: 800;
-  letter-spacing: 0.08em;
-  text-decoration: none;
+  color: #effffb;
+  background: rgba(3, 20, 21, 0.72);
+  box-shadow: 0 14px 38px rgba(0, 0, 0, 0.24);
+  font: 800 0.68rem/1 system-ui, sans-serif;
+  letter-spacing: 0.05em;
   text-transform: uppercase;
-  pointer-events: auto;
   backdrop-filter: blur(14px);
-  transition: border-color 220ms ease, box-shadow 220ms ease, transform 220ms ease;
 }
 
 .landing-3d__about-link span:last-child {
   display: grid;
-  width: 2.1rem;
-  height: 2.1rem;
+  width: 2.08rem;
+  height: 2.08rem;
   border-radius: 50%;
   place-items: center;
-  color: #03110f;
-  background: linear-gradient(135deg, var(--aito-teal), var(--aito-teal-secondary));
-  font-size: 0.98rem;
-  transition: transform 220ms ease;
+  color: #03120f;
+  background: linear-gradient(135deg, var(--aito-teal), var(--aito-teal-dark));
+  font-size: 1rem;
 }
 
+.landing-3d__account-link { padding: 0.2rem 0.82rem; color: var(--aito-aqua); }
+.landing-3d__account-link .q-icon { font-size: 1.08rem; }
 .landing-3d__about-link:hover,
-.landing-3d__about-link:focus-visible {
-  border-color: var(--aito-teal);
-  outline: none;
-  box-shadow: 0 18px 58px rgba(19, 188, 157, 0.26);
-  transform: translateY(-2px);
-}
+.landing-3d__about-link:focus-visible,
+.landing-3d__account-link:hover,
+.landing-3d__account-link:focus-visible { border-color: var(--aito-teal); outline: none; box-shadow: 0 18px 52px rgba(19, 188, 157, 0.24); }
 
-.landing-3d__about-link:hover span:last-child {
-  transform: translateX(2px);
-}
-
-.landing-3d__content {
-  position: relative;
-  z-index: 2;
-}
+.landing-3d__content { position: relative; z-index: 2; }
 
 .landing-3d__section {
   position: relative;
-  display: grid;
-  width: min(100%, 1440px);
+  display: flex;
+  width: min(100%, 1480px);
   min-height: 100vh;
   min-height: 100svh;
   margin: 0 auto;
-  padding: clamp(7rem, 12vh, 9rem) clamp(1.25rem, 7vw, 7rem);
-  grid-template-columns: repeat(2, minmax(0, 1fr));
+  padding: 6.7rem clamp(1rem, 5vw, 5rem) 4.8rem;
   align-items: center;
   scroll-snap-align: start;
   scroll-snap-stop: always;
 }
 
-.landing-3d__copy {
-  position: relative;
-  width: min(100%, 34rem);
-  padding-block: 2rem;
-  transition: opacity 180ms linear, transform 180ms linear;
-  will-change: opacity, transform;
-}
+.landing-3d__section-inner { display: grid; width: 100%; grid-template-columns: minmax(0, 0.8fr) minmax(0, 1.2fr); align-items: center; gap: clamp(2rem, 6vw, 6rem); }
+.landing-3d__section--inicio .landing-3d__section-inner { grid-template-columns: minmax(0, 0.92fr) minmax(0, 1.08fr); }
+.landing-3d__section--right .landing-3d__copy { order: 2; }
+.landing-3d__section--right .landing-3d__visual { order: 1; }
+.landing-3d__section--center .landing-3d__section-inner { grid-template-columns: 1fr; }
+.landing-3d__section--center .landing-3d__copy { max-width: 52rem; margin: 0 auto; text-align: center; }
+.landing-3d__section--center .landing-3d__eyebrow { justify-content: center; }
 
-.landing-3d__copy::before {
-  position: absolute;
-  z-index: -1;
-  inset: -5rem -4rem;
-  content: "";
-  background: radial-gradient(
-    ellipse at center,
-    rgba(5, 9, 12, 0.92) 0%,
-    rgba(5, 9, 12, 0.54) 48%,
-    transparent 74%
-  );
-  pointer-events: none;
-}
+.landing-3d__copy { position: relative; z-index: 2; transition: opacity 180ms linear, transform 180ms linear; }
+.landing-3d__copy::before { position: absolute; z-index: -1; inset: -4.5rem -4rem; content: ''; border-radius: 50%; background: radial-gradient(ellipse at center, rgba(3, 9, 11, 0.92), rgba(3, 9, 11, 0.45) 48%, transparent 75%); pointer-events: none; }
+.landing-3d__eyebrow { display: flex; margin: 0 0 1rem; align-items: center; gap: 0.65rem; color: var(--aito-aqua); font-size: 0.68rem; font-weight: 800; letter-spacing: 0.16em; text-transform: uppercase; }
+.landing-3d__eyebrow::before { width: 2rem; height: 1px; content: ''; background: linear-gradient(90deg, var(--aito-teal), transparent); }
+.landing-3d__title { max-width: 13ch; margin: 0; color: #f1fffc; font-family: 'Tomorrow', 'Trebuchet MS', system-ui, sans-serif; font-size: 4.6rem; font-weight: 800; letter-spacing: 0; line-height: 0.98; text-shadow: 0 4px 30px rgba(0, 0, 0, 0.62); background: linear-gradient(135deg, #f3fffd 8%, var(--aito-teal) 68%, var(--aito-aqua)); -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent; }
+.landing-3d__section--inicio .landing-3d__title { max-width: 16ch; font-size: 3.8rem; }
+.landing-3d__section--center .landing-3d__title { max-width: 16ch; margin-inline: auto; }
+.landing-3d__description { max-width: 34rem; margin: 1.35rem 0 0; color: rgba(232, 255, 250, 0.82); font-size: 1.02rem; line-height: 1.62; text-shadow: 0 2px 18px rgba(0, 0, 0, 0.75); }
+.landing-3d__section--center .landing-3d__description { margin-inline: auto; }
 
-.landing-3d__section--left .landing-3d__copy {
-  grid-column: 1;
-}
+.landing-3d__visual { position: relative; z-index: 2; min-width: 0; }
+.landing-3d__hero-actions { display: flex; margin-top: 2rem; gap: 0.7rem; flex-wrap: wrap; }
+.landing-3d__cta { display: inline-flex; min-height: 3.25rem; padding: 0.28rem 0.32rem 0.28rem 1.1rem; align-items: center; gap: 0.85rem; border: 1px solid rgba(19, 188, 157, 0.45); border-radius: 999px; color: #effffb; background: rgba(4, 24, 25, 0.68); box-shadow: 0 16px 48px rgba(0, 0, 0, 0.24); font: 800 0.74rem/1 system-ui, sans-serif; text-decoration: none; cursor: pointer; backdrop-filter: blur(12px); transition: transform 220ms ease, border-color 220ms ease, box-shadow 220ms ease; }
+.landing-3d__cta:hover, .landing-3d__cta:focus-visible { border-color: var(--aito-aqua); outline: none; transform: translateY(-2px); box-shadow: 0 18px 58px rgba(19, 188, 157, 0.25); }
+.landing-3d__cta .q-icon { display: grid; width: 2.55rem; height: 2.55rem; border-radius: 50%; place-items: center; color: #02100e; background: linear-gradient(135deg, var(--aito-teal), var(--aito-aqua)); font-size: 1.02rem; }
+.landing-3d__cta--secondary { background: rgba(3, 16, 18, 0.42); }
+.landing-3d__cta--secondary .q-icon { color: var(--aito-aqua); background: rgba(19, 188, 157, 0.12); }
+.landing-3d__cta--surprise { color: #031411; background: linear-gradient(135deg, var(--aito-teal), var(--aito-dark, #12ad89) 54%, var(--aito-aqua)); border-color: rgba(143, 255, 238, 0.74); }
+.landing-3d__cta--surprise .q-icon { color: #dffff8; background: rgba(2, 18, 17, 0.76); }
+.landing-3d__proof-row { display: flex; margin-top: 2rem; gap: 1rem; flex-wrap: wrap; color: rgba(220, 250, 244, 0.66); font-size: 0.68rem; }
+.landing-3d__proof-row span { display: grid; padding-left: 0.8rem; border-left: 1px solid rgba(19, 188, 157, 0.35); gap: 0.18rem; }
+.landing-3d__proof-row strong { color: var(--aito-teal); font-size: 1.12rem; }
 
-.landing-3d__section--right .landing-3d__copy {
-  grid-column: 2;
-  justify-self: end;
-}
+.landing-3d__service-grid, .landing-3d__case-grid, .landing-3d__satisfaction-grid { display: grid; gap: 0.8rem; }
+.landing-3d__service-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.landing-3d__service-card, .landing-3d__case-card, .landing-3d__testimonial, .landing-3d__satisfaction-meter, .landing-3d__founder-card, .landing-3d__lead-form { border: 1px solid rgba(19, 188, 157, 0.26); border-radius: 0.8rem; background: linear-gradient(145deg, rgba(7, 35, 35, 0.72), rgba(2, 15, 17, 0.64)); box-shadow: 0 20px 60px rgba(0, 0, 0, 0.24), inset 0 1px 0 rgba(255, 255, 255, 0.08); backdrop-filter: blur(14px); }
+.landing-3d__service-card { padding: 1.1rem; }
+.landing-3d__icon-bubble, .landing-3d__case-icon { display: grid; width: 2.35rem; height: 2.35rem; border-radius: 0.7rem; place-items: center; color: #02110e; background: linear-gradient(135deg, var(--aito-teal), var(--aito-aqua)); }
+.landing-3d__service-card h3, .landing-3d__case-card h3 { margin: 0.8rem 0 0.35rem; color: #f4fffd; font-size: 1rem; }
+.landing-3d__service-card p, .landing-3d__case-card p { margin: 0; color: rgba(225, 255, 249, 0.75); font-size: 0.78rem; line-height: 1.5; }
+.landing-3d__service-card ul { display: grid; margin: 0.85rem 0 0; padding: 0; gap: 0.3rem; color: rgba(191, 245, 235, 0.7); font-size: 0.68rem; list-style: none; }
+.landing-3d__service-card li::before { margin-right: 0.35rem; content: '·'; color: var(--aito-teal); font-weight: 900; }
+.landing-3d__case-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+.landing-3d__case-card { display: flex; min-height: 17rem; padding: 1.1rem; flex-direction: column; }
+.landing-3d__case-kicker { margin-top: 1rem !important; color: var(--aito-aqua) !important; font-size: 0.68rem !important; font-weight: 800; }
+.landing-3d__case-card h3 { font-size: 1.15rem; }
+.landing-3d__tag-row { display: flex; margin-top: auto; gap: 0.35rem; flex-wrap: wrap; }
+.landing-3d__tag-row span { padding: 0.26rem 0.42rem; border: 1px solid rgba(19, 188, 157, 0.25); border-radius: 999px; color: var(--aito-aqua); font-size: 0.58rem; }
+.landing-3d__case-link, .landing-3d__dialog-link { display: inline-flex; margin-top: 0.9rem; align-items: center; gap: 0.3rem; color: var(--aito-aqua); font-size: 0.68rem; font-weight: 800; text-decoration: none; }
+.landing-3d__case-link .q-icon, .landing-3d__dialog-link .q-icon { font-size: 0.95rem; }
 
-.landing-3d__section--center .landing-3d__copy {
-  width: min(100%, 47rem);
-  grid-column: 1 / -1;
-  justify-self: center;
-  text-align: center;
-}
+.landing-3d__satisfaction-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.landing-3d__satisfaction-meter { display: flex; min-height: 11rem; padding: 1.2rem; flex-direction: column; align-items: flex-start; justify-content: center; }
+.landing-3d__satisfaction-meter .q-icon { color: #ff7eaa; font-size: 2rem; }
+.landing-3d__satisfaction-meter strong { margin-top: 0.45rem; color: var(--aito-aqua); font-size: 3rem; line-height: 1; }
+.landing-3d__satisfaction-meter span { color: rgba(238, 255, 251, 0.82); font-size: 0.8rem; }
+.landing-3d__satisfaction-meter small { margin-top: 0.75rem; color: rgba(225, 255, 249, 0.62); font-size: 0.68rem; }
+.landing-3d__testimonial { padding: 1rem; }
+.landing-3d__testimonial-head { display: flex; align-items: center; gap: 0.65rem; }
+.landing-3d__testimonial-head img, .landing-3d__avatar-placeholder { display: grid; width: 2.2rem; height: 2.2rem; border-radius: 50%; object-fit: cover; place-items: center; color: var(--aito-aqua); background: rgba(19, 188, 157, 0.16); }
+.landing-3d__testimonial-head div { display: grid; gap: 0.12rem; }
+.landing-3d__testimonial-head strong { color: #effffb; font-size: 0.76rem; }
+.landing-3d__testimonial-head small { color: rgba(225, 255, 249, 0.55); font-size: 0.62rem; }
+.landing-3d__testimonial p { margin: 1rem 0 0; color: rgba(233, 255, 250, 0.78); font-size: 0.8rem; line-height: 1.55; }
 
-.landing-3d__section--center .landing-3d__copy::before {
-  inset: -7rem -10rem;
-}
+.landing-3d__founder-card { display: grid; padding: 1rem; grid-template-columns: auto 1fr auto; align-items: center; gap: 1rem; }
+.landing-3d__founder-image { width: 5.2rem; height: 5.2rem; border: 1px solid rgba(143, 255, 238, 0.5); border-radius: 50%; object-fit: cover; box-shadow: 0 0 28px rgba(19, 188, 157, 0.2); }
+.landing-3d__founder-role { color: var(--aito-aqua); font-size: 0.66rem; font-weight: 800; letter-spacing: 0.08em; text-transform: uppercase; }
+.landing-3d__founder-card p { margin: 0.55rem 0 0; color: rgba(230, 255, 250, 0.78); font-size: 0.84rem; line-height: 1.5; }
+.landing-3d__founder-socials { display: flex; gap: 0.45rem; }
+.landing-3d__founder-socials a { display: grid; width: 2.25rem; height: 2.25rem; border: 1px solid rgba(19, 188, 157, 0.34); border-radius: 50%; place-items: center; color: var(--aito-aqua); background: rgba(19, 188, 157, 0.1); }
 
-.landing-3d__eyebrow {
-  display: flex;
-  margin: 0 0 1.4rem;
-  align-items: center;
-  gap: 0.8rem;
-  color: var(--aito-teal);
-  font-size: clamp(0.68rem, 1vw, 0.78rem);
-  font-weight: 700;
-  letter-spacing: 0.16em;
-  text-transform: uppercase;
-}
+.landing-3d__contact-copy { display: grid; margin-top: 1.5rem; gap: 0.7rem; }
+.landing-3d__text-link { display: inline-flex; width: fit-content; padding: 0; align-items: center; gap: 0.45rem; border: 0; color: var(--aito-aqua); background: transparent; font-size: 0.72rem; cursor: pointer; }
+.landing-3d__text-link .q-icon { font-size: 1.05rem; }
+.landing-3d__lead-form { padding: 1.25rem; }
+.landing-3d__lead-form :deep(.q-field__control) { min-height: 2.85rem; color: #f0fffc; background: rgba(5, 33, 34, 0.86); }
+.landing-3d__lead-form :deep(.q-field__native), .landing-3d__lead-form :deep(.q-field__input) { color: #f0fffc !important; caret-color: var(--aito-aqua); }
+.landing-3d__lead-form :deep(.q-field__label) { color: rgba(208, 250, 242, 0.72); }
+.landing-3d__lead-form :deep(.q-field--focused .q-field__label), .landing-3d__lead-form :deep(.q-field--float .q-field__label) { color: var(--aito-aqua); }
+.landing-3d__lead-form :deep(.q-field--outlined .q-field__control:before) { border-color: rgba(80, 212, 190, 0.42); }
+.landing-3d__lead-form :deep(.q-field--outlined:hover .q-field__control:before), .landing-3d__lead-form :deep(.q-field--focused .q-field__control:after) { border-color: var(--aito-aqua); }
+.landing-3d__lead-form :deep(.q-field__marginal) { color: var(--aito-aqua); }
+.landing-3d__form-heading { display: flex; align-items: center; gap: 0.5rem; color: var(--aito-aqua); font-size: 0.82rem; font-weight: 800; }
+.landing-3d__form-grid { display: grid; margin-top: 1rem; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0.65rem; }
+.landing-3d__form-full { grid-column: 1 / -1; }
+.landing-3d__form-actions { display: flex; margin-top: 0.85rem; gap: 0.55rem; flex-wrap: wrap; }
+.landing-3d__form-submit, .landing-3d__auth-submit { border-radius: 999px; color: #00bb96; background: linear-gradient(135deg, var(--aito-teal), var(--aito-aqua)); font-weight: 800; }
+.landing-3d__referral-button { display: inline-flex; min-height: 2.7rem; padding: 0.55rem 0.8rem; align-items: center; gap: 0.4rem; border: 1px solid rgba(143, 255, 238, 0.36); border-radius: 999px; color: var(--aito-aqua); background: rgba(19, 188, 157, 0.08); font-size: 0.7rem; cursor: pointer; }
 
-.landing-3d__eyebrow::before {
-  width: 2.2rem;
-  height: 1px;
-  content: "";
-  background: linear-gradient(90deg, var(--aito-green), transparent);
-}
+.landing-3d__ambient-panel { display: grid; min-height: 13rem; padding: 2rem; border: 1px solid rgba(19, 188, 157, 0.24); border-radius: 1rem; place-items: center; text-align: center; background: rgba(3, 24, 25, 0.5); box-shadow: 0 24px 70px rgba(0, 0, 0, 0.24); backdrop-filter: blur(14px); }
+.landing-3d__ambient-panel .q-icon { color: var(--aito-teal); font-size: 2.5rem; }
+.landing-3d__ambient-panel strong { color: #f1fffc; font-size: 1.25rem; }
+.landing-3d__ambient-panel span:last-child { color: rgba(225, 255, 249, 0.65); font-size: 0.8rem; }
 
-.landing-3d__section--center .landing-3d__eyebrow {
-  justify-content: center;
-}
+.landing-3d__scroll-cue { position: absolute; bottom: 1.6rem; left: clamp(1rem, 5vw, 5rem); display: flex; align-items: center; gap: 0.7rem; color: rgba(220, 250, 244, 0.5); font-size: 0.62rem; letter-spacing: 0.14em; text-transform: uppercase; }
+.landing-3d__scroll-cue i { display: block; width: 3.4rem; height: 1px; background: linear-gradient(90deg, transparent, var(--aito-teal), transparent); }
+.landing-3d__progress { position: fixed; top: 50%; right: 1.5rem; z-index: 7; display: flex; flex-direction: column; gap: 0.45rem; transform: translateY(-50%); }
+.landing-3d__progress button { display: grid; width: 1.3rem; height: 1.3rem; padding: 0; border: 0; place-items: center; background: transparent; cursor: pointer; }
+.landing-3d__progress button span { display: block; width: 3px; height: 3px; border-radius: 999px; background: rgba(220, 250, 244, 0.3); transition: height 200ms ease, background 200ms ease; }
+.landing-3d__progress button.is-active span { height: 1.25rem; background: linear-gradient(var(--aito-aqua), var(--aito-teal)); }
+.landing-3d__counter { position: fixed; right: 3.8rem; bottom: 1.65rem; z-index: 7; display: flex; margin: 0; align-items: center; gap: 0.6rem; color: rgba(220, 250, 244, 0.44); font: 0.62rem/1 system-ui, sans-serif; letter-spacing: 0.12em; }
+.landing-3d__counter span:first-child { color: var(--aito-aqua); }
+.landing-3d__counter i { width: 1.45rem; height: 1px; background: rgba(220, 250, 244, 0.22); }
+.landing-3d__ai-float { position: fixed; right: 1.3rem; bottom: 4.5rem; z-index: 8; display: grid; width: 3.5rem; height: 3.5rem; padding: 0; border: 1px solid rgba(19, 188, 157, 0.55); border-radius: 1rem; place-items: center; background: linear-gradient(135deg, var(--aito-teal), var(--aito-teal-dark)); box-shadow: 0 15px 40px rgba(19, 188, 157, 0.34); cursor: pointer; }
+.landing-3d__ai-float img { width: 2.45rem; height: 2.45rem; object-fit: contain; }
 
-.landing-3d__title {
-  max-width: 13ch;
-  margin: 0;
-  font-family: "Tomorrow", "Montserrat", system-ui, sans-serif;
-  font-size: clamp(2.5rem, 5.2vw, 5.5rem);
-  font-weight: 500;
-  letter-spacing: -0.045em;
-  line-height: 0.98;
-  text-wrap: balance;
-}
+.landing-3d__dialog-card { width: min(92vw, 30rem); border: 1px solid rgba(19, 188, 157, 0.42); border-radius: 0.95rem; color: #effffb; background: radial-gradient(circle at 10% 0%, rgba(19, 188, 157, 0.2), transparent 14rem), linear-gradient(145deg, rgba(3, 23, 24, 0.98), rgba(1, 10, 12, 0.98)); box-shadow: 0 30px 100px rgba(0, 0, 0, 0.55); }
+.landing-3d__dialog-card :deep(.q-field__control) { min-height: 2.85rem; color: #f0fffc; background: rgba(5, 33, 34, 0.86); }
+.landing-3d__dialog-card :deep(.q-field__native), .landing-3d__dialog-card :deep(.q-field__input) { color: #f0fffc !important; caret-color: var(--aito-aqua); }
+.landing-3d__dialog-card :deep(.q-field__label) { color: rgba(208, 250, 242, 0.72); }
+.landing-3d__dialog-card :deep(.q-field--focused .q-field__label), .landing-3d__dialog-card :deep(.q-field--float .q-field__label) { color: var(--aito-aqua); }
+.landing-3d__dialog-card :deep(.q-field--outlined .q-field__control:before) { border-color: rgba(80, 212, 190, 0.42); }
+.landing-3d__dialog-card :deep(.q-field--outlined:hover .q-field__control:before), .landing-3d__dialog-card :deep(.q-field--focused .q-field__control:after) { border-color: var(--aito-aqua); }
+.landing-3d__dialog-card :deep(.q-field__bottom) { padding-top: 0.25rem; color: rgba(208, 250, 242, 0.72); }
+.landing-3d__dialog-card :deep(.q-field__messages) { color: #ff9eaf; }
+.landing-3d__dialog-card :deep(.q-field--error .q-field__label), .landing-3d__dialog-card :deep(.q-field--error .q-field__native) { color: #ff9eaf !important; }
+.landing-3d__dialog-card :deep(.q-field__marginal) { color: var(--aito-aqua); }
+.landing-3d__dialog-card :deep(.q-btn--flat) { color: #dffff8; }
+.landing-3d__dialog-head { display: flex; padding: 1rem 1.1rem 0.45rem; align-items: flex-start; justify-content: space-between; }
+.landing-3d__dialog-head h3 { margin: 0.25rem 0 0; color: #f2fffc; font-size: 1.2rem; }
+.landing-3d__dialog-kicker { color: var(--aito-aqua); font-size: 0.62rem; font-weight: 800; letter-spacing: 0.12em; text-transform: uppercase; }
+.landing-3d__dialog-body { padding: 0.5rem 1.1rem 1.25rem; }
+.landing-3d__dialog-body p { margin: 0; color: rgba(230, 255, 250, 0.76); line-height: 1.6; }
+.landing-3d__auth-tabs { display: flex; padding: 0.5rem 1.1rem; gap: 0.45rem; border-top: 1px solid rgba(19, 188, 157, 0.16); border-bottom: 1px solid rgba(19, 188, 157, 0.16); }
+.landing-3d__auth-tabs button { padding: 0.42rem 0.65rem; border: 0; border-radius: 999px; color: rgba(225, 255, 249, 0.62); background: transparent; font-size: 0.68rem; cursor: pointer; }
+.landing-3d__auth-tabs button.is-active { color: #03120f; background: var(--aito-teal); font-weight: 800; }
+.landing-3d__auth-separator { display: flex; margin: 1rem 0; align-items: center; gap: 0.65rem; color: rgba(225, 255, 249, 0.4); font-size: 0.68rem; }
+.landing-3d__auth-separator::before, .landing-3d__auth-separator::after { flex: 1; height: 1px; content: ''; background: rgba(19, 188, 157, 0.2); }
+.landing-3d__google-button { display: flex; width: 100%; min-height: 2.7rem; align-items: center; justify-content: center; gap: 0.5rem; border: 1px solid rgba(19, 188, 157, 0.3); border-radius: 999px; color: #effffb; background: rgba(19, 188, 157, 0.08); font-size: 0.74rem; cursor: pointer; }
+.landing-3d__google-button .q-icon { color: var(--aito-aqua); }
+.landing-3d__auth-note { display: block; margin-top: 0.9rem; color: rgba(225, 255, 249, 0.42); font-size: 0.62rem; line-height: 1.45; }
 
-.landing-3d__section--center .landing-3d__title {
-  max-width: 16ch;
-  margin-inline: auto;
-}
-
-.landing-3d__description {
-  max-width: 32rem;
-  margin: clamp(1.4rem, 3vw, 2rem) 0 0;
-  color: var(--aito-muted);
-  font-size: clamp(0.95rem, 1.35vw, 1.12rem);
-  font-weight: 400;
-  backdrop-filter: blur(12px);
-  line-height: 1.75;
-  text-wrap: pretty;
-}
-
-.landing-3d__section--center .landing-3d__description {
-  margin-inline: auto;
-}
-
-.landing-3d__actions {
-  display: flex;
-  margin-top: 2.2rem;
-  align-items: center;
-  justify-content: center;
-  gap: 0.8rem;
-  flex-wrap: wrap;
-}
-
-.landing-3d__cta {
-  display: inline-flex;
-  min-height: 3.8rem;
-  padding: 0.3rem 0.35rem 0.3rem 1.45rem;
-  align-items: center;
-  gap: 1.25rem;
-  border: 1px solid rgba(8, 159, 165, 0.52);
-  border-radius: 999px;
-  color: #f6f7fb;
-  background: rgba(5, 20, 24, 0.72);
-  box-shadow: 0 16px 50px rgba(8, 159, 165, 0.16);
-  font-size: 0.86rem;
-  font-weight: 700;
-  letter-spacing: 0.04em;
-  text-decoration: none;
-  cursor: pointer;
-  backdrop-filter: blur(12px);
-  transition: border-color 220ms ease, box-shadow 220ms ease, transform 220ms ease;
-}
-
-button.landing-3d__cta {
-  font: inherit;
-}
-
-.landing-3d__cta--primary span:last-child {
-  display: grid;
-  width: 3rem;
-  height: 3rem;
-  border-radius: 50%;
-  place-items: center;
-  color: #041013;
-  background: linear-gradient(135deg, var(--aito-green), var(--aito-teal-secondary));
-  font-size: 1.1rem;
-  transition: transform 220ms ease;
-}
-
-.landing-3d__cta:hover,
-.landing-3d__cta:focus-visible {
-  border-color: var(--aito-green);
-  outline: none;
-  box-shadow: 0 18px 60px rgba(28, 189, 107, 0.22);
-  transform: translateY(-2px);
-}
-
-.landing-3d__cta--primary:hover span:last-child {
-  transform: rotate(45deg);
-}
-
-.landing-3d__cta--secondary {
-  padding-right: 0.35rem;
-  border-color: rgba(14, 167, 148, 0.38);
-  background: rgba(5, 16, 19, 0.52);
-  box-shadow: none;
-}
-
-.landing-3d__cta--secondary span:last-child {
-  display: grid;
-  width: 3rem;
-  height: 3rem;
-  border: 1px solid rgba(14, 167, 148, 0.4);
-  border-radius: 50%;
-  place-items: center;
-  color: var(--aito-green);
-  background: rgba(8, 159, 165, 0.09);
-  font-size: 1.1rem;
-  transition: color 220ms ease, background 220ms ease, transform 220ms ease;
-}
-
-.landing-3d__cta--secondary:hover span:last-child {
-  color: #041013;
-  background: var(--aito-green);
-  transform: translateX(2px);
-}
-
-.landing-3d__cta--surprise {
-  width: min(100%, 18rem);
-  max-width: 18rem;
-  margin-inline: auto;
-  flex: 0 1 18rem;
-  order: 3;
-  justify-content: center;
-  border-color: rgba(87, 214, 190, 0.78);
-  color: #031211;
-  background:
-    radial-gradient(circle at 20% 10%, rgba(255, 255, 255, 0.34), transparent 28%),
-    linear-gradient(135deg, var(--aito-teal) 0%, var(--aito-teal-secondary) 48%, var(--aito-green) 100%);
-  box-shadow: 0 18px 58px rgba(19, 188, 157, 0.34);
-}
-
-.landing-3d__cta--surprise span:last-child {
-  display: grid;
-  width: 3rem;
-  height: 3rem;
-  border-radius: 50%;
-  place-items: center;
-  color: #dffff8;
-  background: rgba(2, 13, 13, 0.72);
-  font-size: 1.2rem;
-  transition: transform 220ms ease, background 220ms ease;
-}
-
-.landing-3d__cta--surprise:hover span:last-child,
-.landing-3d__cta--surprise:focus-visible span:last-child {
-  background: rgba(2, 13, 13, 0.9);
-  transform: rotate(18deg) scale(1.05);
-}
-
-.landing-3d__section--dance {
-  align-items: end;
-  padding-bottom: clamp(2rem, 5vh, 4rem);
-}
-
-.landing-3d__section--dance .landing-3d__copy {
-  width: min(100%, 34rem);
-  padding-bottom: 0;
-  align-self: end;
-}
-
-.landing-3d__section--dance .landing-3d__copy::before {
-  inset: -4rem -5rem -5rem;
-  background: radial-gradient(
-    ellipse at center,
-    rgba(5, 22, 24, 0.82) 0%,
-    rgba(5, 9, 12, 0.5) 52%,
-    transparent 78%
-  );
-}
-
-.landing-3d__section--dance .landing-3d__title {
-  position: absolute;
-  width: 1px;
-  height: 1px;
-  overflow: hidden;
-  clip: rect(0 0 0 0);
-  white-space: nowrap;
-}
-
-.landing-3d__section--dance .landing-3d__eyebrow {
-  position: absolute;
-  width: 1px;
-  height: 1px;
-  overflow: hidden;
-  clip: rect(0 0 0 0);
-  white-space: nowrap;
-}
-
-.landing-3d__dance-panel {
-  display: flex;
-  margin-top: 0;
-  align-items: center;
-  justify-content: center;
-  gap: 1rem;
-  flex-wrap: wrap;
-}
-
-.landing-3d__speech-bubble {
-  position: relative;
-  max-width: min(100%, 25rem);
-  margin: 0;
-  padding: 1rem 1.15rem;
-  border: 1px solid rgba(19, 188, 157, 0.48);
-  border-radius: 1.15rem;
-  color: #effffb;
-  background:
-    linear-gradient(135deg, rgba(19, 188, 157, 0.22), rgba(18, 173, 137, 0.08)),
-    rgba(3, 17, 19, 0.76);
-  box-shadow:
-    0 18px 54px rgba(0, 0, 0, 0.34),
-    inset 0 1px 0 rgba(255, 255, 255, 0.12);
-  font-size: clamp(0.96rem, 1.6vw, 1.16rem);
-  font-weight: 800;
-  line-height: 1.35;
-  backdrop-filter: blur(16px);
-}
-
-.landing-3d__speech-bubble::after {
-  position: absolute;
-  right: 2.1rem;
-  top: -0.64rem;
-  width: 1.1rem;
-  height: 1.1rem;
-  border-top: 1px solid rgba(19, 188, 157, 0.42);
-  border-left: 1px solid rgba(19, 188, 157, 0.42);
-  content: "";
-  background: rgba(4, 24, 25, 0.9);
-  transform: rotate(45deg);
-}
-
-.landing-3d__audio-toggle {
-  display: grid;
-  width: 3.65rem;
-  height: 3.65rem;
-  padding: 0;
-  border: 1px solid rgba(19, 188, 157, 0.48);
-  border-radius: 50%;
-  place-items: center;
-  color: #041013;
-  background: linear-gradient(135deg, var(--aito-teal), var(--aito-teal-secondary));
-  box-shadow: 0 18px 52px rgba(19, 188, 157, 0.24);
-  cursor: pointer;
-  transition: transform 220ms ease, box-shadow 220ms ease, filter 220ms ease;
-}
-
-.landing-3d__audio-toggle .material-icons {
-  font-size: 1.55rem;
-}
-
-.landing-3d__audio-toggle:hover,
-.landing-3d__audio-toggle:focus-visible {
-  outline: none;
-  filter: saturate(1.16);
-  box-shadow: 0 20px 64px rgba(19, 188, 157, 0.32);
-  transform: translateY(-2px);
-}
-
-.landing-3d__audio-toggle.is-active {
-  color: #dffff8;
-  background:
-    radial-gradient(circle at 30% 20%, rgba(255, 255, 255, 0.32), transparent 32%),
-    linear-gradient(135deg, rgba(19, 188, 157, 0.96), rgba(7, 70, 68, 0.95));
-}
-
-.landing-3d__credits-toggle {
-  display: grid;
-  width: 2.45rem;
-  height: 2.45rem;
-  padding: 0;
-  border: 1px solid rgba(19, 188, 157, 0.4);
-  border-radius: 50%;
-  place-items: center;
-  color: #dffff8;
-  background: rgba(3, 17, 19, 0.74);
-  box-shadow: 0 14px 42px rgba(0, 0, 0, 0.24);
-  font: inherit;
-  font-size: 1rem;
-  font-weight: 900;
-  cursor: pointer;
-  backdrop-filter: blur(14px);
-  transition: transform 220ms ease, border-color 220ms ease, background 220ms ease;
-}
-
-.landing-3d__credits-toggle:hover,
-.landing-3d__credits-toggle:focus-visible {
-  border-color: var(--aito-teal);
-  outline: none;
-  background: rgba(19, 188, 157, 0.18);
-  transform: translateY(-2px);
-}
-
-.landing-3d__credits-card {
-  width: min(92vw, 28rem);
-  border: 1px solid rgba(19, 188, 157, 0.38);
-  border-radius: 1rem;
-  color: #effffb;
-  background:
-    radial-gradient(circle at 18% 0%, rgba(19, 188, 157, 0.2), transparent 15rem),
-    linear-gradient(145deg, rgba(3, 20, 23, 0.98), rgba(1, 9, 11, 0.98));
-  box-shadow: 0 28px 90px rgba(0, 0, 0, 0.5);
-  overflow: hidden;
-}
-
-.landing-3d__credits-head {
-  display: flex;
-  padding: 1.15rem 1.2rem 0.5rem;
-  align-items: center;
-  justify-content: space-between;
-  gap: 1rem;
-}
-
-.landing-3d__credits-head p {
-  margin: 0;
-  color: #ffffff;
-  font-family: "Tomorrow", "Montserrat", system-ui, sans-serif;
-  font-size: 1rem;
-  font-weight: 900;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-}
-
-.landing-3d__credits-close {
-  display: grid;
-  width: 2.4rem;
-  height: 2.4rem;
-  padding: 0;
-  border: 1px solid rgba(19, 188, 157, 0.28);
-  border-radius: 50%;
-  place-items: center;
-  color: #dffff8;
-  background: rgba(255, 255, 255, 0.04);
-  cursor: pointer;
-}
-
-.landing-3d__credits-close .material-icons {
-  font-size: 1.2rem;
-}
-
-.landing-3d__credits-close:hover,
-.landing-3d__credits-close:focus-visible {
-  outline: none;
-  background: rgba(19, 188, 157, 0.16);
-}
-
-.landing-3d__credits-body {
-  display: grid;
-  padding: 0.55rem 1.2rem 1.35rem;
-  gap: 0.85rem;
-}
-
-.landing-3d__credits-body p {
-  margin: 0;
-  color: rgba(239, 255, 251, 0.82);
-  font-size: 0.96rem;
-  line-height: 1.55;
-}
-
-.landing-3d__credits-body a {
-  color: var(--aito-teal);
-  font-weight: 900;
-  text-decoration: none;
-}
-
-.landing-3d__credits-body a:hover,
-.landing-3d__credits-body a:focus-visible {
-  color: #57d6be;
-  outline: none;
-  text-decoration: underline;
-}
-
-.landing-3d__scroll-cue {
-  position: absolute;
-  bottom: clamp(1.5rem, 4vh, 3rem);
-  left: clamp(1.25rem, 7vw, 7rem);
-  display: flex;
-  align-items: center;
-  gap: 0.9rem;
-  color: rgba(220, 232, 235, 0.42);
-  font-size: 0.64rem;
-  font-weight: 700;
-  letter-spacing: 0.18em;
-  text-transform: uppercase;
-}
-
-.landing-3d__scroll-cue i {
-  position: relative;
-  display: block;
-  width: 3.5rem;
-  height: 1px;
-  overflow: hidden;
-  background: rgba(220, 232, 235, 0.15);
-}
-
-.landing-3d__scroll-cue i::after {
-  position: absolute;
-  inset: 0;
-  content: "";
-  background: linear-gradient(90deg, transparent, var(--aito-teal), transparent);
-  animation: scroll-cue 1.8s ease-in-out infinite;
-}
-
-.landing-3d__progress {
-  position: fixed;
-  top: 50%;
-  right: clamp(1rem, 2.5vw, 2.5rem);
-  z-index: 5;
-  display: flex;
-  flex-direction: column;
-  gap: 0.5rem;
-  transform: translateY(-50%);
-}
-
-.landing-3d__progress button {
-  display: grid;
-  width: 1.5rem;
-  height: 1.5rem;
-  padding: 0;
-  border: 0;
-  place-items: center;
-  background: transparent;
-  cursor: pointer;
-}
-
-.landing-3d__progress button span {
-  display: block;
-  width: 3px;
-  height: 3px;
-  border-radius: 99px;
-  background: rgba(220, 232, 235, 0.32);
-  transition: width 220ms ease, height 220ms ease, background 220ms ease;
-}
-
-.landing-3d__progress button.is-active span {
-  width: 5px;
-  height: 1.5rem;
-  background: linear-gradient(var(--aito-green), var(--aito-teal));
-}
-
-.landing-3d__progress button:focus-visible {
-  border-radius: 99px;
-  outline: 1px solid var(--aito-teal);
-}
-
-.landing-3d__progress button:disabled {
-  cursor: not-allowed;
-  opacity: 0.28;
-}
-
-.landing-3d__counter {
-  position: fixed;
-  right: clamp(1.25rem, 5vw, 5rem);
-  bottom: clamp(1.25rem, 3vw, 2.5rem);
-  z-index: 5;
-  display: flex;
-  margin: 0;
-  align-items: center;
-  gap: 0.65rem;
-  color: rgba(220, 232, 235, 0.42);
-  font-family: "Tomorrow", system-ui, sans-serif;
-  font-size: 0.62rem;
-  letter-spacing: 0.12em;
-}
-
-.landing-3d__counter span:first-child {
-  color: var(--aito-teal);
-}
-
-.landing-3d__counter i {
-  width: 1.7rem;
-  height: 1px;
-  background: rgba(220, 232, 235, 0.2);
-}
-
-@keyframes scroll-cue {
-  from {
-    transform: translateX(-100%);
-  }
-  to {
-    transform: translateX(100%);
-  }
+@media (max-width: 1100px) {
+  .landing-3d__title { font-size: 3.7rem; }
+  .landing-3d__section--inicio .landing-3d__title { font-size: 3.25rem; }
+  .landing-3d__section-inner { gap: 2rem; }
+  .landing-3d__case-grid { grid-template-columns: 1fr; }
 }
 
 @media (max-width: 767px) {
-  .landing-3d__atmosphere {
-    background:
-      linear-gradient(90deg, rgba(5, 9, 12, 0.18), transparent 48%, rgba(5, 9, 12, 0.12)),
-      radial-gradient(circle at 50% 50%, transparent 46%, rgba(1, 4, 6, 0.34) 100%);
-  }
-
-  .landing-3d__header {
-    padding: 1.1rem 1.15rem;
-  }
-
-  .landing-3d__progress {
-    display: none;
-  }
-
-  .landing-3d__about-link {
-    min-height: 2.45rem;
-    padding-left: 0.86rem;
-    gap: 0.56rem;
-    font-size: 0.64rem;
-    letter-spacing: 0.05em;
-  }
-
-  .landing-3d__about-link span:last-child {
-    width: 1.86rem;
-    height: 1.86rem;
-  }
-
-  .landing-3d__section {
-    padding: 6.5rem 1.25rem 5rem;
-    grid-template-columns: 1fr;
-    align-items: start;
-  }
-
-  .landing-3d__copy,
-  .landing-3d__section--left .landing-3d__copy,
-  .landing-3d__section--right .landing-3d__copy {
-    width: 100%;
-    padding-top: clamp(1rem, 7vh, 4rem);
-    grid-column: 1;
-    justify-self: start;
-  }
-
-  .landing-3d__section--center {
-    align-items: center;
-  }
-
-  .landing-3d__section--center .landing-3d__copy {
-    padding-top: 0;
-  }
-
-  .landing-3d__copy::before {
-    inset: -3rem -2rem -4rem;
-    opacity: 0.68;
-    background: radial-gradient(
-      ellipse at top left,
-      rgba(5, 9, 12, 0.82) 0%,
-      rgba(5, 9, 12, 0.48) 48%,
-      transparent 76%
-    );
-  }
-
-  .landing-3d__section--center .landing-3d__copy::before {
-    inset: -5rem -2rem;
-    opacity: 0.62;
-    background: radial-gradient(
-      ellipse at center,
-      rgba(5, 9, 12, 0.78),
-      rgba(5, 9, 12, 0.42) 52%,
-      transparent 78%
-    );
-  }
-
-  .landing-3d__title {
-    max-width: 12ch;
-    font-size: clamp(2.25rem, 12vw, 4rem);
-    text-shadow: 0 2px 22px rgba(0, 0, 0, 0.72);
-  }
-
-  .landing-3d__description {
-    max-width: 26rem;
-    font-size: 0.94rem;
-    backdrop-filter: none;
-    line-height: 1.65;
-    text-shadow: 0 2px 18px rgba(0, 0, 0, 0.76);
-  }
-
-  .landing-3d__eyebrow {
-    text-shadow: 0 2px 16px rgba(0, 0, 0, 0.72);
-  }
-
-  .landing-3d__scroll-cue {
-    bottom: 1.5rem;
-    left: 1.25rem;
-  }
-
-  .landing-3d__counter {
-    right: 1.2rem;
-    bottom: 1.2rem;
-  }
-
-  .landing-3d__actions {
-    width: 100%;
-    flex-direction: column;
-    align-items: stretch;
-  }
-
-  .landing-3d__cta {
-    width: 100%;
-    justify-content: space-between;
-  }
-
-  #consultoria.landing-3d__section {
-    padding-top: 5.35rem;
-    padding-bottom: 4.2rem;
-    align-items: center;
-  }
-
-  #consultoria .landing-3d__copy {
-    padding-top: 0;
-    transform: none !important;
-  }
-
-  #consultoria .landing-3d__eyebrow {
-    margin-bottom: 0.9rem;
-  }
-
-  #consultoria .landing-3d__title {
-    max-width: 14ch;
-    font-size: clamp(1.92rem, 8.4vw, 3.05rem);
-    line-height: 1;
-  }
-
-  #consultoria .landing-3d__description {
-    max-width: 22rem;
-    margin-top: 0.95rem;
-    font-size: 0.88rem;
-    line-height: 1.48;
-  }
-
-  #consultoria .landing-3d__actions {
-    margin-top: 1.18rem;
-    gap: 0.62rem;
-  }
-
-  #consultoria .landing-3d__cta {
-    min-height: 3.18rem;
-    padding-left: 1.1rem;
-    font-size: 0.78rem;
-  }
-
-  .landing-3d__cta--surprise {
-    width: min(100%, 18rem);
-    max-width: 18rem;
-    align-self: center;
-    flex-basis: auto;
-    justify-content: center;
-  }
-
-  .landing-3d__section--dance {
-    align-items: end;
-    padding-bottom: 4.5rem;
-  }
-
-  .landing-3d__section--dance .landing-3d__copy {
-    width: 100%;
-    padding-bottom: 0;
-  }
-
-  .landing-3d__section--dance .landing-3d__title {
-    font-size: clamp(1.75rem, 8vw, 2.55rem);
-  }
-
-  .landing-3d__dance-panel {
-    align-items: flex-end;
-    gap: 0.8rem;
-  }
-
-  .landing-3d__speech-bubble {
-    flex: 1 1 13rem;
-    padding: 0.9rem 1rem;
-    font-size: 0.94rem;
-  }
-
-  .landing-3d__audio-toggle {
-    width: 3.25rem;
-    height: 3.25rem;
-    flex: 0 0 auto;
-  }
-
-  .landing-3d__credits-toggle {
-    width: 2.45rem;
-    height: 2.45rem;
-    flex: 0 0 auto;
-  }
+  .landing-3d__header { padding: 1rem 0.9rem; }
+  .landing-3d__account-label { display: none; }
+  .landing-3d__account-link { padding: 0.25rem 0.62rem; }
+  .landing-3d__about-link { min-height: 2.35rem; padding-left: 0.7rem; font-size: 0.6rem; }
+  .landing-3d__about-link span:last-child { width: 1.8rem; height: 1.8rem; }
+  .landing-3d__progress { display: none; }
+  .landing-3d__section { padding: 5.7rem 0.9rem 4.6rem; align-items: flex-start; }
+  .landing-3d__section-inner, .landing-3d__section--right .landing-3d__section-inner { display: flex; flex-direction: column; gap: 1rem; }
+  .landing-3d__section--right .landing-3d__copy, .landing-3d__section--right .landing-3d__visual { order: initial; }
+  .landing-3d__copy, .landing-3d__visual { width: 100%; }
+  .landing-3d__copy::before { inset: -2rem -1rem; background: radial-gradient(ellipse at center, rgba(3, 9, 11, 0.9), rgba(3, 9, 11, 0.38) 58%, transparent 78%); }
+  .landing-3d__title { max-width: 13ch; font-size: 2.55rem; line-height: 1.02; }
+  .landing-3d__section--inicio .landing-3d__title { font-size: 2.55rem; }
+  .landing-3d__description { margin-top: 0.9rem; font-size: 0.88rem; line-height: 1.54; }
+  .landing-3d__hero-actions { margin-top: 1.2rem; flex-direction: column; align-items: stretch; }
+  .landing-3d__cta { width: 100%; justify-content: space-between; }
+  .landing-3d__cta--surprise { justify-content: center; }
+  .landing-3d__proof-row { margin-top: 1.3rem; gap: 0.75rem; }
+  .landing-3d__proof-row span { font-size: 0.58rem; }
+  .landing-3d__proof-row strong { font-size: 0.95rem; }
+  .landing-3d__service-grid, .landing-3d__satisfaction-grid { grid-template-columns: 1fr; }
+  .landing-3d__service-card { padding: 0.85rem; }
+  .landing-3d__founder-card { grid-template-columns: auto 1fr; }
+  .landing-3d__founder-socials { grid-column: 1 / -1; justify-content: flex-end; }
+  .landing-3d__form-grid { grid-template-columns: 1fr; }
+  .landing-3d__form-full { grid-column: auto; }
+  .landing-3d__form-actions { flex-direction: column; }
+  .landing-3d__form-submit, .landing-3d__referral-button { width: 100%; justify-content: center; }
+  .landing-3d__scroll-cue { bottom: 1.25rem; left: 0.9rem; }
+  .landing-3d__counter { right: 0.9rem; bottom: 1.25rem; }
+  .landing-3d__ai-float { right: 0.75rem; bottom: 4.4rem; width: 3.2rem; height: 3.2rem; }
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .landing-3d__copy,
-  .landing-3d__header,
-  .landing-3d__content,
-  .landing-3d__counter,
-  .landing-3d__about-link,
-  .landing-3d__cta,
-  .landing-3d__cta span:last-child,
-  .landing-3d__progress button span {
-    transition-duration: 0.01ms;
-  }
-
-  .landing-3d__scroll-cue i::after {
-    animation: none;
-  }
-}
-</style>
-
-<style>
-html.landing-3d-scroll,
-body.landing-3d-scroll {
-  scroll-behavior: smooth;
-  scroll-snap-type: y mandatory;
-  overscroll-behavior-y: none;
-}
-
-@media (prefers-reduced-motion: reduce) {
-  html.landing-3d-scroll,
-  body.landing-3d-scroll {
-    scroll-behavior: auto;
-  }
+  .landing-3d__copy, .landing-3d__header, .landing-3d__content { transition: none; }
 }
 </style>

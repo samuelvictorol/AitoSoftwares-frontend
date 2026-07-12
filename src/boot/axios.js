@@ -7,7 +7,8 @@ import axios from 'axios'
 // good idea to move this instance creation inside of the
 // "export default () => {}" function below (which runs individually
 // for each client)
-const api = axios.create({ baseURL: 'https://chatcar.onrender.com/api' })
+const apiBaseURL = import.meta.env.VITE_API_URL || 'http://localhost:3000'
+const api = axios.create({ baseURL: apiBaseURL })
 
 export default defineBoot(({ app }) => {
   // for use inside Vue files (Options API) through this.$axios and this.$api
@@ -21,4 +22,4 @@ export default defineBoot(({ app }) => {
   //       so you can easily perform requests against your app's API
 })
 
-export { api }
+export { api, apiBaseURL }

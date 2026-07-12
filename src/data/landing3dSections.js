@@ -1,94 +1,78 @@
 export const landing3dSections = Object.freeze([
   {
-    id: 'visao',
-    eyebrow: '01 · A nova operação',
-    title: 'Existe uma versão da sua empresa que vende mais e erra menos.',
-    description: 'Por trás de toda empresa que cresce rápido, existe uma operação que quase ninguém vê.',
+    id: 'inicio',
+    eyebrow: 'AITO SOFTWARES / SOFTWARE STUDIO',
+    title: 'Tecnologia sob medida para empresas de alto padrão.',
+    description: 'Software sob medida, IA, cloud e automação trabalhando juntos para transformar complexidade em movimento.',
     align: 'left',
-    modelKey: 'logo',
-    cta: null
-  },
-  {
-    id: 'movimento',
-    eyebrow: '02 · O custo do legado',
-    title: 'Você está pagando para manter o problema vivo?',
-    description: 'Sistemas isolados, backups manuais e processos lentos consomem dinheiro todos os dias. O custo real do legado aparece no retrabalho, no risco e nas oportunidades perdidas.',
-    align: 'right',
-    modelKey: 'logo',
-    cta: null
-  },
-  {
-    id: 'inteligencia',
-    eyebrow: '03 · Evolução sem ruptura',
-    title: 'E se a mudança acontecesse sem desligar o que já funciona?',
-    description: 'Modernizamos sua operação por etapas, em paralelo ao sistema atual. Você valida cada avanço, reduz riscos e só realiza a transição quando o novo estiver pronto.',
-    align: 'left',
-    modelKey: 'obj2',
-    cta: null
-  },
-  {
-    id: 'automacao',
-    eyebrow: '04 · Cloud e segurança',
-    title: 'O melhor backup é aquele que você nunca precisa lembrar.',
-    description: 'Arquitetura em nuvem, segurança e rotinas automáticas protegem o que sustenta sua empresa. Seus dados continuam disponíveis mesmo quando o imprevisto acontece.',
-    align: 'right',
-    modelKey: 'obj2',
-    cta: null
-  },
-  {
-    id: 'cloud',
-    eyebrow: '05 · IA que atende',
-    title: 'Sua empresa dorme. Seu atendimento não precisa.',
-    description: 'Criamos inteligências que entendem texto, áudio e imagem, respondem com contexto, qualificam oportunidades e direcionam cada conversa para a pessoa certa.',
-    align: 'left',
-    modelKey: 'obj3',
-    cta: null
-  },
-  {
-    id: 'produtos',
-    eyebrow: '06 · Automação e dados',
-    title: 'Milhares de itens. Nenhuma decisão no escuro.',
-    description: 'Dashboards transformam dados em alertas, previsões e sugestões práticas. Relatórios chegam automaticamente, estoques ganham inteligência e sua equipe age antes do problema.',
-    align: 'right',
-    modelKey: 'obj3',
-    cta: null
-  },
-  {
-    id: 'experiencia',
-    eyebrow: '07 · Produtos digitais',
-    title: 'Uma boa ideia ainda não é um produto.',
-    description: 'Transformamos conhecimento e audiência em plataformas, experiências e produtos digitais completos, com IA, checkout automatizado e estrutura preparada para vender e crescer.',
-    align: 'left',
-    modelKey: 'obj4',
-    cta: null
-  },
-  {
-    id: 'escala',
-    eyebrow: '08 · Tecnologia completa',
-    title: 'Você não precisa de cinco fornecedores para evoluir.',
-    description: 'Software, IA, cloud, automação, design, SEO e marketing trabalhando como uma única estratégia. Menos ruído entre equipes, mais velocidade e resultado mensurável.',
-    align: 'right',
-    modelKey: 'obj4',
-    cta: null
-  },
-  {
-    id: 'consultoria',
-    eyebrow: '09 · Próximo passo',
-    title: 'Antes de investir em tecnologia, descubra onde ela se paga.',
-    description: 'Transformamos processos, atendimento e dados em uma operação mais rápida, segura e pronta para escalar.',
-    align: 'center',
-    modelKey: 'obj4',
+    modelKey: 'obj1',
     cta: {
-      label: 'Quero minha consultoria gratuita',
-      href: 'https://wa.me/5561981748795?text=Olá%2C+gostaria+de+uma+consultoria+gratuita+para+saber+como+evoluir+minha+empresa+com+AitoSoftwares.',
+      label: 'Quero meu diagnostico gratis',
+      href: 'https://wa.me/5561981748795?text=Ola%2C%20quero%20meu%20diagnostico%20gratis%20com%20a%20AitoSoftwares.'
+    },
+    secondaryCta: {
+      label: 'Saiba quem somos',
+      to: 'marcas'
     },
     surpriseCta: {
       label: 'Surpreenda-me',
       to: '/surpresa'
-    },
-    secondaryCta: {
-      label: 'Saiba quem somos',
-      to: '/sobre'
-    },
+    }
+  },
+  {
+    id: 'marcas',
+    eyebrow: '01 / CLIENTES E OPERAÇÕES',
+    title: 'Grandes marcas e pessoas ainda maiores em nosso case.',
+    description: 'Projetos reais, contextos diferentes e a mesma busca: tecnologia funcionando no ritmo do negocio.',
+    align: 'left',
+    modelKey: 'logo'
+  },
+  {
+    id: 'solucoes',
+    eyebrow: '02 / O QUE FAZEMOS',
+    title: 'Criamos soluções sem parar o que está funcionando.',
+    description: 'Entramos onde a operação precisa de clareza, velocidade ou escala e traduzimos o complexo em realidade simples e confiável.',
+    align: 'right',
+    modelKey: 'obj2'
+  },
+  {
+    id: 'cases',
+    eyebrow: '03 / CASES E PRODUTOS',
+    title: 'Ideias que ganharam forma, fluxo e resultado.',
+    description: 'Cases para ver o tipo de problema que resolvemos e como pensamos cada entrega.',
+    align: 'left',
+    modelKey: 'obj2'
+  },
+  {
+    id: 'satisfacao',
+    eyebrow: '04 / RELACAO DE LONGO PRAZO',
+    title: 'Tecnologia boa deixa a rotina mais leve.',
+    description: 'Acompanhamento proximo, entregas visiveis e decisoes que fazem sentido para quem usa.',
+    align: 'right',
+    modelKey: 'obj3'
+  },
+  {
+    id: 'founder-samuel',
+    eyebrow: '05 / FOUNDERS',
+    title: 'Samuel Victor',
+    description: 'Produto, comercial, usabilidade, criatividade e tecnologia conectados para transformar uma ideia em algo que as pessoas conseguem usar.',
+    align: 'left',
+    modelKey: 'samuel'
+  },
+  {
+    id: 'founder-dion',
+    eyebrow: '06 / FOUNDERS',
+    title: 'Dion Vitor',
+    description: 'Arquitetura, escalabilidade, cloud e seguranca para sistemas preparados para a operacao real.',
+    align: 'right',
+    modelKey: 'dion'
+  },
+  {
+    id: 'contato',
+    eyebrow: '07 / PROXIMO MOVIMENTO',
+    title: 'Vamos descobrir o que sua operacao pode fazer melhor.',
+    description: 'Conte o contexto. A gente responde com um proximo passo claro.',
+    align: 'center',
+    modelKey: 'obj4'
   }
 ])

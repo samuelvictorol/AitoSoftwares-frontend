@@ -1,6 +1,6 @@
 <template>
-  <div class="bg-dark text-white flex flex-center relative">
-    <div class="chat-container column q-pa-md">
+  <div class="chat-shell bg-dark text-white">
+    <div class="chat-container">
 
       <!-- Cabeçalho -->
       <div class="row items-center justify-between q-mb-md">
@@ -15,11 +15,21 @@
             </q-badge>
           </div>
         </div>
+        <q-btn
+          flat
+          round
+          dense
+          icon="mdi-close"
+          aria-label="Fechar assistente"
+          class="chat-close"
+          @click="emit('close')"
+        />
       </div>
 
       <!-- Lista de mensagens -->
-      <div class="chat-messages col">
-        <q-scroll-area ref="scrollAreaRef" class="fit">
+      <div class="chat-messages">
+        <q-scroll-area ref="scrollAreaRef" class="chat-scroll">
+          <div class="chat-message-list" role="log" aria-live="polite">
           <div v-for="(msg, index) in messages" :key="index" class="q-mb-lg flex"
             :class="msg.from === 'user' ? 'justify-end' : 'justify-start'">
             <div class="chat-bubble animate__animated animate__slower"
@@ -30,13 +40,13 @@
 
               <!-- Botão de link (só aparece quando o backend mandar link) -->
               <div v-if="msg.link" class="q-mt-xs">
-                <q-btn :label="msg.link.label || 'Abrir link'" :href="msg.link.url" target="_blank" color="green-14"
-                  rel="noopener" icon="open_in_new" size="sm" no-caps />
+              <q-btn :label="msg.link.label || 'Abrir link'" :href="msg.link.url" target="_blank" color="green-14"
+                  rel="noopener" icon="mdi-open-in-new" size="sm" no-caps />
               </div>
             </div>
           </div>
 
-          <div v-if="loading" class="q-mt-xs text-grey-5 text-caption">
+          <div v-if="loading" class="q-mt-xs chat-loading text-caption">
             IA está respondendo...
           </div>
 
@@ -55,24 +65,26 @@
               />
             </div>
           </div>
+          </div>
         </q-scroll-area>
       </div>
 
       <!-- Input + botão enviar -->
-      <div class="chat-input row items-center q-gutter-sm q-pt-sm">
-        <q-input v-model="currentMessage" class="col" color="secondary" dense outlined bg-color="grey-4"
+      <div class="chat-input row items-center q-gutter-sm">
+        <q-input v-model="currentMessage" class="col" color="secondary" dark dense outlined
           placeholder="Digite sua mensagem..." :disable="loading" @keyup.enter="sendMessage()" />
 
-        <q-btn class="cta-btn" icon="send" :loading="loading" :disable="!canSend" @click="sendMessage()" />
+        <q-btn class="cta-btn" icon="mdi-send" :loading="loading" :disable="!canSend" @click="sendMessage()" />
       </div>
     </div>
   </div>
 </template>
 
 <script setup>
-import { ref, computed, watch, nextTick, onMounted } from 'vue'
+import { ref, computed, watch, nextTick, onBeforeUnmount, onMounted } from 'vue'
 import { api } from 'boot/axios' // usando o boot/axios
 
+const emit = defineEmits(['close'])
 const STORAGE_KEY = 'aito_site_chat_messages_v2'
 
 const messages = ref([
@@ -85,6 +97,8 @@ const messages = ref([
 
 const currentMessage = ref('')
 const loading = ref(false)
+const triageReady = ref(false)
+let triageTimer
 
 const triageOptions = Object.freeze([
   {
@@ -167,6 +181,14 @@ onMounted(async () => {
   loadFromSession()
   await nextTick()
   scrollToBottom()
+  triageTimer = window.setTimeout(() => {
+    triageReady.value = true
+    scrollToBottom()
+  }, 1100)
+})
+
+onBeforeUnmount(() => {
+  window.clearTimeout(triageTimer)
 })
 
 // sempre que o número de mensagens mudar, desce
@@ -193,7 +215,7 @@ const canSend = computed(() => {
 })
 
 const showTriage = computed(() => {
-  return !loading.value && !messages.value.some((message) => message.from === 'user')
+  return triageReady.value && !loading.value && !messages.value.some((message) => message.from === 'user')
 })
 
 function selectTriage(option) {
@@ -221,7 +243,7 @@ const sendMessage = async (presetText = '') => {
         text: m.text
       }))
     }
-    const { data } = await api.post('/talk-site-ia', payload)
+    const { data } = await api.post('/talk_site_bot', payload)
 
     const iaReplies = data.ia_replies || []
     const link = data.link || null
@@ -264,21 +286,46 @@ const sendMessage = async (presetText = '') => {
 
 
 <style scoped>
+.chat-shell {
+  width: min(94vw, 32rem);
+  height: min(82vh, 44rem);
+  max-height: calc(100vh - 1.5rem);
+  overflow: hidden;
+  border: 1px solid rgba(19, 188, 157, 0.34);
+  border-radius: 1rem;
+  background: linear-gradient(145deg, rgba(3, 25, 26, 0.96), rgba(1, 10, 12, 0.98));
+  box-shadow: 0 28px 80px rgba(0, 0, 0, 0.48);
+}
+
 .chat-container {
-  width: 100%;
-  height: 80vh;
   display: flex;
+  width: 100%;
+  height: 100%;
+  min-height: 0;
+  padding: 1rem;
+  flex-direction: column;
   color: #edfffb;
 }
 
 .chat-messages {
   flex: 1;
   min-height: 0;
-  /* pra scroll-area funcionar bem */
+  overflow: hidden;
+}
+
+.chat-scroll {
+  height: 100%;
+}
+
+.chat-message-list {
+  min-width: 0;
+  overflow-x: hidden;
+  padding: 0.25rem 0.25rem 1rem;
 }
 
 .chat-bubble {
-  max-width: 80%;
+  max-width: 88%;
+  overflow-wrap: anywhere;
   padding: 8px 12px;
   border-radius: 16px;
   font-size: 0.9rem;
@@ -317,7 +364,7 @@ const sendMessage = async (presetText = '') => {
 
 .triage-options {
   display: grid;
-  grid-template-columns: 1fr;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 0.5rem;
 }
 
@@ -330,7 +377,48 @@ const sendMessage = async (presetText = '') => {
 }
 
 .chat-input {
-  /* border-top: 1px solid rgba(148, 163, 184, 0.3); */
+  flex: 0 0 auto;
+  padding-top: 0.75rem;
+  border-top: 1px solid rgba(19, 188, 157, 0.14);
+}
+
+.chat-input :deep(.q-field__control) {
+  background: rgba(5, 33, 34, 0.88);
+}
+
+.chat-input :deep(.q-field__native),
+.chat-input :deep(.q-field__input) {
+  color: #f0fffc !important;
+  caret-color: #57d6be;
+}
+
+.chat-input :deep(.q-field__native::placeholder),
+.chat-input :deep(.q-field__input::placeholder) {
+  color: rgba(225, 255, 249, 0.56);
+}
+
+.chat-loading {
+  color: rgba(225, 255, 249, 0.62);
+}
+
+.chat-close {
+  color: #dffff8;
+  background: rgba(19, 188, 157, 0.08);
+}
+
+@media (max-width: 460px) {
+  .chat-shell {
+    width: calc(100vw - 1rem);
+    height: min(86vh, 42rem);
+  }
+
+  .chat-container {
+    padding: 0.8rem;
+  }
+
+  .triage-options {
+    grid-template-columns: 1fr;
+  }
 }
 
 .cta-btn {

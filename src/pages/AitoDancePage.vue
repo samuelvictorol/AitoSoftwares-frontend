@@ -20,7 +20,7 @@
           </router-link>
 
           <button type="button" class="aito-dance__back" @click="goBack">
-            <span class="material-icons" aria-hidden="true">arrow_back</span>
+            <q-icon name="mdi-arrow-left" aria-hidden="true" />
             <span>Voltar</span>
           </button>
         </header>
@@ -39,9 +39,7 @@
               :aria-label="audioActive ? 'Pausar musica' : 'Tocar musica'"
               @click="handleAudioToggle"
             >
-              <span class="material-icons" aria-hidden="true">
-                {{ audioActive ? 'volume_up' : 'volume_off' }}
-              </span>
+              <q-icon :name="audioActive ? 'mdi-volume-high' : 'mdi-volume-off'" aria-hidden="true" />
             </button>
 
             <button
@@ -50,7 +48,7 @@
               aria-label="Ver creditos da musica e animacao"
               @click="creditsDialogOpen = true"
             >
-              ?
+              <q-icon name="mdi-help-circle-outline" aria-hidden="true" />
             </button>
           </div>
         </section>
@@ -71,7 +69,7 @@
                 aria-label="Fechar creditos"
                 @click="creditsDialogOpen = false"
               >
-                <span class="material-icons" aria-hidden="true">close</span>
+                <q-icon name="mdi-close" aria-hidden="true" />
               </button>
             </q-card-section>
 
@@ -295,7 +293,7 @@ onBeforeUnmount(() => {
   transition: transform 220ms ease, border-color 220ms ease, box-shadow 220ms ease;
 }
 
-.aito-dance__back .material-icons {
+.aito-dance__back .q-icon {
   display: grid;
   width: 2.1rem;
   height: 2.1rem;
@@ -399,7 +397,7 @@ onBeforeUnmount(() => {
   box-shadow: 0 18px 52px rgba(19, 188, 157, 0.24);
 }
 
-.aito-dance__audio .material-icons {
+.aito-dance__audio .q-icon {
   font-size: 1.55rem;
 }
 
@@ -500,7 +498,7 @@ onBeforeUnmount(() => {
   cursor: pointer;
 }
 
-.aito-dance__credits-close .material-icons {
+.aito-dance__credits-close .q-icon {
   font-size: 1.2rem;
 }
 
@@ -549,7 +547,7 @@ onBeforeUnmount(() => {
     letter-spacing: 0.05em;
   }
 
-  .aito-dance__back .material-icons {
+  .aito-dance__back .q-icon {
     width: 1.86rem;
     height: 1.86rem;
   }

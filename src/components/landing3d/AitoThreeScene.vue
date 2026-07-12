@@ -49,6 +49,7 @@ const BRAND_TEAL = 0x089fa5
 const BRAND_TEAL_SECONDARY = 0x0ea794
 const BRAND_GREEN = 0x1cbd6b
 const BRAND_NAVY = 0x0b1220
+const STAR_COLORS = [0x1fb694, 0x23917d, 0x50dcc4, 0x8fffee]
 
 const STATE_DEFAULTS = {
   x: 0,
@@ -62,9 +63,13 @@ const STATE_DEFAULTS = {
 }
 
 const MODEL_KEYFRAMES = {
-  logo: [
+  obj1: [
     { section: 0, x: 2.35, y: 0.05, ry: -0.35, rz: -0.08, scale: 1, opacity: 1 },
-    { section: 1, x: -2.35, y: -0.72, rx: 0.3, ry: 1.05, rz: 0.16, scale: 0.92, opacity: 1 },
+    { section: 1, x: 4.2, y: 0, scale: 0.42, opacity: 0 }
+  ],
+  logo: [
+    { section: 0, x: 4.2, y: 0, scale: 0.42, opacity: 0 },
+    { section: 1, x: 2.35, y: 0.05, ry: -0.35, rz: -0.08, scale: 1, opacity: 1 },
     { section: 2, x: -4.2, y: -1.7, rx: 0.65, ry: 1.7, scale: 0.62, opacity: 0 }
   ],
   obj2: [
@@ -78,21 +83,27 @@ const MODEL_KEYFRAMES = {
     { section: 0, x: 4.4, y: 0.1, scale: 0.5, opacity: 0 },
     { section: 3, x: 4.4, y: 0.1, scale: 0.5, opacity: 0 },
     { section: 4, x: 2.35, y: 0.05, rx: 0.2, ry: -0.45, scale: 1, opacity: 1 },
-    { section: 5, x: -2.35, y: -0.2, rx: -0.4, ry: 0.9, rz: 0.2, scale: 0.95, opacity: 1 },
-    { section: 6, x: -4.2, y: -0.8, rx: -0.7, ry: 1.5, scale: 0.65, opacity: 0 }
+    { section: 5, x: -4.2, y: -0.8, rx: -0.7, ry: 1.5, scale: 0.65, opacity: 0 }
   ],
   obj4: [
     { section: 0, x: 4.5, y: 0.2, scale: 0.48, opacity: 0 },
-    { section: 5, x: 4.5, y: 0.2, scale: 0.48, opacity: 0 },
-    { section: 6, x: 2.35, y: 0.05, rx: -0.25, ry: 0.25, scale: 1, opacity: 1 },
-    { section: 7, x: -2.3, y: -0.15, rx: 0.3, ry: 1.15, rz: -0.2, scale: 0.94, opacity: 1 },
-    { section: 8, x: 0, y: 0.35, z: -0.4, rx: 0.05, ry: 2.1, rz: 0, scale: 0.72, opacity: 1 },
-    { section: 9, x: 0, y: 0.02, z: -0.25, rx: 0.04, ry: 0, rz: 0, scale: 1.05, opacity: 1 }
+    { section: 6, x: 4.5, y: 0.2, scale: 0.48, opacity: 0 },
+    { section: 7, x: 0, y: 0.08, z: -0.25, rx: 0.04, ry: 0, rz: 0, scale: 1.05, opacity: 1 }
   ],
   obj4Dance: [
-    { section: 0, x: 0, y: 0, scale: 0.48, opacity: 0 },
-    { section: 8, x: 0, y: 0.08, z: -0.3, scale: 0.76, opacity: 0 },
-    { section: 9, x: 0, y: 0.02, z: -0.22, rx: 0.02, ry: 0, rz: 0, scale: 1.08, opacity: 1 }
+    { section: 0, x: 0, y: 0, scale: 0.48, opacity: 0 }
+  ],
+  samuel: [
+    { section: 0, x: 4.2, y: 0, scale: 0.42, opacity: 0 },
+    { section: 4, x: 4.2, y: 0, scale: 0.42, opacity: 0 },
+    { section: 5, x: 2.25, y: -0.08, rx: 0.04, ry: -0.2, scale: 1.02, opacity: 1 },
+    { section: 6, x: -4.2, y: -0.5, rx: 0.4, ry: 1.3, scale: 0.62, opacity: 0 }
+  ],
+  dion: [
+    { section: 0, x: 4.2, y: 0, scale: 0.42, opacity: 0 },
+    { section: 5, x: 4.2, y: 0, scale: 0.42, opacity: 0 },
+    { section: 6, x: -2.25, y: -0.08, rx: -0.04, ry: 0.2, scale: 1.02, opacity: 1 },
+    { section: 7, x: -4.2, y: -0.5, rx: -0.4, ry: -1.3, scale: 0.62, opacity: 0 }
   ]
 }
 
@@ -103,6 +114,7 @@ let animationFrame = 0
 let destroyed = false
 let smoothProgress = 0
 let starField
+let starFieldIsDesktop = false
 let modelEntries = {}
 let lastFrameTime = 0
 let readyEmitted = false
@@ -407,11 +419,64 @@ function createOrbitalFallback() {
   return group
 }
 
+function createFounderFallback(variant) {
+  const group = new THREE.Group()
+  const primary = variant === 'samuel' ? BRAND_TEAL : BRAND_GREEN
+  const secondary = variant === 'samuel' ? BRAND_GREEN : BRAND_TEAL
+  const bodyMaterial = brandMaterial(primary, {
+    metalness: 0.68,
+    roughness: 0.2,
+    emissiveIntensity: 0.16
+  })
+  const accentMaterial = brandMaterial(secondary, {
+    metalness: 0.48,
+    roughness: 0.16,
+    emissiveIntensity: 0.36
+  })
+  const darkMaterial = new THREE.MeshStandardMaterial({
+    color: BRAND_NAVY,
+    metalness: 0.72,
+    roughness: 0.24
+  })
+
+  const torso = new THREE.Mesh(new THREE.CapsuleGeometry(0.64, 1.08, 8, 18), bodyMaterial)
+  torso.position.y = -0.22
+  group.add(torso)
+
+  const head = new THREE.Mesh(new THREE.SphereGeometry(0.58, 32, 22), accentMaterial)
+  head.position.y = 0.92
+  group.add(head)
+
+  const visor = new THREE.Mesh(new THREE.SphereGeometry(0.38, 24, 16), darkMaterial)
+  visor.scale.set(1.2, 0.62, 0.34)
+  visor.position.set(0, 0.98, 0.45)
+  group.add(visor)
+
+  const shoulderGeometry = new THREE.SphereGeometry(0.22, 20, 14)
+  const leftShoulder = new THREE.Mesh(shoulderGeometry, accentMaterial)
+  leftShoulder.position.set(-0.78, 0.12, 0)
+  const rightShoulder = leftShoulder.clone()
+  rightShoulder.position.x = 0.78
+  group.add(leftShoulder, rightShoulder)
+
+  const ring = new THREE.Mesh(
+    new THREE.TorusGeometry(1.18, 0.028, 10, 120),
+    brandMaterial(secondary, { metalness: 0.24, emissiveIntensity: 0.7, opacity: 0.76 })
+  )
+  ring.rotation.x = Math.PI / 2
+  ring.position.y = -0.94
+  group.add(ring)
+
+  return group
+}
+
 function createFallback(type) {
   if (type === 'loader-object') return createLoaderObjectFallback()
   if (type === 'torus-knot') return createTorusKnotFallback()
   if (type === 'icosahedron') return createIcosahedronFallback()
   if (type === 'orbital') return createOrbitalFallback()
+  if (type === 'founder-samuel') return createFounderFallback('samuel')
+  if (type === 'founder-dion') return createFounderFallback('dion')
   return createCloudFallback()
 }
 
@@ -556,12 +621,112 @@ function createStarLayer(count, size, opacity, spread, color) {
   return new THREE.Points(geometry, material)
 }
 
+function createThreadStarLayer(count, minLength, maxLength, opacity, spread) {
+  const positions = new Float32Array(count * 6)
+  const colors = new Float32Array(count * 6)
+  const basePositions = new Float32Array(count * 3)
+  const lengths = new Float32Array(count)
+  const phases = new Float32Array(count)
+
+  for (let index = 0; index < count; index += 1) {
+    const baseStride = index * 3
+    const lineStride = index * 6
+    const baseX = (Math.random() - 0.5) * spread
+    const baseY = (Math.random() - 0.5) * spread * 0.7
+    const baseZ = -Math.random() * 22 + 5
+    const length = minLength + Math.random() * (maxLength - minLength)
+    const color = new THREE.Color(
+      STAR_COLORS[Math.floor(Math.random() * STAR_COLORS.length)]
+    )
+
+    basePositions[baseStride] = baseX
+    basePositions[baseStride + 1] = baseY
+    basePositions[baseStride + 2] = baseZ
+    lengths[index] = length
+    phases[index] = Math.random() * Math.PI * 2
+
+    positions[lineStride] = baseX
+    positions[lineStride + 1] = baseY - length * 0.5
+    positions[lineStride + 2] = baseZ
+    positions[lineStride + 3] = baseX
+    positions[lineStride + 4] = baseY + length * 0.5
+    positions[lineStride + 5] = baseZ
+    color.toArray(colors, lineStride)
+    color.toArray(colors, lineStride + 3)
+  }
+
+  const geometry = new THREE.BufferGeometry()
+  geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3))
+  geometry.setAttribute('color', new THREE.BufferAttribute(colors, 3))
+
+  const material = new THREE.LineBasicMaterial({
+    vertexColors: true,
+    transparent: true,
+    opacity,
+    depthWrite: false,
+    blending: THREE.AdditiveBlending
+  })
+
+  const line = new THREE.LineSegments(geometry, material)
+  line.frustumCulled = false
+  line.userData.threadStars = { basePositions, lengths, phases }
+  return line
+}
+
 function createStarField() {
   const group = new THREE.Group()
-  group.add(createStarLayer(620, 0.025, 0.42, 32, 0xb8c9cc))
-  group.add(createStarLayer(260, 0.045, 0.58, 28, BRAND_TEAL_SECONDARY))
-  group.add(createStarLayer(90, 0.072, 0.68, 24, BRAND_GREEN))
+  starFieldIsDesktop = window.innerWidth >= 768
+
+  if (starFieldIsDesktop) {
+    group.add(createThreadStarLayer(420, 0.05, 0.11, 0.52, 32))
+    group.add(createThreadStarLayer(180, 0.08, 0.18, 0.62, 28))
+    group.add(createThreadStarLayer(80, 0.12, 0.24, 0.78, 24))
+  } else {
+    group.add(createStarLayer(620, 0.025, 0.42, 32, 0xb8c9cc))
+    group.add(createStarLayer(260, 0.045, 0.58, 28, BRAND_TEAL_SECONDARY))
+    group.add(createStarLayer(90, 0.072, 0.68, 24, BRAND_GREEN))
+  }
+
   return group
+}
+
+function updateThreadStarLayer(layer, elapsedTime, targetX, targetY) {
+  const stars = layer.userData.threadStars
+  if (!stars) return
+
+  const positions = layer.geometry.getAttribute('position').array
+  const { basePositions, lengths, phases } = stars
+
+  for (let index = 0; index < lengths.length; index += 1) {
+    const baseStride = index * 3
+    const lineStride = index * 6
+    const driftX = Math.sin(elapsedTime * 0.2 + phases[index]) * 0.012
+    const driftY = Math.cos(elapsedTime * 0.17 + phases[index]) * 0.009
+    const baseX = basePositions[baseStride] + driftX
+    const baseY = basePositions[baseStride + 1] + driftY
+    const baseZ = basePositions[baseStride + 2]
+    let directionX = targetX - baseX
+    let directionY = targetY - baseY
+    const directionLength = Math.hypot(directionX, directionY)
+
+    if (directionLength < 0.001) {
+      directionX = 0
+      directionY = -1
+    } else {
+      directionX /= directionLength
+      directionY /= directionLength
+    }
+
+    const halfLength = lengths[index] * 0.5
+    positions[lineStride] = baseX - directionX * halfLength
+    positions[lineStride + 1] = baseY - directionY * halfLength
+    positions[lineStride + 2] = baseZ
+    positions[lineStride + 3] = baseX + directionX * halfLength
+    positions[lineStride + 4] = baseY + directionY * halfLength
+    positions[lineStride + 5] = baseZ
+  }
+
+  layer.geometry.getAttribute('position').needsUpdate = true
 }
 
 function createLights() {
@@ -736,6 +901,14 @@ function updateScene(elapsedTime, deltaTime) {
     : -smoothProgress * (props.reducedMotion ? 0.25 : 1.35)
   starField.position.x = pointerCurrent.x * -0.22
 
+  if (starFieldIsDesktop) {
+    const targetX = pointerCurrent.x * 8 - starField.position.x
+    const targetY = pointerCurrent.y * 4.2 - starField.position.y
+    starField.children.forEach((layer) => {
+      updateThreadStarLayer(layer, elapsedTime, targetX, targetY)
+    })
+  }
+
   Object.values(modelEntries).forEach((entry) => {
     entry.mixer?.update(deltaTime)
   })
@@ -758,6 +931,15 @@ function handleResize() {
 
   const width = window.innerWidth
   const height = window.innerHeight
+
+  if (starField && scene && starFieldIsDesktop !== (width >= 768)) {
+    const previousStarField = starField
+    starField = createStarField()
+    scene.remove(previousStarField)
+    disposeObject(previousStarField)
+    scene.add(starField)
+  }
+
   camera.aspect = width / Math.max(height, 1)
   camera.position.z = width < 768 ? 9.4 : width < 1100 ? 9 : 8.4
   camera.updateProjectionMatrix()
