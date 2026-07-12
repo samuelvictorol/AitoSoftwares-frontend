@@ -326,8 +326,10 @@ onBeforeUnmount(() => {
   gap: 0.55rem;
   color: #effffb;
   background:
-    radial-gradient(circle at 50% 42%, rgba(19, 188, 157, 0.1), transparent 20rem),
-    rgba(3, 9, 12, 0.94);
+    radial-gradient(circle at 50% 42%, rgba(19, 188, 157, 0.08), transparent 20rem),
+    rgba(3, 9, 12, 0.9);
+  -webkit-backdrop-filter: blur(26px) saturate(0.72);
+  backdrop-filter: blur(26px) saturate(0.72);
   text-align: center;
   pointer-events: auto;
 }

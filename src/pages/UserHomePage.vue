@@ -16,7 +16,7 @@
           <main class="user-app__main">
             <span class="user-app__eyebrow">Area do cliente</span>
             <h1>Seu proximo movimento, em um so lugar.</h1>
-            <p>Esse espaco vai reunir diagnosticos, etapas de projeto e os proximos sinais da sua operacao.</p>
+            <p>Esse espaco vai reunir diagnosticos, etapas de projeto e os proximos sinais da sua operação.</p>
             <div class="user-app__grid">
               <section><q-icon name="mdi-radar" size="30px" /><strong>Diagnostico</strong><span>Em preparacao</span></section>
               <section><q-icon name="mdi-progress-check" size="30px" /><strong>Projetos</strong><span>Acompanhe entregas por etapas</span></section>

@@ -2,7 +2,7 @@ export const institutionalBrands = Object.freeze([
   {
     name: 'Empregos.com.br',
     imgUrl: 'empregos.jfif',
-    summary: 'Experiencia digital para conectar pessoas, oportunidades e operacoes com mais clareza.',
+    summary: 'Experiencia digital para conectar pessoas, oportunidades e operações com mais clareza.',
     href: 'https://www.empregos.com.br'
   },
   {
@@ -26,13 +26,13 @@ export const institutionalBrands = Object.freeze([
   {
     name: 'CAIXA',
     imgUrl: 'caixa.jfif',
-    summary: 'Interfaces e operacoes digitais em ambientes que exigem confiabilidade.',
+    summary: 'Interfaces e operações digitais em ambientes que exigem confiabilidade.',
     href: 'https://www.caixa.gov.br'
   },
   {
     name: 'Eletro Nogueira',
     imgUrl: 'en.jfif',
-    summary: 'Migracao para cloud, catalogo conectado e IA no WhatsApp para atender a operacao real.',
+    summary: 'Migração para cloud, catálogo conectado e IA no WhatsApp para atender a operação real.',
     href: 'https://www.eletronogueira.com.br'
   },
   {
@@ -77,20 +77,20 @@ export const institutionalServices = Object.freeze([
   {
     icon: 'mdi-robot-outline',
     title: 'IA no WhatsApp',
-    text: 'Atendimento, qualificacao e contexto para o time comercial.',
+    text: 'Atendimento, qualificação e contexto para o time comercial.',
     items: ['Conversas 24/7', 'Takeover humano', 'Catalogo e CRM', 'Relatorios do funil']
   },
   {
     icon: 'mdi-cloud-outline',
-    title: 'Cloud e migracao',
-    text: 'Infraestrutura segura e custo previsivel para evoluir sem susto.',
+    title: 'Cloud e migração',
+    text: 'Infraestrutura segura e custo previsível para evoluir sem susto.',
     items: ['Plano por etapas', 'Observabilidade', 'Seguranca', 'Otimacao recorrente']
   },
   {
     icon: 'mdi-cog-sync-outline',
-    title: 'Automacao de processos',
-    text: 'Rotinas repetitivas viram fluxos rastreaveis e integrados.',
-    items: ['ERP e CRM', 'Gatilhos', 'Dashboards', 'Governanca']
+    title: 'Automação de processos',
+    text: 'Rotinas repetitivas viram fluxos rastreáveis e integrados.',
+    items: ['ERP e CRM', 'Gatilhos', 'Dashboards', 'Governança']
   },
   {
     icon: 'mdi-palette-outline',
@@ -104,24 +104,24 @@ export const institutionalCases = Object.freeze([
   {
     icon: 'mdi-car-outline',
     title: 'FlaviaKamila App',
-    subtitle: 'Formularios inteligentes, monitoramento e pagamentos integrados.',
+    subtitle: 'Formulários inteligentes, monitoramento e pagamentos integrados.',
     text: 'App para delegada com foco em concurseiros, com formulários inteligentes, diagnóstico automatizado, monitoramento e pagamentos integrados.',
-    tags: ['App', 'Formularios', 'Monitoramento'],
+    tags: ['App', 'Formulários', 'Monitoramento'],
     href: 'https://flaviakamila.com'
   },
   {
     icon: 'mdi-storefront-outline',
     title: 'Eletro Nogueira',
-    subtitle: 'Cloud, catalogo e atendimento no mesmo fluxo.',
-    text: 'Migracao de sistema, reducao de custo e IA integrada ao estoque fisico.',
-    tags: ['Cloud', 'SEO', 'Catalogo'],
+    subtitle: 'Cloud, catálogo e atendimento no mesmo fluxo.',
+    text: 'Migração de sistema, redução de custo e IA integrada ao estoque físico.',
+    tags: ['Cloud', 'SEO', 'Catálogo'],
     href: 'https://www.eletronogueira.com.br'
   },
   {
     icon: 'mdi-earth',
     title: 'Globo',
     subtitle: 'Arquitetura para ambientes de alta demanda.',
-    text: 'Automacao de processos, monitoramento e integracoes entre sistemas internos.',
+    text: 'Automação de processos, monitoramento e integrações entre sistemas internos.',
     tags: ['Escala', 'Dados', 'Performance'],
     href: 'https://www.globo.com'
   }
@@ -131,7 +131,7 @@ export const institutionalTestimonials = Object.freeze([
   {
     name: 'Eletro Nogueira',
     role: 'Eletrica e hidraulica',
-    quote: 'A migracao aconteceu com clareza, suporte proximo e entregas que a equipe conseguiu acompanhar.',
+    quote: 'A migração aconteceu com clareza, suporte próximo e entregas que a equipe conseguiu acompanhar.',
     img: 'en.jfif'
   },
   {
@@ -149,7 +149,7 @@ export const institutionalTestimonials = Object.freeze([
   {
     name: 'Onicloud',
     role: 'Escalabilidade em cloud',
-    quote: 'Temos um desenvolvedor dedicado que entende o nosso negocio, nos ajuda a evoluir e nos da tranquilidade para focar no que importa.',
+    quote: 'Temos um desenvolvedor dedicado que entende o nosso negócio, nos ajuda a evoluir e nos da tranquilidade para focar no que importa.',
     img: 'oni-mini.png'
   },
 ])
@@ -158,8 +158,8 @@ export const institutionalFounders = Object.freeze([
   {
     id: 'samuel',
     name: 'Samuel Victor',
-    role: 'Produto, negocio e fullstack',
-    summary: 'Conecta produto, venda e experiencia para transformar ideia em software util, bonito e mensuravel.',
+    role: 'Produto, negócio e fullstack',
+    summary: 'Conecta produto, venda e experiência para transformar ideia em software util, bonito e mensurável.',
     image: '/samuel.png',
     instagram: 'https://www.instagram.com/samuelvictorol/',
     portfolio: 'https://samuelvictorol.github.io/portfolio'
@@ -167,8 +167,8 @@ export const institutionalFounders = Object.freeze([
   {
     id: 'dion',
     name: 'Dion Vitor',
-    role: 'Arquitetura, cloud e seguranca',
-    summary: 'Desenha sistemas preparados para a operacao real, com arquitetura clara, escala e seguranca.',
+    role: 'Arquitetura, cloud e segurança',
+    summary: 'Desenha sistemas preparados para a operação real, com arquitetura clara, escala e segurança.',
     image: '/dion.png',
     instagram: 'https://www.instagram.com/dionvitor/',
     portfolio: 'https://www.linkedin.com/in/dion-v%C3%ADtor-a519631aa/'

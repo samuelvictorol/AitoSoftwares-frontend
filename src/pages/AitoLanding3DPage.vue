@@ -100,9 +100,9 @@
             </div>
 
             <div v-if="section.id === 'inicio'" class="landing-3d__proof-row">
-              <span><strong>50+</strong> operacoes atendidas</span>
+              <span><strong>50+</strong> operações atendidas</span>
               <span><strong>200+</strong> entregas</span>
-              <span><strong>98%</strong> satisfacao</span>
+              <span><strong>98%</strong> satisfação</span>
             </div>
 
             <div v-if="section.id === 'contato'" class="landing-3d__contact-copy">
@@ -153,8 +153,8 @@
                 <div class="landing-3d__satisfaction-meter">
                   <q-icon name="mdi-heart" size="31px" aria-hidden="true" />
                   <strong>98%</strong>
-                  <span>de satisfacao</span>
-                  <small>Relacoes que continuam depois do go-live.</small>
+                  <span>de satisfação</span>
+                  <small>Relações que continuam depois do go-live.</small>
                 </div>
                 <article v-for="item in institutionalTestimonials" :key="item.name" class="landing-3d__testimonial">
                   <div class="landing-3d__testimonial-head">

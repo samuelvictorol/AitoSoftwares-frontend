@@ -7,7 +7,7 @@ export const landing3dSections = Object.freeze([
     align: 'left',
     modelKey: 'obj1',
     cta: {
-      label: 'Quero meu diagnostico gratis',
+      label: 'Quero meu diagnóstico grátis',
       href: 'https://wa.me/5561981748795?text=Ola%2C%20quero%20meu%20diagnostico%20gratis%20com%20a%20AitoSoftwares.'
     },
     secondaryCta: {
@@ -45,7 +45,7 @@ export const landing3dSections = Object.freeze([
   },
   {
     id: 'satisfacao',
-    eyebrow: '04 / RELACAO DE LONGO PRAZO',
+    eyebrow: '04 / RELAÇÃO DE LONGO PRAZO',
     title: 'Tecnologia boa deixa a rotina mais leve.',
     description: 'Acompanhamento proximo, entregas visiveis e decisoes que fazem sentido para quem usa.',
     align: 'right',
@@ -63,14 +63,14 @@ export const landing3dSections = Object.freeze([
     id: 'founder-dion',
     eyebrow: '06 / FOUNDERS',
     title: 'Dion Vitor',
-    description: 'Arquitetura, escalabilidade, cloud e seguranca para sistemas preparados para a operacao real.',
+    description: 'Arquitetura, escalabilidade, cloud e seguranca para sistemas preparados para a operação real.',
     align: 'right',
     modelKey: 'dion'
   },
   {
     id: 'contato',
     eyebrow: '07 / PROXIMO MOVIMENTO',
-    title: 'Vamos descobrir o que sua operacao pode fazer melhor.',
+    title: 'Vamos descobrir o que sua operação pode fazer melhor.',
     description: 'Conte o contexto. A gente responde com um proximo passo claro.',
     align: 'center',
     modelKey: 'obj4'
