@@ -11,8 +11,8 @@ export const landing3dSections = Object.freeze([
       href: 'https://wa.me/5561981748795?text=Ola%2C%20quero%20meu%20diagnostico%20gratis%20com%20a%20AitoSoftwares.'
     },
     secondaryCta: {
-      label: 'Saiba quem somos',
-      to: 'marcas'
+      label: 'AitoLearn: estude conosco',
+      to: '/aitolearn'
     },
     surpriseCta: {
       label: 'Surpreenda-me',

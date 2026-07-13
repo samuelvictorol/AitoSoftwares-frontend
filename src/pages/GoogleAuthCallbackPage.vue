@@ -45,20 +45,22 @@ onMounted(() => {
 
   try {
     const user = JSON.parse(rawUser)
-    const role = user.role === 'admin' ? 'admin' : 'user'
+    const role = user.role === 'admin' ? 'admin' : user.role === 'customer' ? 'customer' : 'user'
+    localStorage.removeItem('aito_admin_token')
+    localStorage.removeItem('aito_admin_user')
+    localStorage.removeItem('aito_user_token')
+    localStorage.removeItem('aito_user')
+    localStorage.removeItem('aito_seller_token')
+    localStorage.removeItem('aito_seller_user')
     const tokenKey = role === 'admin' ? 'aito_admin_token' : 'aito_user_token'
     const userKey = role === 'admin' ? 'aito_admin_user' : 'aito_user'
 
     localStorage.setItem(tokenKey, token)
-    localStorage.setItem(userKey, JSON.stringify(user))
-    if (role === 'user') {
-      localStorage.removeItem('aito_admin_token')
-      localStorage.removeItem('aito_admin_user')
-    }
+    localStorage.setItem(userKey, JSON.stringify({ ...user, role }))
 
     window.history.replaceState({}, document.title, '/auth/google/callback')
     message.value = 'Acesso confirmado. Redirecionando...'
-    router.replace(role === 'admin' ? '/admin' : '/app')
+    router.replace(role === 'admin' ? '/admin' : role === 'customer' ? '/customer' : '/app')
   } catch (error) {
     goHomeWithError('A resposta do Google estava invalida.')
   }

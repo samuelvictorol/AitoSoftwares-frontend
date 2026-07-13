@@ -1,0 +1,27 @@
+<template>
+  <q-layout view="lHh Lpr lFf" class="legal-page">
+    <q-page-container><q-page class="legal-page__page"><main class="legal-page__shell">
+      <header class="legal-page__header"><router-link to="/" class="legal-page__brand"><img src="/favicon.png" alt="" /> AITO<span>SOFTWARES</span></router-link><router-link to="/" class="legal-page__back"><q-icon name="mdi-arrow-left" /> Voltar</router-link></header>
+      <article class="legal-page__article"><p class="legal-page__eyebrow">AitoSoftwares / {{ type === 'privacy' ? 'LGPD' : 'Termos' }}</p><h1>{{ policy.title }}</h1><p class="legal-page__updated">Versao {{ policy.version || '1.0' }}</p><div class="legal-page__content">{{ policy.content }}</div><p class="legal-page__contact">Para solicitar acesso, correcao ou exclusao de dados, fale com a AitoSoftwares pelo canal oficial de atendimento.</p></article>
+    </main></q-page></q-page-container>
+  </q-layout>
+</template>
+
+<script setup>
+import { onMounted, reactive } from 'vue'
+import { api } from 'boot/axios'
+
+const props = defineProps({ type: { type: String, default: 'privacy' } })
+const fallbackContent = props.type === 'privacy'
+  ? 'A AitoSoftwares trata dados pessoais com transparencia, finalidade e seguranca. Coletamos dados de cadastro, contato, navegacao e interacoes para autenticar acessos, responder solicitacoes, entregar produtos e cursos, melhorar a experiencia, prevenir abuso e cumprir obrigacoes legais. Compartilhamos dados apenas quando necessario para operar servicos, cumprir a lei ou proteger direitos. Nao vendemos dados pessoais. Voce pode solicitar acesso, correcao, portabilidade, informacoes sobre o uso, oposicao ou exclusao, respeitados os limites legais. Para exercer seus direitos, fale com a AitoSoftwares pelo canal oficial de atendimento.'
+  : 'A AitoSoftwares oferece software sob medida, automacoes, experiencias digitais e cursos de desenvolvimento. O usuario deve manter seus dados corretos, proteger suas credenciais e utilizar o aplicativo de maneira legal, respeitosa e segura. Materiais de cursos sao licenciados para uso pessoal ou empresarial conforme a oferta contratada e nao podem ser redistribuidos sem autorizacao. Servicos podem evoluir, ser atualizados ou passar por manutencao. Estes termos valorizam transparencia, colaboracao e melhoria continua.'
+const policy = reactive({ title: props.type === 'privacy' ? 'Politica de Privacidade AitoSoftwares' : 'Termos de Servico AitoSoftwares', content: fallbackContent, version: '1.0' })
+
+onMounted(async () => {
+  try { Object.assign(policy, (await api.get(`/legal/${props.type}`)).data.data) } catch (error) { policy.content = fallbackContent }
+})
+</script>
+
+<style scoped>
+.legal-page { color:#effffb; background:#03090b; }.legal-page__page { min-height:100vh; background:radial-gradient(circle at 50% 10%,rgba(19,188,157,.14),transparent 30rem),#03090b; }.legal-page__shell { width:min(900px,calc(100% - 2rem)); margin:auto; }.legal-page__header { display:flex; justify-content:space-between; align-items:center; padding:1rem 0; border-bottom:1px solid rgba(19,188,157,.2); }.legal-page__brand,.legal-page__back { display:inline-flex; align-items:center; gap:.5rem; color:#effffb; font-size:.76rem; font-weight:800; text-decoration:none; }.legal-page__brand img { width:32px; height:32px; }.legal-page__brand span { color:#13bc9d; }.legal-page__article { padding:14vh 0; }.legal-page__eyebrow { color:#8fffee; font-size:.7rem; font-weight:900; letter-spacing:.15em; text-transform:uppercase; }.legal-page h1 { max-width:16ch; margin:.8rem 0; font-size:clamp(2.2rem,6vw,4.8rem); line-height:1; background:linear-gradient(135deg,#effffb,#8fffee,#13bc9d); background-clip:text; -webkit-background-clip:text; color:transparent; }.legal-page__updated,.legal-page__contact { color:rgba(229,255,250,.58); font-size:.78rem; }.legal-page__content { margin-top:2rem; padding:1.4rem; border-left:2px solid #13bc9d; color:rgba(239,255,251,.82); line-height:1.8; white-space:pre-line; background:rgba(3,25,26,.52); }.legal-page__contact { margin-top:1.5rem; }
+</style>

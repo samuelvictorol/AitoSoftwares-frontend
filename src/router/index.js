@@ -29,8 +29,28 @@ export default defineRouter(function (/* { store, ssrContext } */) {
   Router.beforeEach((to) => {
     if (process.env.SERVER) return true
 
-    if (to.meta?.requiresAuth === 'user' && !localStorage.getItem('aito_user_token')) {
+    const token = localStorage.getItem('aito_user_token')
+    let sessionUser = {}
+    try {
+      sessionUser = JSON.parse(localStorage.getItem('aito_user') || '{}')
+    } catch (error) {
+      sessionUser = {}
+    }
+
+    if (to.meta?.requiresAuth === 'user' && !token) {
       return '/'
+    }
+
+    if (to.meta?.requiresAuth === 'user' && sessionUser.role === 'customer') {
+      return '/customer'
+    }
+
+    if (to.meta?.requiresAuth === 'customer' && !token) {
+      return '/'
+    }
+
+    if (to.meta?.requiresAuth === 'customer' && sessionUser.role !== 'customer') {
+      return '/app'
     }
 
     if (to.meta?.requiresAuth === 'admin' && !localStorage.getItem('aito_admin_token')) {

@@ -1,79 +1,27 @@
 <template>
   <q-layout view="lHh Lpr lFf" class="user-app">
-    <q-page-container>
-      <q-page class="user-app__page">
-        <div class="user-app__shell">
-          <header class="user-app__header">
-            <div class="user-app__brand"><img src="/favicon.png" alt="" /><span>AITO<span>SOFTWARES</span></span></div>
-            <div class="user-app__session">
-              <div>
-                <strong>{{ sessionUser.name || 'Cliente Aito' }}</strong>
-                <small>{{ sessionUser.email }}</small>
-              </div>
-              <q-btn flat no-caps icon="mdi-logout" label="Sair" @click="logout" />
-            </div>
-          </header>
-          <main class="user-app__main">
-            <span class="user-app__eyebrow">Area do cliente</span>
-            <h1>Seu proximo movimento, em um so lugar.</h1>
-            <p>Esse espaco vai reunir diagnosticos, etapas de projeto e os proximos sinais da sua operação.</p>
-            <div class="user-app__grid">
-              <section><q-icon name="mdi-radar" size="30px" /><strong>Diagnostico</strong><span>Em preparacao</span></section>
-              <section><q-icon name="mdi-progress-check" size="30px" /><strong>Projetos</strong><span>Acompanhe entregas por etapas</span></section>
-              <section><q-icon name="mdi-message-outline" size="30px" /><strong>Contato</strong><span>Fale com a equipe Aito</span></section>
-            </div>
-          </main>
-        </div>
-      </q-page>
-    </q-page-container>
+    <q-page-container><q-page class="user-app__page"><div class="user-app__shell">
+      <header class="user-app__header"><router-link class="user-app__brand" to="/"><img src="/favicon.png" alt="" /><span>AITO<span>SOFTWARES</span></span></router-link><div class="user-app__session"><div><strong>{{ firstName }}</strong><small>{{ sessionUser.email }}</small></div><q-btn flat round icon="mdi-logout" aria-label="Sair" @click="logout"><q-tooltip>Sair</q-tooltip></q-btn></div></header>
+      <nav class="user-app__nav" aria-label="Area do usuario"><button type="button" :class="{ 'is-active': activeMenu === 'home' }" @click="activeMenu = 'home'"><q-icon name="mdi-view-dashboard-outline" /> Inicio</button><button type="button" :class="{ 'is-active': activeMenu === 'profile' }" @click="activeMenu = 'profile'"><q-icon name="mdi-account-outline" /> Meu perfil</button><button type="button" :class="{ 'is-active': activeMenu === 'courses' }" @click="activeMenu = 'courses'"><q-icon name="mdi-school-outline" /> Cursos</button></nav>
+      <main v-if="activeMenu === 'home'" class="user-app__main"><span class="user-app__eyebrow">AitoLearn / Area do usuario</span><h1>Aprenda a criar software que o mercado valoriza.</h1><p>Seu acesso para cursos, aulas e materiais da AitoLearn fica reunido aqui.</p><div class="user-app__grid"><section><q-icon name="mdi-school-outline" size="30px" /><strong>Curso 1</strong><span>Desenvolvimento de sistemas high ticket</span><q-btn unelevated no-caps label="Conhecer lancamento" icon="mdi-arrow-top-right" @click="router.push('/aitolearn')" /></section><section><q-icon name="mdi-progress-check" size="30px" /><strong>Seu progresso</strong><span>Comece pela trilha de fundamentos</span></section><section><q-icon name="mdi-message-outline" size="30px" /><strong>Suporte</strong><span>Fale com a equipe Aito</span></section></div></main>
+      <main v-else-if="activeMenu === 'profile'" class="user-app__main user-app__profile"><span class="user-app__eyebrow">Meu perfil</span><h1>Seu acesso, do seu jeito.</h1><q-form class="user-app__profile-form" @submit.prevent="saveProfile"><q-input v-model="profile.name" outlined label="Nome" /><q-input v-model="profile.email" outlined label="E-mail" readonly /><q-input v-model="profile.phone" outlined label="Telefone" readonly /><q-btn unelevated no-caps type="submit" label="Salvar nome" icon="mdi-content-save" :loading="saving" /></q-form></main>
+      <main v-else class="user-app__main"><span class="user-app__eyebrow">AitoLearn</span><h1>O proximo projeto pode comecar por uma aula.</h1><p>O Curso 1 foi desenhado para transformar conhecimento tecnico em entregas que geram valor e venda.</p><q-btn unelevated no-caps label="Ver lancamento do Curso 1" icon="mdi-arrow-top-right" @click="router.push('/aitolearn')" /></main>
+    </div></q-page></q-page-container>
   </q-layout>
 </template>
 
 <script setup>
-import { onMounted, ref } from 'vue'
+import { computed, onMounted, reactive, ref } from 'vue'
+import { useQuasar } from 'quasar'
 import { useRouter } from 'vue-router'
 
-const router = useRouter()
-const sessionUser = ref({})
-
-onMounted(() => {
-  try {
-    sessionUser.value = JSON.parse(localStorage.getItem('aito_user') || '{}')
-  } catch (error) {
-    sessionUser.value = {}
-  }
-})
-
-function logout() {
-  localStorage.removeItem('aito_user_token')
-  localStorage.removeItem('aito_user')
-  router.push('/')
-}
+const router = useRouter(); const $q = useQuasar(); const sessionUser = ref({}); const activeMenu = ref('home'); const saving = ref(false); const profile = reactive({ name: '', email: '', phone: '' })
+const firstName = computed(() => String(sessionUser.value.name || 'Usuario Aito').trim().split(/\s+/)[0])
+onMounted(() => { try { sessionUser.value = JSON.parse(localStorage.getItem('aito_user') || '{}'); Object.assign(profile, sessionUser.value) } catch (error) { sessionUser.value = {} } })
+function saveProfile () { saving.value = true; const next = { ...sessionUser.value, name: profile.name.trim() }; localStorage.setItem('aito_user', JSON.stringify(next)); sessionUser.value = next; saving.value = false; $q.notify({ type: 'positive', message: 'Perfil atualizado.' }) }
+function logout () { localStorage.removeItem('aito_user_token'); localStorage.removeItem('aito_user'); router.push('/') }
 </script>
 
 <style scoped>
-.user-app { color: #effffb; background: #03090b; }
-.user-app__page { min-height: 100vh; background: radial-gradient(circle at 70% 18%, rgba(19, 188, 157, 0.16), transparent 25rem), #03090b; }
-.user-app__shell { width: min(1100px, calc(100% - 2rem)); margin: 0 auto; }
-.user-app__header { display: flex; padding: 1.1rem 0; align-items: center; justify-content: space-between; border-bottom: 1px solid rgba(19, 188, 157, 0.18); }
-.user-app__session { display: flex; align-items: center; gap: 0.8rem; }
-.user-app__session > div { display: grid; gap: 0.12rem; text-align: right; }
-.user-app__session strong { color: #effffb; font-size: 0.72rem; }
-.user-app__session small { color: rgba(230, 255, 250, 0.58); font-size: 0.62rem; }
-.user-app__brand { display: flex; align-items: center; gap: 0.65rem; font-size: 0.78rem; font-weight: 800; letter-spacing: 0.12em; }
-.user-app__brand img { width: 34px; height: 34px; }
-.user-app__brand span span { color: #13bc9d; }
-.user-app__main { padding: 12vh 0; }
-.user-app__eyebrow { color: #8fffee; font-size: 0.7rem; font-weight: 800; letter-spacing: 0.14em; text-transform: uppercase; }
-.user-app h1 { max-width: 12ch; margin: 0.8rem 0 0; font-size: clamp(2.4rem, 6vw, 5rem); line-height: 0.98; background: linear-gradient(135deg, #f3fffd, #13bc9d, #8fffee); background-clip: text; -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
-.user-app p { max-width: 32rem; color: rgba(230, 255, 250, 0.72); line-height: 1.6; }
-.user-app__grid { display: grid; margin-top: 3rem; grid-template-columns: repeat(3, 1fr); gap: 0.8rem; }
-.user-app__grid section { display: grid; padding: 1.2rem; gap: 0.4rem; border: 1px solid rgba(19, 188, 157, 0.25); border-radius: 0.8rem; background: rgba(4, 24, 25, 0.72); }
-.user-app__grid strong { color: #effffb; }
-.user-app__grid span { color: rgba(230, 255, 250, 0.58); font-size: 0.75rem; }
-.user-app__grid .q-icon { color: #13bc9d; }
-@media (max-width: 650px) { .user-app__grid { grid-template-columns: 1fr; } }
-@media (max-width: 520px) {
-  .user-app__session > div { display: none; }
-}
+.user-app{color:#effffb;background:#03090b}.user-app__page{min-height:100vh;background:radial-gradient(circle at 70% 18%,rgba(19,188,157,.16),transparent 25rem),#03090b}.user-app__shell{width:min(1100px,calc(100% - 2rem));margin:0 auto}.user-app__header{display:flex;padding:1.1rem 0;align-items:center;justify-content:space-between;border-bottom:1px solid rgba(19,188,157,.18)}.user-app__session{display:flex;align-items:center;gap:.8rem}.user-app__session>div{display:grid;gap:.12rem;text-align:right}.user-app__session strong{color:#effffb;font-size:.78rem}.user-app__session small{color:rgba(230,255,250,.58);font-size:.64rem}.user-app__brand{display:flex;align-items:center;gap:.65rem;color:#effffb;font-size:.78rem;font-weight:800;letter-spacing:.12em;text-decoration:none}.user-app__brand img{width:34px;height:34px}.user-app__brand span span{color:#13bc9d}.user-app__nav{display:flex;gap:.4rem;padding:1.1rem 0;border-bottom:1px solid rgba(19,188,157,.14)}.user-app__nav button{display:inline-flex;align-items:center;gap:.4rem;padding:.55rem .75rem;border:1px solid rgba(19,188,157,.25);border-radius:.5rem;color:rgba(239,255,251,.7);background:rgba(3,25,26,.5);cursor:pointer;font:inherit;font-size:.72rem}.user-app__nav button.is-active{color:#03110f;background:linear-gradient(135deg,#8fffee,#13bc9d)}.user-app__main{padding:12vh 0}.user-app__eyebrow{color:#8fffee;font-size:.7rem;font-weight:800;letter-spacing:.14em;text-transform:uppercase}.user-app h1{max-width:12ch;margin:.8rem 0 0;font-size:clamp(2.4rem,6vw,5rem);line-height:.98;background:linear-gradient(135deg,#f3fffd,#13bc9d,#8fffee);background-clip:text;-webkit-background-clip:text;-webkit-text-fill-color:transparent}.user-app p{max-width:32rem;color:rgba(230,255,250,.72);line-height:1.6}.user-app__grid{display:grid;margin-top:3rem;grid-template-columns:repeat(3,1fr);gap:.8rem}.user-app__grid section{display:grid;padding:1.2rem;gap:.5rem;border:1px solid rgba(19,188,157,.25);border-radius:.8rem;background:rgba(4,24,25,.72)}.user-app__grid strong{color:#effffb}.user-app__grid span{color:rgba(230,255,250,.58);font-size:.75rem}.user-app__grid .q-icon{color:#13bc9d}.user-app__grid .q-btn,.user-app__main>.q-btn,.user-app__profile-form .q-btn{width:max-content;color:#03110f;background:linear-gradient(135deg,#8fffee,#13bc9d);font-weight:800}.user-app__profile-form{display:grid;max-width:520px;gap:.8rem;margin-top:2rem}.user-app__profile-form :deep(.q-field__control){background:rgba(4,24,25,.78);color:#effffb}.user-app__profile-form :deep(.q-field__native),.user-app__profile-form :deep(.q-field__label){color:rgba(239,255,251,.78)}@media(max-width:650px){.user-app__grid{grid-template-columns:1fr}.user-app__session>div{display:none}}
 </style>

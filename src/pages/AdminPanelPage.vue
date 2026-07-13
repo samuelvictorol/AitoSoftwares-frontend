@@ -1,617 +1,80 @@
 <template>
-  <q-layout view="lHh Lpr lFf">
-    <q-page-container>
-      <q-page class="ops-page">
-        <div class="ops-shell">
-      <header class="ops-header">
-        <div class="row items-center q-gutter-sm">
-          <q-img src="/favicon.png" width="52px" height="34px" fit="contain" />
-          <div>
-            <div class="text-h6 text-weight-bold">Painel de Atendimento</div>
-            <div class="text-caption text-grey-7">WhatsApp unico, IA e vendedores</div>
-          </div>
-        </div>
-        <div class="row items-center q-gutter-sm">
-          <q-chip dense square :color="whatsappColor" text-color="white" :icon="whatsappIcon">
-            {{ whatsappLabel }}
-          </q-chip>
-          <q-btn flat dense no-caps icon="mdi-logout" label="Sair" @click="logout" />
-        </div>
-      </header>
+  <q-layout view="lHh Lpr lFf" class="admin-app">
+    <q-page-container><q-page class="admin-app__page"><div class="admin-app__shell">
+      <header class="admin-app__header"><div class="admin-app__brand"><img src="/favicon.png" alt="" /><div><strong>AITO / OPERACAO</strong><small>Captacao, usuarios e clientes</small></div></div><div class="admin-app__session"><span>{{ firstName }}</span><q-btn flat round icon="mdi-logout" aria-label="Sair" @click="logout"><q-tooltip>Sair</q-tooltip></q-btn></div></header>
+      <section class="admin-app__hero"><div><p class="admin-app__eyebrow">Painel admin</p><h1>Decisoes claras para cada fluxo.</h1><p>Gerencie os contatos que chegaram pela AitoSoftwares, os acessos e os textos legais do aplicativo.</p></div><div class="admin-app__stats"><span><strong>{{ leads.length }}</strong> leads carregados</span><span><strong>{{ users.length }}</strong> usuarios</span><span><strong>{{ customers.length }}</strong> clientes</span></div></section>
 
-      <q-tabs v-model="tab" dense align="left" class="ops-tabs" active-color="primary" indicator-color="secondary">
-        <q-tab name="sellers" icon="mdi-account-tie" label="Vendedores" />
-        <q-tab name="whatsapp" icon="mdi-qrcode-scan" label="WhatsApp" />
-        <q-tab name="logs" icon="mdi-console" label="Logs" />
-        <q-tab name="config" icon="mdi-robot-outline" label="Configuracao da IA" />
+      <q-tabs v-model="tab" dense align="left" outside-arrows mobile-arrows class="admin-app__tabs" active-color="teal-3" indicator-color="teal-4">
+        <q-tab name="overview" icon="mdi-view-dashboard-outline" label="Visao geral" />
+        <q-tab name="leads" icon="mdi-account-multiple-outline" label="Leads" />
+        <q-tab name="users" icon="mdi-account-outline" label="Usuarios" />
+        <q-tab name="customers" icon="mdi-briefcase-outline" label="Clientes" />
+        <q-tab name="lgpd" icon="mdi-shield-lock-outline" label="LGPD" />
       </q-tabs>
 
-      <q-tab-panels v-model="tab" animated class="ops-panels">
-        <q-tab-panel name="sellers" class="q-pa-none">
-          <section class="ops-section">
-            <div class="ops-section-head">
-              <div>
-                <div class="text-subtitle1 text-weight-bold">Vendedores</div>
-                <div class="text-caption text-grey-7">Cadastro, login, status e senha dos atendentes.</div>
-              </div>
-              <q-btn unelevated no-caps class="ops-primary-btn" icon="mdi-account-plus" label="Novo vendedor" @click="openSellerDialog()" />
-            </div>
+      <q-tab-panels v-model="tab" animated class="admin-app__panels">
+        <q-tab-panel name="overview"><div class="admin-app__overview"><article><q-icon name="mdi-account-multiple-outline" /><strong>{{ leads.length }}</strong><span>respostas e indicacoes</span><q-btn flat no-caps label="Abrir Leads" @click="tab = 'leads'" /></article><article><q-icon name="mdi-school-outline" /><strong>{{ users.length }}</strong><span>acessos para cursos</span><q-btn flat no-caps label="Abrir Usuarios" @click="tab = 'users'" /></article><article><q-icon name="mdi-briefcase-outline" /><strong>{{ customers.length }}</strong><span>acessos de clientes</span><q-btn flat no-caps label="Abrir Clientes" @click="tab = 'customers'" /></article><article><q-icon name="mdi-file-document-edit-outline" /><strong>LGPD</strong><span>Politicas e termos versionados</span><q-btn flat no-caps label="Editar documentos" @click="tab = 'lgpd'" /></article></div></q-tab-panel>
 
-            <div class="row q-col-gutter-sm q-mb-md">
-              <div class="col-12 col-md-5">
-                <q-input v-model="sellerSearch" outlined dense debounce="350" label="Buscar vendedor" clearable @update:model-value="loadSellers">
-                  <template #prepend><q-icon name="mdi-magnify" /></template>
-                </q-input>
-              </div>
-            </div>
+        <q-tab-panel name="leads"><section class="admin-app__section"><div class="admin-app__section-head"><div><p class="admin-app__eyebrow">01 / CAPTACAO</p><h2>Leads</h2><span>Formularios, indicacoes, landing e atendimento da IA.</span></div><q-btn unelevated no-caps class="admin-app__primary" icon="mdi-plus" label="Cadastrar lead" @click="openLeadDialog()" /></div><div class="admin-app__filters"><q-input v-model="leadSearch" outlined dense clearable label="Buscar por nome, email ou telefone" @keyup.enter="loadLeads"><template #prepend><q-icon name="mdi-magnify" /></template></q-input><q-select v-model="leadStatus" outlined dense clearable label="Status" :options="leadStatuses" emit-value map-options @update:model-value="loadLeads" /></div><q-table flat bordered wrap-cells row-key="_id" class="admin-app__table" :rows="leads" :columns="leadColumns" :loading="loading.leads" :pagination.sync="leadPagination" no-data-label="Nenhum lead encontrado"><template #body-cell-type="props"><q-td :props="props"><span class="admin-app__type">{{ props.row.flowType || props.row.source || 'landing' }}</span></q-td></template><template #body-cell-tags="props"><q-td :props="props"><span v-for="tag in props.row.tags || []" :key="tag" class="admin-app__tag">{{ tag }}</span></q-td></template><template #body-cell-actions="props"><q-td :props="props"><q-btn flat round dense icon="mdi-pencil" @click="openLeadDialog(props.row)" /><q-btn flat round dense color="negative" icon="mdi-delete-outline" @click="deleteLead(props.row)" /></q-td></template></q-table></section></q-tab-panel>
 
-            <q-table
-              flat
-              bordered
-              row-key="id"
-              class="ops-table"
-              :rows="sellers"
-              :columns="sellerColumns"
-              :loading="loading.sellers"
-              no-data-label="Nenhum vendedor cadastrado"
-            >
-              <template #body-cell-active="props">
-                <q-td :props="props">
-                  <q-toggle :model-value="props.row.active" color="positive" @update:model-value="toggleSeller(props.row, $event)" />
-                </q-td>
-              </template>
+        <q-tab-panel v-for="personType in ['users', 'customers']" :key="personType" :name="personType"><section class="admin-app__section"><div class="admin-app__section-head"><div><p class="admin-app__eyebrow">{{ personType === 'users' ? '02 / AITOLEARN' : '03 / OPERACAO' }}</p><h2>{{ personType === 'users' ? 'Usuarios' : 'Clientes' }}</h2><span>{{ personType === 'users' ? 'Acessos para cursos e materiais.' : 'Acessos para acompanhamento de projetos.' }}</span></div><q-btn unelevated no-caps class="admin-app__primary" icon="mdi-account-plus-outline" :label="personType === 'users' ? 'Cadastrar usuario' : 'Cadastrar cliente'" @click="openPersonDialog(personType === 'customers' ? 'customer' : 'user')" /></div><div class="admin-app__filters"><q-input v-model="personSearch" outlined dense clearable label="Buscar por nome, email ou telefone" @keyup.enter="loadPeople(personType === 'customers' ? 'customer' : 'user')"><template #prepend><q-icon name="mdi-magnify" /></template></q-input></div><q-table flat bordered wrap-cells row-key="_id" class="admin-app__table" :rows="personType === 'users' ? users : customers" :columns="personColumns" :loading="loading[personType]" :pagination.sync="personPagination" no-data-label="Nenhum cadastro encontrado"><template #body-cell-role="props"><q-td :props="props"><span class="admin-app__type">{{ props.row.role === 'customer' ? 'cliente' : 'usuario' }}</span></q-td></template><template #body-cell-active="props"><q-td :props="props"><q-icon :name="props.row.active ? 'mdi-check-circle' : 'mdi-close-circle'" :color="props.row.active ? 'positive' : 'negative'" /></q-td></template><template #body-cell-actions="props"><q-td :props="props"><q-btn flat round dense icon="mdi-pencil" @click="openPersonDialog(props.row.role, props.row)" /><q-btn flat round dense color="negative" icon="mdi-delete-outline" @click="deletePerson(props.row)" /></q-td></template></q-table></section></q-tab-panel>
 
-              <template #body-cell-actions="props">
-                <q-td :props="props">
-                  <q-btn dense flat round icon="mdi-pencil" @click="openSellerDialog(props.row)">
-                    <q-tooltip>Editar</q-tooltip>
-                  </q-btn>
-                  <q-btn dense flat round icon="mdi-lock-reset" @click="openPasswordDialog(props.row)">
-                    <q-tooltip>Alterar senha</q-tooltip>
-                  </q-btn>
-                  <q-btn dense flat round color="negative" icon="mdi-delete-outline" @click="deleteSeller(props.row)">
-                    <q-tooltip>Excluir</q-tooltip>
-                  </q-btn>
-                </q-td>
-              </template>
-            </q-table>
-          </section>
-        </q-tab-panel>
-
-        <q-tab-panel name="whatsapp" class="q-pa-none">
-          <section class="ops-section">
-            <div class="ops-section-head">
-              <div>
-                <div class="text-subtitle1 text-weight-bold">Autenticacao WhatsApp</div>
-                <div class="text-caption text-grey-7">Uma unica sessao alimenta todos os vendedores logados.</div>
-              </div>
-              <div class="row q-gutter-sm">
-                <q-btn unelevated no-caps class="ops-primary-btn" icon="mdi-qrcode-scan" label="Gerar QR" :loading="loading.whatsapp" @click="connectWhatsapp" />
-                <q-btn outline no-caps icon="mdi-refresh" label="Reconectar" :loading="loading.whatsapp" @click="reconnectWhatsapp" />
-                <q-btn outline no-caps color="negative" icon="mdi-power" label="Desconectar" :loading="loading.whatsapp" @click="disconnectWhatsapp" />
-              </div>
-            </div>
-
-            <div class="whatsapp-grid">
-              <div class="ops-card">
-                <div class="text-caption text-grey-7">Status atual</div>
-                <div class="row items-center q-gutter-sm q-mt-sm">
-                  <q-icon :name="whatsappIcon" size="28px" :color="whatsappColor" />
-                  <div>
-                    <div class="text-h6 text-weight-bold">{{ whatsappLabel }}</div>
-                    <div class="text-caption text-grey-7">{{ whatsappStatus.connectedPhone || 'Nenhum numero conectado' }}</div>
-                  </div>
-                </div>
-                <q-banner v-if="whatsappStatus.lastError" class="q-mt-md bg-orange-1 text-orange-10">
-                  {{ whatsappStatus.lastError }}
-                </q-banner>
-              </div>
-
-              <div class="ops-card qr-card">
-                <img v-if="whatsappStatus.qrCode" :src="whatsappStatus.qrCode" alt="QR Code WhatsApp" class="qr-image">
-                <div v-else class="empty-qr">
-                  <q-icon name="mdi-qrcode" size="54px" color="grey-5" />
-                  <div class="text-caption text-grey-7 q-mt-sm">QR Code aparece aqui quando a sessao solicitar autenticacao.</div>
-                </div>
-              </div>
-            </div>
-
-            <div class="ops-card q-mt-md">
-              <div class="row items-center justify-between q-mb-sm">
-                <div>
-                  <div class="text-subtitle2 text-weight-bold">Simular mensagem</div>
-                  <div class="text-caption text-grey-7">Util para testar UI, IA e cooldown sem conectar o WhatsApp real.</div>
-                </div>
-                <q-btn dense outline no-caps icon="mdi-send" label="Enviar mock" :loading="loading.mock" @click="sendMock" />
-              </div>
-              <div class="row q-col-gutter-sm">
-                <div class="col-12 col-md-3"><q-input v-model="mock.phone" dense outlined label="Telefone" /></div>
-                <div class="col-12 col-md-3"><q-input v-model="mock.name" dense outlined label="Nome" /></div>
-                <div class="col-12 col-md-6"><q-input v-model="mock.content" dense outlined label="Mensagem" /></div>
-              </div>
-            </div>
-          </section>
-        </q-tab-panel>
-
-        <q-tab-panel name="logs" class="q-pa-none">
-          <section class="ops-section">
-            <div class="ops-section-head">
-              <div>
-                <div class="text-subtitle1 text-weight-bold">Logs administrativos</div>
-                <div class="text-caption text-grey-7">Eventos de WhatsApp, IA, vendedores, cooldown e erros.</div>
-              </div>
-              <q-btn outline no-caps icon="mdi-refresh" label="Atualizar" @click="loadLogs" />
-            </div>
-
-            <div class="console">
-              <div v-for="log in logs" :key="log._id || `${log.type}-${log.timestamp}`" class="console-line">
-                <span class="console-time">{{ formatDate(log.timestamp || log.createdAt) }}</span>
-                <span class="console-level" :class="`level-${log.level}`">{{ log.level || 'info' }}</span>
-                <span class="console-type">{{ log.type }}</span>
-                <span class="console-message">{{ log.message }}</span>
-              </div>
-            </div>
-          </section>
-        </q-tab-panel>
-
-        <q-tab-panel name="config" class="q-pa-none">
-          <q-form class="ops-section" @submit="saveConfig">
-            <div class="ops-section-head">
-              <div>
-                <div class="text-subtitle1 text-weight-bold">Configuracao da IA</div>
-                <div class="text-caption text-grey-7">Prompt, contexto, cooldown e televendas sem redeploy.</div>
-              </div>
-              <q-btn unelevated no-caps class="ops-primary-btn" icon="mdi-content-save" label="Salvar configuracao" type="submit" :loading="loading.config" />
-            </div>
-
-            <div class="config-grid">
-              <q-input v-model="aiConfig.virtualPrefix" outlined dense label="Prefixo da IA" />
-              <q-input v-model.number="aiConfig.cooldownSeconds" outlined dense type="number" label="Cooldown da IA em segundos" />
-              <q-input v-model.number="aiConfig.contextMessages" outlined dense type="number" label="Mensagens de contexto" />
-              <q-input v-model="aiConfig.televendasOption" outlined dense label="Opcao de televendas" />
-              <q-input v-model="aiConfig.televendasNumber" outlined dense label="WhatsApp televendas" />
-              <q-toggle v-model="aiConfig.televendasEnabled" color="positive" label="Televendas ativo" />
-            </div>
-
-            <q-input v-model="aiConfig.initialMessage" outlined type="textarea" autogrow label="Mensagem inicial automatica" class="q-mt-md" />
-            <q-input v-model="aiConfig.televendasRedirectText" outlined type="textarea" autogrow label="Texto de redirecionamento para televendas" class="q-mt-md" />
-            <q-input v-model="aiConfig.basePrompt" outlined type="textarea" autogrow label="Prompt base" class="q-mt-md" />
-            <q-input v-model="aiConfig.metadata" outlined type="textarea" autogrow label="Metadata dinamica enviada para a IA" class="q-mt-md" />
-            <q-input v-model="aiConfig.additionalRules" outlined type="textarea" autogrow label="Regras adicionais" class="q-mt-md" />
-          </q-form>
-        </q-tab-panel>
+        <q-tab-panel name="lgpd"><section class="admin-app__section"><div class="admin-app__section-head"><div><p class="admin-app__eyebrow">04 / GOVERNANCA</p><h2>LGPD e documentos</h2><span>Edite a politica de privacidade e os termos do aplicativo.</span></div><q-btn unelevated no-caps class="admin-app__primary" icon="mdi-content-save" label="Salvar documento" :loading="loading.policy" @click="savePolicy" /></div><div class="admin-app__policy-tabs"><button v-for="item in policies" :key="item.type" type="button" :class="{ 'is-active': policyDraft.type === item.type }" @click="selectPolicy(item)"><q-icon :name="item.type === 'privacy' ? 'mdi-shield-lock-outline' : 'mdi-file-document-outline'" /> {{ item.type === 'privacy' ? 'Politica de privacidade' : 'Termos de servico' }}</button></div><q-input v-model="policyDraft.title" outlined label="Titulo" /><q-input v-model="policyDraft.version" outlined label="Versao" class="q-mt-md" /><q-input v-model="policyDraft.content" outlined type="textarea" autogrow label="Conteudo" class="q-mt-md" /><div class="admin-app__policy-actions"><q-btn unelevated no-caps class="admin-app__primary" icon="mdi-content-save" label="Salvar" :loading="loading.policy" @click="savePolicy" /><q-btn flat no-caps color="negative" icon="mdi-delete-outline" label="Excluir documento salvo" @click="deletePolicy" /></div></section></q-tab-panel>
       </q-tab-panels>
-    </div>
+    </div></q-page></q-page-container>
 
-    <q-dialog v-model="sellerDialog">
-      <q-card class="dialog-card">
-        <q-card-section>
-          <div class="text-subtitle1 text-weight-bold">{{ sellerForm.id ? 'Editar vendedor' : 'Novo vendedor' }}</div>
-        </q-card-section>
-        <q-form @submit="saveSeller">
-          <q-card-section class="q-gutter-sm">
-            <q-input v-model="sellerForm.name" outlined dense label="Nome" />
-            <q-input v-model="sellerForm.email" outlined dense label="Email/login" type="email" />
-            <q-input v-model="sellerForm.phone" outlined dense label="Telefone" />
-            <q-input v-if="!sellerForm.id" v-model="sellerForm.password" outlined dense label="Senha inicial" type="password" />
-            <q-toggle v-model="sellerForm.active" color="positive" label="Ativo" />
-          </q-card-section>
-          <q-card-actions align="right">
-            <q-btn flat no-caps label="Cancelar" v-close-popup />
-            <q-btn unelevated no-caps class="ops-primary-btn" label="Salvar" type="submit" :loading="loading.sellerSave" />
-          </q-card-actions>
-        </q-form>
-      </q-card>
-    </q-dialog>
+    <q-dialog v-model="leadDialog"><q-card class="admin-app__dialog"><q-card-section class="admin-app__dialog-head"><h3>{{ leadForm._id ? 'Editar lead' : 'Cadastrar lead' }}</h3><q-btn flat round dense icon="mdi-close" @click="leadDialog = false" /></q-card-section><q-card-section><q-form @submit.prevent="saveLead"><q-input v-model="leadForm.name" outlined label="Nome" :rules="[requiredRule]" /><q-input v-model="leadForm.email" outlined label="E-mail" class="q-mt-sm" /><q-input v-model="leadForm.phone" outlined label="Telefone" class="q-mt-sm" /><q-input v-model="leadForm.company" outlined label="Empresa" class="q-mt-sm" /><q-input v-model="leadForm.flowType" outlined label="Tipo do fluxo" class="q-mt-sm" /><q-input v-model="leadForm.message" outlined type="textarea" autogrow label="Mensagem" class="q-mt-sm" /><q-select v-model="leadForm.status" outlined label="Status" :options="leadStatuses" emit-value map-options class="q-mt-sm" /><q-btn unelevated no-caps type="submit" class="admin-app__primary full-width q-mt-md" label="Salvar lead" :loading="loading.save" /></q-form></q-card-section></q-card></q-dialog>
 
-    <q-dialog v-model="passwordDialog">
-      <q-card class="dialog-card">
-        <q-card-section>
-          <div class="text-subtitle1 text-weight-bold">Alterar senha</div>
-          <div class="text-caption text-grey-7">{{ passwordTarget?.name }}</div>
-        </q-card-section>
-        <q-form @submit="savePassword">
-          <q-card-section>
-            <q-input v-model="newPassword" outlined dense label="Nova senha" type="password" />
-          </q-card-section>
-          <q-card-actions align="right">
-            <q-btn flat no-caps label="Cancelar" v-close-popup />
-            <q-btn unelevated no-caps class="ops-primary-btn" label="Alterar" type="submit" />
-          </q-card-actions>
-        </q-form>
-      </q-card>
-        </q-dialog>
-      </q-page>
-    </q-page-container>
+    <q-dialog v-model="personDialog"><q-card class="admin-app__dialog"><q-card-section class="admin-app__dialog-head"><h3>{{ personForm._id ? 'Editar cadastro' : personForm.role === 'customer' ? 'Cadastrar cliente' : 'Cadastrar usuario' }}</h3><q-btn flat round dense icon="mdi-close" @click="personDialog = false" /></q-card-section><q-card-section><q-form @submit.prevent="savePerson"><q-input v-model="personForm.name" outlined label="Nome" :rules="[requiredRule]" /><q-input v-model="personForm.email" outlined label="E-mail" type="email" class="q-mt-sm" :rules="[requiredRule]" /><q-input v-model="personForm.phone" outlined label="Telefone" class="q-mt-sm" :rules="[requiredRule]" /><q-input v-if="!personForm._id" v-model="personForm.password" outlined label="Senha inicial" type="password" class="q-mt-sm" :rules="[requiredRule]" /><q-toggle v-model="personForm.active" label="Acesso ativo" color="positive" class="q-mt-sm" /><q-btn unelevated no-caps type="submit" class="admin-app__primary full-width q-mt-md" label="Salvar cadastro" :loading="loading.save" /></q-form></q-card-section></q-card></q-dialog>
   </q-layout>
 </template>
 
 <script>
-import { api, apiBaseURL } from 'boot/axios'
+import { api } from 'boot/axios'
 
 export default {
   name: 'AdminPanelPage',
   data () {
     return {
-      tab: 'sellers',
-      token: localStorage.getItem('aito_admin_token'),
-      sellerSearch: '',
-      sellers: [],
-      sellerDialog: false,
-      passwordDialog: false,
-      passwordTarget: null,
-      newPassword: '',
-      sellerForm: this.emptySellerForm(),
-      sellerColumns: [
-        { name: 'name', label: 'Nome', align: 'left', field: 'name', sortable: true },
-        { name: 'email', label: 'Login', align: 'left', field: 'email', sortable: true },
-        { name: 'phone', label: 'Telefone', align: 'left', field: 'phone' },
-        { name: 'active', label: 'Ativo', align: 'center', field: 'active' },
-        { name: 'lastLoginAt', label: 'Ultimo login', align: 'left', field: row => this.formatDate(row.lastLoginAt) },
-        { name: 'actions', label: '', align: 'right' }
-      ],
-      whatsappStatus: {},
-      logs: [],
-      aiConfig: {},
-      mock: {
-        phone: '5562999999999',
-        name: 'Cliente Teste',
-        content: 'Tem furadeira em promocao?'
-      },
-      loading: {
-        sellers: false,
-        sellerSave: false,
-        whatsapp: false,
-        config: false,
-        mock: false
-      },
-      eventSource: null
+      tab: 'overview', token: localStorage.getItem('aito_admin_token'), admin: {}, leads: [], users: [], customers: [], policies: [], leadSearch: '', leadStatus: '', personSearch: '', leadDialog: false, personDialog: false, leadForm: this.emptyLead(), personForm: this.emptyPerson('user'), policyDraft: {},
+      leadStatuses: [{ label: 'Novo', value: 'new' }, { label: 'Contatado', value: 'contacted' }, { label: 'Qualificado', value: 'qualified' }, { label: 'Fechado', value: 'closed' }],
+      leadColumns: [{ name: 'name', label: 'Nome', field: 'name', align: 'left', sortable: true }, { name: 'email', label: 'Contato', field: row => row.email || row.phone || '-', align: 'left' }, { name: 'type', label: 'Tipo', field: 'flowType', align: 'left' }, { name: 'tags', label: 'Tags', field: 'tags', align: 'left' }, { name: 'status', label: 'Status', field: 'status', align: 'left' }, { name: 'createdAt', label: 'Entrada', field: row => this.formatDate(row.createdAt), align: 'left' }, { name: 'actions', label: '', align: 'right' }],
+      personColumns: [{ name: 'name', label: 'Nome', field: 'name', align: 'left', sortable: true }, { name: 'email', label: 'E-mail', field: 'email', align: 'left' }, { name: 'phone', label: 'Telefone', field: 'phone', align: 'left' }, { name: 'role', label: 'Tipo', field: 'role', align: 'left' }, { name: 'active', label: 'Ativo', field: 'active', align: 'center' }, { name: 'actions', label: '', align: 'right' }],
+      leadPagination: { page: 1, rowsPerPage: 8 }, personPagination: { page: 1, rowsPerPage: 8 }, loading: { leads: false, users: false, customers: false, policy: false, save: false }
     }
   },
   computed: {
-    headers () {
-      return { Authorization: `Bearer ${this.token}` }
-    },
-    whatsappLabel () {
-      const labels = {
-        online: 'Online',
-        offline: 'Offline',
-        waiting_qr: 'Aguardando QR',
-        authenticating: 'Autenticando',
-        error: 'Erro'
-      }
-      return labels[this.whatsappStatus.status] || 'Offline'
-    },
-    whatsappColor () {
-      const colors = {
-        online: 'positive',
-        waiting_qr: 'warning',
-        authenticating: 'info',
-        error: 'negative'
-      }
-      return colors[this.whatsappStatus.status] || 'grey-7'
-    },
-    whatsappIcon () {
-      const icons = {
-        online: 'mdi-whatsapp',
-        waiting_qr: 'mdi-qrcode-scan',
-        authenticating: 'mdi-sync',
-        error: 'mdi-alert-circle-outline'
-      }
-      return icons[this.whatsappStatus.status] || 'mdi-whatsapp'
-    }
+    firstName () { return String(this.admin.name || 'Admin Aito').trim().split(/\s+/)[0] },
+    headers () { return { headers: { Authorization: `Bearer ${this.token}` } } }
   },
   mounted () {
-    if (!this.token) {
-      this.$router.push('/admin/login')
-      return
-    }
+    try { this.admin = JSON.parse(localStorage.getItem('aito_admin_user') || '{}') } catch (error) { this.admin = {} }
     this.loadAll()
-    this.connectEvents()
-  },
-  beforeUnmount () {
-    if (this.eventSource) this.eventSource.close()
   },
   methods: {
-    emptySellerForm () {
-      return { id: null, name: '', email: '', phone: '', password: '', active: true }
-    },
-    async request (method, url, payload) {
-      return api.request({ method, url, data: payload, headers: this.headers })
-    },
-    async loadAll () {
-      await Promise.all([this.loadSellers(), this.loadWhatsapp(), this.loadLogs(), this.loadConfig()])
-    },
-    async loadSellers () {
-      this.loading.sellers = true
-      try {
-        const { data } = await api.get('/admin/sellers', { params: { q: this.sellerSearch }, headers: this.headers })
-        this.sellers = data.data
-      } finally {
-        this.loading.sellers = false
-      }
-    },
-    async loadWhatsapp () {
-      const { data } = await api.get('/admin/whatsapp/status', { headers: this.headers })
-      this.whatsappStatus = data.data || {}
-    },
-    async loadLogs () {
-      const { data } = await api.get('/admin/logs', { params: { limit: 180 }, headers: this.headers })
-      this.logs = data.data || []
-    },
-    async loadConfig () {
-      const { data } = await api.get('/admin/ai-config', { headers: this.headers })
-      this.aiConfig = data.data || {}
-    },
-    openSellerDialog (seller = null) {
-      this.sellerForm = seller ? { ...seller, id: seller.id || seller._id, password: '' } : this.emptySellerForm()
-      this.sellerDialog = true
-    },
-    async saveSeller () {
-      this.loading.sellerSave = true
-      try {
-        if (this.sellerForm.id) {
-          await this.request('put', `/admin/sellers/${this.sellerForm.id}`, this.sellerForm)
-        } else {
-          await this.request('post', '/admin/sellers', this.sellerForm)
-        }
-        this.sellerDialog = false
-        await this.loadSellers()
-      } catch (error) {
-        this.$q.notify({ type: 'negative', message: error.response?.data?.message || 'Nao foi possivel salvar.' })
-      } finally {
-        this.loading.sellerSave = false
-      }
-    },
-    async toggleSeller (seller, active) {
-      await this.request('patch', `/admin/sellers/${seller.id || seller._id}/status`, { active })
-      await this.loadSellers()
-    },
-    openPasswordDialog (seller) {
-      this.passwordTarget = seller
-      this.newPassword = ''
-      this.passwordDialog = true
-    },
-    async savePassword () {
-      await this.request('patch', `/admin/sellers/${this.passwordTarget.id || this.passwordTarget._id}/password`, { password: this.newPassword })
-      this.passwordDialog = false
-      this.$q.notify({ type: 'positive', message: 'Senha alterada.' })
-    },
-    deleteSeller (seller) {
-      this.$q.dialog({
-        title: 'Excluir vendedor',
-        message: `Remover ${seller.name}?`,
-        cancel: true,
-        persistent: true
-      }).onOk(async () => {
-        await this.request('delete', `/admin/sellers/${seller.id || seller._id}`)
-        await this.loadSellers()
-      })
-    },
-    async connectWhatsapp () {
-      this.loading.whatsapp = true
-      try {
-        const { data } = await this.request('post', '/admin/whatsapp/connect')
-        this.whatsappStatus = data.data
-      } finally {
-        this.loading.whatsapp = false
-      }
-    },
-    async reconnectWhatsapp () {
-      this.loading.whatsapp = true
-      try {
-        const { data } = await this.request('post', '/admin/whatsapp/reconnect')
-        this.whatsappStatus = data.data
-      } finally {
-        this.loading.whatsapp = false
-      }
-    },
-    async disconnectWhatsapp () {
-      this.loading.whatsapp = true
-      try {
-        const { data } = await this.request('post', '/admin/whatsapp/disconnect')
-        this.whatsappStatus = data.data
-      } finally {
-        this.loading.whatsapp = false
-      }
-    },
-    async saveConfig () {
-      this.loading.config = true
-      try {
-        const { data } = await this.request('put', '/admin/ai-config', this.aiConfig)
-        this.aiConfig = data.data
-        this.$q.notify({ type: 'positive', message: 'Configuracao salva.' })
-      } finally {
-        this.loading.config = false
-      }
-    },
-    async sendMock () {
-      this.loading.mock = true
-      try {
-        await this.request('post', '/admin/whatsapp/mock-message', this.mock)
-        this.$q.notify({ type: 'positive', message: 'Mensagem mock enviada.' })
-      } catch (error) {
-        this.$q.notify({ type: 'negative', message: error.response?.data?.message || 'Falha no mock.' })
-      } finally {
-        this.loading.mock = false
-      }
-    },
-    connectEvents () {
-      const url = new URL(`${apiBaseURL.replace(/\/$/, '')}/events`, window.location.origin)
-      url.searchParams.set('token', this.token)
-      this.eventSource = new EventSource(url.toString())
-      this.eventSource.addEventListener('admin.log', (event) => {
-        const packet = JSON.parse(event.data)
-        this.logs.push(packet.payload)
-        this.logs = this.logs.slice(-220)
-      })
-      this.eventSource.addEventListener('whatsapp.status', (event) => {
-        const packet = JSON.parse(event.data)
-        this.whatsappStatus = packet.payload
-      })
-    },
-    formatDate (value) {
-      if (!value) return '-'
-      return new Date(value).toLocaleString('pt-BR')
-    },
-    logout () {
-      localStorage.removeItem('aito_admin_token')
-      localStorage.removeItem('aito_admin_user')
-      this.$router.push('/admin/login')
-    }
+    emptyLead () { return { name: '', email: '', phone: '', company: '', message: '', flowType: '', status: 'new', tags: [] } },
+    emptyPerson (role) { return { name: '', email: '', phone: '', password: '', active: true, role } },
+    requiredRule (value) { return Boolean(String(value || '').trim()) || 'Preencha este campo.' },
+    formatDate (value) { return value ? new Date(value).toLocaleDateString('pt-BR') : '-' },
+    async loadAll () { await Promise.all([this.loadLeads(), this.loadPeople('user'), this.loadPeople('customer'), this.loadPolicies()]) },
+    async loadLeads () { this.loading.leads = true; try { const { data } = await api.get('/admin/leads', { ...this.headers, params: { q: this.leadSearch, status: this.leadStatus } }); this.leads = data.data || [] } catch (error) { this.notifyError(error) } finally { this.loading.leads = false } },
+    async loadPeople (role) { const key = role === 'customer' ? 'customers' : 'users'; this.loading[key] = true; try { const { data } = await api.get(`/admin/${role === 'customer' ? 'customers' : 'users'}`, { ...this.headers, params: { q: this.personSearch } }); this[key] = data.data || [] } catch (error) { this.notifyError(error) } finally { this.loading[key] = false } },
+    async loadPolicies () { try { const { data } = await api.get('/admin/policies', this.headers); this.policies = data.data || []; this.selectPolicy(this.policies[0]) } catch (error) { this.notifyError(error) } },
+    selectPolicy (policy) { if (policy) this.policyDraft = { ...policy } },
+    openLeadDialog (lead) { this.leadForm = lead ? { ...lead } : this.emptyLead(); this.leadDialog = true },
+    async saveLead () { this.loading.save = true; try { const id = this.leadForm._id; const result = id ? await api.put(`/admin/leads/${id}`, this.leadForm, this.headers) : await api.post('/admin/leads', this.leadForm, this.headers); if (id) this.leads = this.leads.map(item => item._id === id ? result.data.data : item); else this.leads.unshift(result.data.data); this.leadDialog = false; this.$q.notify({ type: 'positive', message: 'Lead salvo.' }) } catch (error) { this.notifyError(error) } finally { this.loading.save = false } },
+    deleteLead (lead) { this.$q.dialog({ title: 'Excluir lead', message: `Remover ${lead.name}?`, cancel: true, persistent: true }).onOk(async () => { try { await api.delete(`/admin/leads/${lead._id}`, this.headers); this.leads = this.leads.filter(item => item._id !== lead._id); this.$q.notify({ type: 'positive', message: 'Lead removido.' }) } catch (error) { this.notifyError(error) } }) },
+    openPersonDialog (role, person) { this.personForm = person ? { ...person, password: '' } : this.emptyPerson(role); this.personDialog = true },
+    async savePerson () { this.loading.save = true; const role = this.personForm.role; const resource = role === 'customer' ? 'customers' : 'users'; try { const id = this.personForm._id; const result = id ? await api.put(`/admin/${resource}/${id}`, this.personForm, this.headers) : await api.post(`/admin/${resource}`, this.personForm, this.headers); const key = role === 'customer' ? 'customers' : 'users'; if (id) this[key] = this[key].map(item => item._id === id ? result.data.data : item); else this[key].unshift(result.data.data); this.personDialog = false; this.$q.notify({ type: 'positive', message: 'Cadastro salvo.' }) } catch (error) { this.notifyError(error) } finally { this.loading.save = false } },
+    deletePerson (person) { const role = person.role === 'customer' ? 'customers' : 'users'; this.$q.dialog({ title: 'Excluir cadastro', message: `Remover ${person.name}?`, cancel: true, persistent: true }).onOk(async () => { try { await api.delete(`/admin/${role}/${person._id}`, this.headers); this[role] = this[role].filter(item => item._id !== person._id); this.$q.notify({ type: 'positive', message: 'Cadastro removido.' }) } catch (error) { this.notifyError(error) } }) },
+    async savePolicy () { this.loading.policy = true; try { const { data } = await api.put(`/admin/policies/${this.policyDraft.type}`, this.policyDraft, this.headers); this.policyDraft = data.data; this.policies = this.policies.map(item => item.type === data.data.type ? data.data : item); this.$q.notify({ type: 'positive', message: 'Documento atualizado.' }) } catch (error) { this.notifyError(error) } finally { this.loading.policy = false } },
+    deletePolicy () { this.$q.dialog({ title: 'Excluir documento', message: 'A rota publica usara o texto padrao.', cancel: true, persistent: true }).onOk(async () => { try { await api.delete(`/admin/policies/${this.policyDraft.type}`, this.headers); await this.loadPolicies(); this.$q.notify({ type: 'positive', message: 'Documento excluido.' }) } catch (error) { this.notifyError(error) } }) },
+    notifyError (error) { this.$q.notify({ type: 'negative', message: error.response?.data?.message || 'Nao foi possivel concluir a operacao.' }) },
+    logout () { localStorage.removeItem('aito_admin_token'); localStorage.removeItem('aito_admin_user'); this.$router.push('/admin/login') }
   }
 }
 </script>
 
 <style scoped>
-.ops-page {
-  min-height: 100vh;
-  background: #f5f7fa;
-  color: #0b1220;
-}
-
-.ops-shell {
-  width: min(1220px, calc(100vw - 24px));
-  margin: 0 auto;
-  padding: 18px 0 32px;
-}
-
-.ops-header,
-.ops-section-head {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 16px;
-}
-
-.ops-header {
-  padding: 14px 0 16px;
-}
-
-.ops-tabs {
-  background: white;
-  border: 1px solid #dce3ea;
-  border-radius: 8px 8px 0 0;
-}
-
-.ops-panels {
-  border: 1px solid #dce3ea;
-  border-top: 0;
-  border-radius: 0 0 8px 8px;
-  background: white;
-}
-
-.ops-section {
-  padding: 18px;
-}
-
-.ops-section-head {
-  margin-bottom: 16px;
-}
-
-.ops-primary-btn {
-  background: #0b1220;
-  color: white;
-  border-radius: 8px;
-}
-
-.ops-table,
-.ops-card,
-.dialog-card {
-  border-radius: 8px;
-}
-
-.ops-card {
-  border: 1px solid #dce3ea;
-  background: #ffffff;
-  padding: 16px;
-}
-
-.whatsapp-grid {
-  display: grid;
-  grid-template-columns: minmax(240px, 1fr) minmax(260px, 360px);
-  gap: 16px;
-}
-
-.qr-card {
-  min-height: 260px;
-  display: grid;
-  place-items: center;
-}
-
-.qr-image {
-  width: min(280px, 100%);
-  border: 1px solid #dce3ea;
-  border-radius: 8px;
-}
-
-.empty-qr {
-  text-align: center;
-  max-width: 260px;
-}
-
-.console {
-  min-height: 520px;
-  max-height: 65vh;
-  overflow: auto;
-  background: #07111f;
-  color: #d8e8f4;
-  border-radius: 8px;
-  padding: 12px;
-  font-family: Consolas, Monaco, monospace;
-  font-size: 12px;
-}
-
-.console-line {
-  display: grid;
-  grid-template-columns: 150px 58px 160px 1fr;
-  gap: 10px;
-  padding: 4px 0;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
-}
-
-.console-level {
-  text-transform: uppercase;
-  color: #8cc8ff;
-}
-
-.level-error {
-  color: #ff9d9d;
-}
-
-.level-warn {
-  color: #ffd27a;
-}
-
-.console-type {
-  color: #7ee0c5;
-}
-
-.config-grid {
-  display: grid;
-  grid-template-columns: repeat(3, minmax(180px, 1fr));
-  gap: 12px;
-}
-
-.dialog-card {
-  width: min(520px, calc(100vw - 32px));
-}
-
-@media (max-width: 820px) {
-  .ops-header,
-  .ops-section-head {
-    align-items: flex-start;
-    flex-direction: column;
-  }
-
-  .whatsapp-grid,
-  .config-grid {
-    grid-template-columns: 1fr;
-  }
-
-  .console-line {
-    grid-template-columns: 1fr;
-    gap: 2px;
-  }
-}
+.admin-app{color:#ebfffb;background:#03090b}.admin-app__page{min-height:100vh;background:radial-gradient(circle at 90% 0,rgba(19,188,157,.15),transparent 30rem),#03090b}.admin-app__shell{width:min(1280px,calc(100% - 2rem));margin:auto;padding:1rem 0 3rem}.admin-app__header{display:flex;align-items:center;justify-content:space-between;padding-bottom:1rem;border-bottom:1px solid rgba(19,188,157,.2)}.admin-app__brand,.admin-app__session{display:flex;align-items:center;gap:.7rem}.admin-app__brand img{width:36px;height:36px}.admin-app__brand strong{display:block;color:#effffb;font-size:.78rem;letter-spacing:.12em}.admin-app__brand small{display:block;margin-top:.2rem;color:rgba(229,255,250,.55);font-size:.65rem}.admin-app__session{color:#8fffee;font-size:.76rem}.admin-app__hero{display:flex;align-items:end;justify-content:space-between;gap:1rem;padding:7vh 0 2.5rem}.admin-app__eyebrow{margin:0 0 .7rem;color:#8fffee;font-size:.67rem;font-weight:900;letter-spacing:.15em;text-transform:uppercase}.admin-app__hero h1,.admin-app__section h2{margin:0;color:#effffb;font-size:clamp(2rem,4vw,4rem);line-height:1}.admin-app__hero>div>p:last-child,.admin-app__section-head span{max-width:32rem;color:rgba(229,255,250,.62);line-height:1.5;font-size:.8rem}.admin-app__stats{display:flex;gap:.6rem}.admin-app__stats span{display:grid;gap:.25rem;padding:.7rem;border:1px solid rgba(19,188,157,.22);border-radius:.55rem;color:rgba(229,255,250,.58);font-size:.66rem}.admin-app__stats strong{color:#8fffee;font-size:1.2rem}.admin-app__tabs{border:1px solid rgba(19,188,157,.2);border-radius:.7rem .7rem 0 0;background:rgba(3,25,26,.7)}.admin-app__panels{border:1px solid rgba(19,188,157,.2);border-top:0;border-radius:0 0 .7rem .7rem;background:rgba(3,25,26,.7)}.admin-app__section{padding:.5rem}.admin-app__section-head{display:flex;align-items:end;justify-content:space-between;gap:1rem;margin-bottom:1.4rem}.admin-app__primary{color:#03110f;background:linear-gradient(135deg,#8fffee,#13bc9d);font-weight:800}.admin-app__filters{display:grid;grid-template-columns:minmax(240px,1fr) 180px;gap:.7rem;margin-bottom:1rem}.admin-app__filters :deep(.q-field__control),.admin-app__dialog :deep(.q-field__control),.admin-app__section :deep(.q-field__control){color:#effffb;background:rgba(7,40,40,.74)}.admin-app__filters :deep(.q-field__native),.admin-app__filters :deep(.q-field__label),.admin-app__dialog :deep(.q-field__native),.admin-app__dialog :deep(.q-field__label),.admin-app__section :deep(.q-field__native),.admin-app__section :deep(.q-field__label){color:rgba(239,255,251,.78)}.admin-app__table{color:#effffb;border-color:rgba(19,188,157,.2);background:rgba(3,16,18,.58)}.admin-app__table :deep(th){color:#8fffee;font-size:.7rem}.admin-app__table :deep(td){color:rgba(239,255,251,.78);font-size:.72rem}.admin-app__type,.admin-app__tag{display:inline-block;padding:.25rem .4rem;border:1px solid rgba(19,188,157,.26);border-radius:999px;color:#8fffee;background:rgba(19,188,157,.08);font-size:.6rem}.admin-app__tag{margin:.1rem;color:rgba(239,255,251,.68)}.admin-app__overview{display:grid;grid-template-columns:repeat(4,1fr);gap:.8rem}.admin-app__overview article{display:grid;gap:.5rem;padding:1.2rem;border:1px solid rgba(19,188,157,.24);border-radius:.7rem;background:rgba(4,24,25,.7)}.admin-app__overview .q-icon{color:#13bc9d;font-size:1.8rem}.admin-app__overview strong{color:#8fffee;font-size:2rem}.admin-app__overview span{color:rgba(229,255,250,.62);font-size:.75rem}.admin-app__overview .q-btn{justify-self:start;color:#8fffee}.admin-app__policy-tabs{display:flex;flex-wrap:wrap;gap:.5rem;margin-bottom:1.2rem}.admin-app__policy-tabs button{display:inline-flex;align-items:center;gap:.4rem;padding:.65rem .8rem;border:1px solid rgba(19,188,157,.22);border-radius:.55rem;color:rgba(239,255,251,.68);background:rgba(19,188,157,.06);cursor:pointer;font:inherit;font-size:.7rem}.admin-app__policy-tabs button.is-active{color:#03110f;background:linear-gradient(135deg,#8fffee,#13bc9d);font-weight:800}.admin-app__policy-actions{display:flex;gap:.6rem;margin-top:1rem}.admin-app__dialog{width:min(94vw,540px);color:#effffb;background:#061819;border:1px solid rgba(19,188,157,.3)}.admin-app__dialog-head{display:flex;align-items:center;justify-content:space-between}.admin-app__dialog h3{margin:0;font-size:1.1rem}@media(max-width:800px){.admin-app__hero,.admin-app__section-head{align-items:flex-start;flex-direction:column}.admin-app__stats{width:100%;flex-wrap:wrap}.admin-app__stats span{flex:1;min-width:8rem}.admin-app__overview{grid-template-columns:1fr 1fr}.admin-app__filters{grid-template-columns:1fr}.admin-app__table{max-width:calc(100vw - 2rem);overflow:auto}}@media(max-width:520px){.admin-app__overview{grid-template-columns:1fr}.admin-app__brand small{display:none}.admin-app__hero{padding-top:5vh}}
 </style>

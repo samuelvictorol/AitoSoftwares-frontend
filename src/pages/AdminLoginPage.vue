@@ -40,8 +40,12 @@ export default {
       this.loading = true
       try {
         const { data } = await api.post('/admin/auth/login', this.form)
+        localStorage.removeItem('aito_user_token')
+        localStorage.removeItem('aito_user')
+        localStorage.removeItem('aito_seller_token')
+        localStorage.removeItem('aito_seller_user')
         localStorage.setItem('aito_admin_token', data.token)
-        localStorage.setItem('aito_admin_user', JSON.stringify(data.user))
+        localStorage.setItem('aito_admin_user', JSON.stringify({ ...data.user, role: 'admin' }))
         this.$router.push('/admin')
       } catch (error) {
         this.$q.notify({ type: 'negative', message: error.response?.data?.message || 'Nao foi possivel entrar.' })

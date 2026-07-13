@@ -27,7 +27,7 @@
     <div class="landing-3d__noise" aria-hidden="true"></div>
 
     <header class="landing-3d__header">
-      <button class="landing-3d__brand" type="button" aria-label="Voltar ao inicio" @click="scrollToSection('inicio')">
+      <button class="landing-3d__brand" type="button" aria-label="Voltar ao inicio" @click="scrollTo('inicio')">
         <img src="/favicon.png" alt="" width="34" height="34" />
         <span>AITO<span>SOFTWARES</span></span>
       </button>
@@ -35,7 +35,7 @@
       <div class="landing-3d__header-actions">
         <button class="landing-3d__account-link" type="button" aria-label="Abrir area do cliente" @click="openAuth()">
           <q-icon name="mdi-account-outline" aria-hidden="true" />
-          <span class="landing-3d__account-label">Area do cliente</span>
+          <span class="landing-3d__account-label">{{ accountLabel }}</span>
         </button>
         <a
           class="landing-3d__instagram-link"
@@ -58,7 +58,7 @@
         :class="{ 'is-active': activeSection === index }"
         :aria-label="`Ir para a secao ${index + 1}: ${section.title}`"
         :aria-current="activeSection === index ? 'step' : undefined"
-        @click="scrollToSection(section.id)"
+        @click="scrollTo(section.id)"
       >
         <span></span>
       </button>
@@ -91,7 +91,7 @@
               </a>
               <button class="landing-3d__cta landing-3d__cta--secondary" type="button" @click="handleAboutCtaClick">
                 <span>{{ section.secondaryCta.label }}</span>
-                <q-icon name="mdi-arrow-down" aria-hidden="true" />
+                <q-icon name="mdi-lightbulb-on-outline" aria-hidden="true" />
               </button>
               <button class="landing-3d__cta landing-3d__cta--surprise" type="button" @click="router.push(section.surpriseCta.to)">
                 <span>{{ section.surpriseCta.label }}</span>
@@ -168,7 +168,16 @@
             </template>
 
             <template v-else-if="section.id === 'founder-samuel' || section.id === 'founder-dion'">
-              <div class="landing-3d__founder-card">
+              <article
+                class="landing-3d__founder-card"
+                :class="{ 'is-focused': founderFocused === section.id }"
+                tabindex="0"
+                @mouseenter="founderFocused = section.id"
+                @mouseleave="founderFocused = null"
+                @focusin="founderFocused = section.id"
+                @focusout="founderFocused = null"
+                @click="founderFocused = founderFocused === section.id ? null : section.id"
+              >
                 <img :src="founderForSection(section.id).image" :alt="founderForSection(section.id).name" class="landing-3d__founder-image" />
                 <div>
                   <span class="landing-3d__founder-role">{{ founderForSection(section.id).role }}</span>
@@ -182,7 +191,7 @@
                     <q-icon name="mdi-web" size="18px" aria-hidden="true" />
                   </a>
                 </div>
-              </div>
+              </article>
             </template>
 
             <template v-else-if="section.id === 'contato'">
@@ -253,6 +262,14 @@
           <button type="button" class="text-grey-6" :class="{ 'is-active': authMode === 'login' }" @click="authMode = 'login'">Entrar</button>
           <button type="button" class="text-grey-6" :class="{ 'is-active': authMode === 'register' }" @click="authMode = 'register'">Criar acesso</button>
         </q-card-section>
+        <q-card-section class="landing-3d__auth-role-tabs">
+          <button type="button" :class="{ 'is-active': authRole === 'user' }" @click="authRole = 'user'">
+            <q-icon name="mdi-school-outline" /> Usuario / cursos
+          </button>
+          <button type="button" :class="{ 'is-active': authRole === 'customer' }" @click="authRole = 'customer'">
+            <q-icon name="mdi-briefcase-outline" /> Cliente / projetos
+          </button>
+        </q-card-section>
         <q-card-section class="landing-3d__dialog-body">
           <q-form @submit.prevent="submitAuth">
             <q-input v-if="authMode === 'login'" v-model="authForm.identifier" outlined dense lazy-rules label="E-mail ou telefone" autocomplete="username" :rules="[requiredRule]" />
@@ -267,6 +284,19 @@
             <q-icon name="mdi-google" size="18px" aria-hidden="true" />
             Continuar com Google
           </button>
+        </q-card-section>
+      </q-card>
+    </q-dialog>
+
+    <q-dialog v-model="coursePromptOpen">
+      <q-card class="landing-3d__dialog-card landing-3d__course-prompt">
+        <q-card-section class="landing-3d__dialog-head">
+          <div><span class="landing-3d__dialog-kicker">AitoLearn / Curso 1</span><h3>Seu proximo nivel pode virar um produto.</h3></div>
+          <q-btn flat round dense icon="mdi-close" aria-label="Fechar" @click="coursePromptOpen = false" />
+        </q-card-section>
+        <q-card-section class="landing-3d__dialog-body">
+          <p>Aprenda a construir e vender sistemas high ticket com frontend, backend, pagamentos, cloud, IA e 3D.</p>
+          <q-btn unelevated no-caps class="landing-3d__auth-submit full-width" icon="mdi-lightbulb-on-outline" label="Conhecer o Curso 1" @click="router.push('/aitolearn'); coursePromptOpen = false" />
         </q-card-section>
       </q-card>
     </q-dialog>
@@ -326,11 +356,17 @@ const brandDialogOpen = ref(false)
 const selectedBrand = ref(null)
 const authDialogOpen = ref(false)
 const authMode = ref('login')
+const authRole = ref('user')
 const authLoading = ref(false)
 const referralDialogOpen = ref(false)
 const iaChat = ref(false)
+const coursePromptOpen = ref(false)
+const founderFocused = ref(null)
+const sessionVersion = ref(0)
 let introTextTimer
 let sceneReadyWatchdog
+let coursePromptTimer
+let coursePromptInterval
 
 const lead = reactive({ name: '', phone: '', email: '', company: '', message: '' })
 const referral = reactive({ name: '', phone: '', leadName: '', notes: '' })
@@ -338,6 +374,17 @@ const authForm = reactive({ identifier: '', name: '', email: '', phone: '', pass
 
 const landingPageStyle = computed(() => ({ minHeight: `${landing3dSections.length * 100}vh` }))
 const requiredRule = (value) => Boolean(String(value || '').trim()) || 'Preencha este campo.'
+
+const accountLabel = computed(() => {
+  sessionVersion.value
+  const raw = localStorage.getItem('aito_admin_user') || localStorage.getItem('aito_user')
+  if (!raw) return 'Area do cliente'
+  try {
+    return String(JSON.parse(raw).name || 'Area do cliente').trim().split(/\s+/)[0]
+  } catch (error) {
+    return 'Area do cliente'
+  }
+})
 
 function founderForSection(sectionId) {
   return institutionalFounders.find((founder) => sectionId.endsWith(founder.id)) || institutionalFounders[0]
@@ -364,10 +411,13 @@ function handleIntroReveal() {
     introTextVisible.value = true
   }, prefersReducedMotion.value ? 420 : 980)
 }
-function handleIntroComplete() { introComplete.value = true }
+function handleIntroComplete() {
+  introComplete.value = true
+  scheduleCoursePrompt()
+}
 
 function handleAboutCtaClick() {
-  scrollTo('marcas')
+  router.push('/aitolearn')
 }
 
 function handleBrandSelect(brand) {
@@ -376,16 +426,22 @@ function handleBrandSelect(brand) {
 }
 
 function openAuth(mode = 'login') {
+  const session = getStoredSession()
+  if (session?.role === 'admin') return router.push('/admin')
+  if (session?.role === 'customer') return router.push('/customer')
   authMode.value = mode
+  authRole.value = 'user'
   authDialogOpen.value = true
 }
 
 function persistAuth(data) {
-  const role = data.user?.role === 'admin' ? 'admin' : 'user'
+  const role = data.user?.role === 'admin' ? 'admin' : data.user?.role === 'customer' ? 'customer' : 'user'
+  ;['aito_admin_token', 'aito_admin_user', 'aito_user_token', 'aito_user', 'aito_seller_token', 'aito_seller_user'].forEach((key) => localStorage.removeItem(key))
   const tokenKey = role === 'admin' ? 'aito_admin_token' : USER_TOKEN_KEY
   const userKey = role === 'admin' ? 'aito_admin_user' : 'aito_user'
   localStorage.setItem(tokenKey, data.token)
-  localStorage.setItem(userKey, JSON.stringify(data.user))
+  localStorage.setItem(userKey, JSON.stringify({ ...data.user, role }))
+  sessionVersion.value += 1
 }
 
 async function submitAuth() {
@@ -396,16 +452,18 @@ async function submitAuth() {
           name: authForm.name,
           email: authForm.email,
           phone: authForm.phone,
-          password: authForm.password
+          password: authForm.password,
+          role: authRole.value
         })
       : await api.post('/auth/login', {
           identifier: authForm.identifier,
-          password: authForm.password
+          password: authForm.password,
+          role: authRole.value
         })
     persistAuth(response.data)
     authDialogOpen.value = false
     $q.notify({ type: 'positive', message: 'Acesso realizado.' })
-    router.push(response.data.user?.role === 'admin' ? '/admin' : '/app')
+    router.push(response.data.user?.role === 'admin' ? '/admin' : response.data.user?.role === 'customer' ? '/customer' : '/app')
   } catch (error) {
     $q.notify({ type: 'negative', message: error.response?.data?.message || 'Nao foi possivel concluir o acesso.' })
   } finally {
@@ -434,8 +492,42 @@ async function sendLead() {
 
 function sendReferral() {
   const message = `Ola! Quero indicar uma oportunidade para a AitoSoftwares.\n\nIndicador: ${referral.name}\nWhatsApp: ${referral.phone}\nIndicado: ${referral.leadName}\nContexto: ${referral.notes}`
+  api.post('/leads', {
+    name: referral.leadName || referral.name,
+    phone: referral.phone,
+    message: referral.notes,
+    source: 'indicacao',
+    flowType: 'indicacao',
+    tags: ['indicacao']
+  }).catch((error) => console.warn('[Landing 3D] Indicacao nao registrada.', error))
   window.open(buildWhatsappUrl(message), '_blank', 'noopener,noreferrer')
   referralDialogOpen.value = false
+}
+
+function getStoredSession() {
+  const raw = localStorage.getItem('aito_admin_user') || localStorage.getItem('aito_user')
+  if (!raw) return null
+  try { return JSON.parse(raw) } catch (error) { return null }
+}
+
+function hasAnySession() {
+  return Boolean(localStorage.getItem('aito_admin_token') || localStorage.getItem('aito_user_token'))
+}
+
+function scheduleCoursePrompt() {
+  window.clearTimeout(coursePromptTimer)
+  window.clearInterval(coursePromptInterval)
+  coursePromptTimer = window.setTimeout(() => {
+    if (!hasAnySession()) coursePromptOpen.value = true
+    coursePromptInterval = window.setInterval(() => {
+      if (hasAnySession()) {
+        window.clearInterval(coursePromptInterval)
+        coursePromptOpen.value = false
+        return
+      }
+      coursePromptOpen.value = true
+    }, 5 * 60 * 1000)
+  }, 90 * 1000)
 }
 
 onMounted(() => {
@@ -446,6 +538,8 @@ onMounted(() => {
 
 onBeforeUnmount(() => {
   window.clearTimeout(introTextTimer)
+  window.clearTimeout(coursePromptTimer)
+  window.clearInterval(coursePromptInterval)
   if (sceneReadyWatchdog) window.clearTimeout(sceneReadyWatchdog)
 })
 </script>
@@ -655,10 +749,12 @@ onBeforeUnmount(() => {
 .landing-3d__testimonial-head small { color: rgba(225, 255, 249, 0.55); font-size: 0.62rem; }
 .landing-3d__testimonial p { margin: 1rem 0 0; color: rgba(233, 255, 250, 0.78); font-size: 0.8rem; line-height: 1.55; }
 
-.landing-3d__founder-card { display: grid; padding: 1rem; grid-template-columns: auto 1fr auto; align-items: center; gap: 1rem; }
+.landing-3d__founder-card { display: grid; padding: 1rem; grid-template-columns: auto 1fr auto; align-items: center; gap: 1rem; opacity: .24; cursor: pointer; outline: none; transition: opacity 280ms ease, transform 280ms ease, filter 280ms ease; filter: saturate(.58); }
+.landing-3d__founder-card:hover, .landing-3d__founder-card:focus-visible, .landing-3d__founder-card.is-focused { opacity: 1; filter: saturate(1); transform: translateY(-3px); }
 .landing-3d__founder-image { width: 5.2rem; height: 5.2rem; border: 1px solid rgba(143, 255, 238, 0.5); border-radius: 50%; object-fit: cover; box-shadow: 0 0 28px rgba(19, 188, 157, 0.2); }
-.landing-3d__founder-role { color: var(--aito-aqua); font-size: 0.66rem; font-weight: 800; letter-spacing: 0.08em; text-transform: uppercase; }
-.landing-3d__founder-card p { margin: 0.55rem 0 0; color: rgba(230, 255, 250, 0.78); font-size: 0.84rem; line-height: 1.5; }
+.landing-3d__founder-role { display: block; color: var(--aito-aqua); font-size: 0.66rem; font-weight: 800; letter-spacing: 0.08em; text-transform: uppercase; opacity: 0; transform: translateY(5px); transition: opacity 250ms ease, transform 250ms ease; }
+.landing-3d__founder-card p { margin: 0.55rem 0 0; color: rgba(230, 255, 250, 0.78); font-size: 0.84rem; line-height: 1.5; opacity: 0; transform: translateY(5px); transition: opacity 250ms ease, transform 250ms ease; }
+.landing-3d__founder-card:hover .landing-3d__founder-role, .landing-3d__founder-card:hover p, .landing-3d__founder-card:focus-visible .landing-3d__founder-role, .landing-3d__founder-card:focus-visible p, .landing-3d__founder-card.is-focused .landing-3d__founder-role, .landing-3d__founder-card.is-focused p { opacity: 1; transform: none; }
 .landing-3d__founder-socials { display: flex; gap: 0.45rem; }
 .landing-3d__founder-socials a { display: grid; width: 2.25rem; height: 2.25rem; border: 1px solid rgba(19, 188, 157, 0.34); border-radius: 50%; place-items: center; color: var(--aito-aqua); background: rgba(19, 188, 157, 0.1); }
 
@@ -719,6 +815,11 @@ onBeforeUnmount(() => {
 .landing-3d__auth-tabs { display: flex; padding: 0.5rem 1.1rem; gap: 0.45rem; border-top: 1px solid rgba(19, 188, 157, 0.16); border-bottom: 1px solid rgba(19, 188, 157, 0.16); }
 .landing-3d__auth-tabs button { padding: 0.42rem 0.65rem; border: 0; border-radius: 999px; color: rgba(225, 255, 249, 0.62); background: transparent; font-size: 0.68rem; cursor: pointer; }
 .landing-3d__auth-tabs button.is-active { color: #03120f; background: var(--aito-teal); font-weight: 800; }
+.landing-3d__auth-role-tabs { display: grid; padding: .65rem 1.1rem 0; grid-template-columns: 1fr 1fr; gap: .45rem; }
+.landing-3d__auth-role-tabs button { display: flex; min-height: 2.55rem; align-items: center; justify-content: center; gap: .35rem; border: 1px solid rgba(19,188,157,.2); border-radius: .55rem; color: rgba(225,255,249,.68); background: rgba(19,188,157,.05); cursor: pointer; font: inherit; font-size: .66rem; }
+.landing-3d__auth-role-tabs button.is-active { border-color: var(--aito-teal); color: #03120f; background: linear-gradient(135deg,var(--aito-aqua),var(--aito-teal)); font-weight: 800; }
+.landing-3d__auth-role-tabs .q-icon { font-size: 1rem; }
+.landing-3d__course-prompt { width: min(92vw, 34rem); }
 .landing-3d__auth-separator { display: flex; margin: 1rem 0; align-items: center; gap: 0.65rem; color: rgba(225, 255, 249, 0.4); font-size: 0.68rem; }
 .landing-3d__auth-separator::before, .landing-3d__auth-separator::after { flex: 1; height: 1px; content: ''; background: rgba(19, 188, 157, 0.2); }
 .landing-3d__google-button { display: flex; width: 100%; min-height: 2.7rem; align-items: center; justify-content: center; gap: 0.5rem; border: 1px solid rgba(19, 188, 157, 0.3); border-radius: 999px; color: #effffb; background: rgba(19, 188, 157, 0.08); font-size: 0.74rem; cursor: pointer; }
@@ -734,7 +835,7 @@ onBeforeUnmount(() => {
 
 @media (max-width: 767px) {
   .landing-3d__header { padding: 1rem 0.9rem; }
-  .landing-3d__account-label { display: none; }
+  .landing-3d__account-label { display: inline; max-width: 7ch; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .landing-3d__account-link { padding: 0.25rem 0.62rem; }
   .landing-3d__progress { display: none; }
   .landing-3d__section { padding: 5.7rem 0.9rem 4.6rem; align-items: flex-start; }

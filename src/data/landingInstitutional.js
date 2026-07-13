@@ -15,13 +15,13 @@ export const institutionalBrands = Object.freeze([
     name: 'Onicloud',
     imgUrl: 'onicloud.png',
     summary: 'Nascemos com o propósito de ajudar os usuários de clouds públicas, a organizar e ter visibilidade clara dos investimentos em recursos, enquanto ganham escala.',
-    href: 'https://www.onicloud.io'
+    href: 'https://onicloud.io/'
   },
   {
     name: 'Flávia Kamila App',
     imgUrl: 'fk.png',
     summary: 'Produto digital com formulário inteligentes, CRM, integração com pagamentos.',
-    href: 'https://www.eletronogueira.com.br'
+    href: 'https://flaviakamila.com'
   },
   {
     name: 'CAIXA',
@@ -30,7 +30,7 @@ export const institutionalBrands = Object.freeze([
     href: 'https://www.caixa.gov.br'
   },
   {
-    name: 'Eletro Nogueira',
+    name: 'EletroNogueira',
     imgUrl: 'en.jfif',
     summary: 'Migração para cloud, catálogo conectado e IA no WhatsApp para atender a operação real.',
     href: 'https://www.eletronogueira.com.br'
@@ -51,7 +51,7 @@ export const institutionalBrands = Object.freeze([
     name: 'PROJUDI',
     imgUrl: 'projudi.jpg',
     summary: 'Solucoes juridicas digitais para otimizar processos e melhorar a experiencia do cliente.',
-    href: 'https://www.projudi.com.br'
+    href: 'https://projudi.tjgo.jus.br/'
   },
   {
     name: 'VerdeBank',
@@ -111,7 +111,7 @@ export const institutionalCases = Object.freeze([
   },
   {
     icon: 'mdi-storefront-outline',
-    title: 'Eletro Nogueira',
+    title: 'EletroNogueira',
     subtitle: 'Cloud, catálogo e atendimento no mesmo fluxo.',
     text: 'Migração de sistema, redução de custo e IA integrada ao estoque físico.',
     tags: ['Cloud', 'SEO', 'Catálogo'],
@@ -129,8 +129,8 @@ export const institutionalCases = Object.freeze([
 
 export const institutionalTestimonials = Object.freeze([
   {
-    name: 'Eletro Nogueira',
-    role: 'Eletrica e hidraulica',
+    name: 'EletroNogueira',
+    role: 'Elétrica e hidráulica',
     quote: 'A migração aconteceu com clareza, suporte próximo e entregas que a equipe conseguiu acompanhar.',
     img: 'en.jfif'
   },

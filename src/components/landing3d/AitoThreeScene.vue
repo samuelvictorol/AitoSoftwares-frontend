@@ -41,6 +41,10 @@ const props = defineProps({
     type: Boolean,
     default: false
   },
+  courseStage: {
+    type: Boolean,
+    default: false
+  },
   surpriseFocus: {
     type: String,
     default: 'obj4Dance'
@@ -89,6 +93,7 @@ const MODEL_LOAD_TIMEOUT_MS = 9000
 const MODEL_LOAD_CONCURRENCY = 2
 const LANDING_MODEL_KEYS = ['obj1', 'logo', 'obj2', 'obj3', 'obj4', 'samuel', 'dion']
 const SURPRISE_MODEL_KEYS = ['obj4', 'obj4Dance', 'samuelDance', 'dionDance']
+const COURSE_MODEL_KEYS = ['obj4', 'obj2', 'obj3']
 
 const STATE_DEFAULTS = {
   x: 0,
@@ -223,7 +228,9 @@ function modelFileCandidates(config) {
 }
 
 function sceneModelEntries() {
-  const keys = props.surpriseStage ? SURPRISE_MODEL_KEYS : LANDING_MODEL_KEYS
+  const keys = props.surpriseStage
+    ? SURPRISE_MODEL_KEYS
+    : props.courseStage ? COURSE_MODEL_KEYS : LANDING_MODEL_KEYS
   return keys
     .map((key) => [key, landing3dModels[key]])
     .filter(([, config]) => config)
@@ -764,6 +771,11 @@ function unloadModel(key) {
 function queueNearbyModelLoads(sectionPosition) {
   if (props.surpriseStage) return
 
+  if (props.courseStage) {
+    COURSE_MODEL_KEYS.forEach(queueModelLoad)
+    return
+  }
+
   Object.entries(MODEL_KEYFRAMES).forEach(([key, keyframes]) => {
     if (!modelEntries[key]) return
 
@@ -788,7 +800,7 @@ function loadModels() {
 
   const initialKeys = props.surpriseStage
     ? SURPRISE_MODEL_KEYS
-    : ['obj1', 'logo']
+    : props.courseStage ? COURSE_MODEL_KEYS : ['obj1', 'logo']
 
   return Promise.all(initialKeys.map(queueModelLoad))
 }
@@ -1113,11 +1125,63 @@ function updateSurpriseStageModels(elapsedTime, isMobile) {
   })
 }
 
+function updateCourseStageModels(elapsedTime, isMobile, sectionPosition) {
+  const normalizedSection = clamp(sectionPosition, 0, Math.max(props.sectionCount - 1, 1))
+  const facing = mouseFacingRotation(0.02, 0, 0, 0.72)
+
+  Object.entries(modelEntries).forEach(([key, entry]) => {
+    let opacity = 0
+    let positionX = 0
+    let positionY = isMobile ? -0.42 : 0.02
+    let positionZ = -0.18
+    let rotationX = facing.x
+    let rotationY = facing.y
+    let rotationZ = facing.z
+    let scale = isMobile ? 0.68 : 0.98
+
+    if (key === 'obj4') {
+      opacity = 1
+      positionY += Math.sin(elapsedTime * 1.7) * (isMobile ? 0.035 : 0.06)
+      rotationZ += Math.sin(elapsedTime * 1.1) * 0.035
+      scale *= 1 + Math.sin(elapsedTime * 1.8) * 0.018
+    } else if (key === 'obj2') {
+      const amount = clamp(1 - Math.abs(normalizedSection - 1.25) / 1.35, 0, 1)
+      opacity = amount * 0.76
+      positionX = isMobile ? 1.12 : 2.35
+      positionY = isMobile ? 0.66 : 0.9
+      positionZ = -0.72
+      scale = (isMobile ? 0.28 : 0.48) * (0.86 + amount * 0.14)
+      rotationX = facing.x + 0.1
+      rotationY = facing.y - 0.2
+    } else if (key === 'obj3') {
+      const amount = clamp(1 - Math.abs(normalizedSection - 2.15) / 1.5, 0, 1)
+      opacity = amount * 0.72
+      positionX = isMobile ? -1.12 : -2.35
+      positionY = isMobile ? 0.55 : 0.78
+      positionZ = -0.64
+      scale = (isMobile ? 0.3 : 0.5) * (0.86 + amount * 0.14)
+      rotationX = facing.x - 0.08
+      rotationY = facing.y + 0.2
+    }
+
+    if (entry.mixer) entry.mixer.timeScale = props.reducedMotion ? 0.35 : 0.72
+    entry.root.position.set(positionX, positionY, positionZ)
+    entry.root.rotation.set(rotationX, rotationY, rotationZ)
+    entry.root.scale.setScalar(scale)
+    setObjectOpacity(entry.root, opacity)
+  })
+}
+
 function updateModels(sectionPosition, elapsedTime) {
   const isMobile = window.innerWidth < 768
 
   if (props.surpriseStage) {
     updateSurpriseStageModels(elapsedTime, isMobile)
+    return
+  }
+
+  if (props.courseStage) {
+    updateCourseStageModels(elapsedTime, isMobile, sectionPosition)
     return
   }
 

@@ -15,10 +15,33 @@ const routes = [
     component: () => import('pages/AitoDancePage.vue'),
   },
   {
+    path: '/aitolearn',
+    name: 'aitolearn-course-1',
+    component: () => import('pages/AitoLearnLaunchPage.vue'),
+  },
+  {
     path: '/app',
     name: 'user-app',
     meta: { requiresAuth: 'user' },
     component: () => import('pages/UserHomePage.vue'),
+  },
+  {
+    path: '/customer',
+    name: 'customer-app',
+    meta: { requiresAuth: 'customer' },
+    component: () => import('pages/CustomerHomePage.vue'),
+  },
+  {
+    path: '/politica-privacidade',
+    name: 'privacy-policy',
+    component: () => import('pages/LegalPage.vue'),
+    props: { type: 'privacy' },
+  },
+  {
+    path: '/termos-servico',
+    name: 'terms-of-service',
+    component: () => import('pages/LegalPage.vue'),
+    props: { type: 'terms' },
   },
   {
     path: '/admin/login',

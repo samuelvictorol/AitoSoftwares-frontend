@@ -81,7 +81,7 @@
 </template>
 
 <script setup>
-import { ref, computed, watch, nextTick, onBeforeUnmount, onMounted } from 'vue'
+import { ref, computed, watch, nextTick, onBeforeUnmount, onMounted, reactive } from 'vue'
 import { api } from 'boot/axios' // usando o boot/axios
 
 const emit = defineEmits(['close'])
@@ -98,6 +98,9 @@ const messages = ref([
 const currentMessage = ref('')
 const loading = ref(false)
 const triageReady = ref(false)
+const leadCaptureStep = ref('')
+const leadCapture = reactive({ name: '', email: '', phone: '' })
+const triageChoicePending = ref(false)
 let triageTimer
 
 const triageOptions = Object.freeze([
@@ -218,14 +221,53 @@ const showTriage = computed(() => {
   return triageReady.value && !loading.value && !messages.value.some((message) => message.from === 'user')
 })
 
-function selectTriage(option) {
-  sendMessage(option.message)
+async function selectTriage(option) {
+  triageChoicePending.value = true
+  await sendMessage(option.message)
 }
 
 const sendMessage = async (presetText = '') => {
   const text = (presetText || currentMessage.value).trim()
   if (!text || loading.value) return
   currentMessage.value = ''
+
+  if (leadCaptureStep.value === 'name') {
+    leadCapture.name = text
+    messages.value.push({ from: 'user', text, link: null })
+    messages.value.push({ from: 'ia', text: 'Obrigado. Qual e-mail ou WhatsApp devo passar para um especialista falar com voce?', link: null })
+    leadCaptureStep.value = 'contact'
+    return
+  }
+
+  if (leadCaptureStep.value === 'contact') {
+    const email = text.match(/[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}/i)?.[0] || ''
+    const phone = text.replace(/\D/g, '')
+    if (!email && phone.length < 8) {
+      messages.value.push({ from: 'user', text, link: null })
+      messages.value.push({ from: 'ia', text: 'Pode me enviar um e-mail valido ou um WhatsApp com DDD?', link: null })
+      return
+    }
+
+    leadCapture.email = email
+    leadCapture.phone = email ? '' : phone
+    messages.value.push({ from: 'user', text, link: null })
+    try {
+      await api.post('/leads', {
+        name: leadCapture.name,
+        email: leadCapture.email,
+        phone: leadCapture.phone,
+        message: messages.value.find((message) => message.from === 'user')?.text || 'Atendimento iniciado pela IA.',
+        source: 'ai-assistant',
+        flowType: 'atendimento-ia',
+        tags: ['atendimento I.A']
+      })
+      messages.value.push({ from: 'ia', text: 'Perfeito. Registrei seu contato e nossa equipe vai falar com voce em breve.', link: null })
+    } catch (error) {
+      messages.value.push({ from: 'ia', text: 'Recebi seus dados. Houve uma instabilidade ao registrar, mas vou continuar te atendendo por aqui.', link: null })
+    }
+    leadCaptureStep.value = 'done'
+    return
+  }
 
   // mensagem do usuário
   messages.value.push({
@@ -271,8 +313,17 @@ const sendMessage = async (presetText = '') => {
         }
       })
     }
+
+    if (triageChoicePending.value) {
+      triageChoicePending.value = false
+      window.setTimeout(() => {
+        messages.value.push({ from: 'ia', text: 'Posso encaminhar seu contexto para um especialista. Como posso te chamar?', link: null })
+        leadCaptureStep.value = 'name'
+      }, Math.max(900, (iaReplies.length + 1) * 650))
+    }
   } catch (e) {
     console.error(e)
+    triageChoicePending.value = false
     messages.value.push({
       from: 'ia',
       text: 'Tive um problema ao processar sua mensagem. Tente novamente em instantes.',

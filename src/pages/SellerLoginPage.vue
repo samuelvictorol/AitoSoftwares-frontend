@@ -40,6 +40,7 @@ export default {
       this.loading = true
       try {
         const { data } = await api.post('/seller/auth/login', this.form)
+        ;['aito_admin_token', 'aito_admin_user', 'aito_user_token', 'aito_user'].forEach((key) => localStorage.removeItem(key))
         localStorage.setItem('aito_seller_token', data.token)
         localStorage.setItem('aito_seller_user', JSON.stringify(data.user))
         this.$router.push('/vendedor/chat')
