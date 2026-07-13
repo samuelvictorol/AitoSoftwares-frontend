@@ -42,7 +42,7 @@ onMounted(() => {
 function logout() {
   localStorage.removeItem('aito_user_token')
   localStorage.removeItem('aito_user')
-  router.push('/')
+  router.push('/customer/login')
 }
 </script>
 

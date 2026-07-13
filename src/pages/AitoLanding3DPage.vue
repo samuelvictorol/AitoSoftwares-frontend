@@ -33,7 +33,7 @@
       </button>
 
       <div class="landing-3d__header-actions">
-        <button class="landing-3d__account-link" type="button" aria-label="Abrir area do cliente" @click="openAuth()">
+        <button class="landing-3d__account-link" type="button" aria-label="Abrir acesso" @click="openAuth()">
           <q-icon name="mdi-account-outline" aria-hidden="true" />
           <span class="landing-3d__account-label">{{ accountLabel }}</span>
         </button>
@@ -205,7 +205,7 @@
                   <q-input v-model="lead.phone" outlined dense lazy-rules label="WhatsApp" :rules="[requiredRule]" />
                   <q-input v-model="lead.email" outlined dense label="E-mail" type="email" />
                   <q-input v-model="lead.company" outlined dense label="Empresa ou projeto" />
-                  <q-input v-model="lead.message" class="landing-3d__form-full" outlined dense type="textarea" autogrow label="O que precisa acontecer?" />
+                  <q-input v-model="lead.message" class="landing-3d__form-full" outlined dense type="textarea" autogrow label="Qual o seu foco principal hoje?" />
                 </div>
                 <div class="landing-3d__form-actions">
                   <q-btn unelevated no-caps type="submit" class="landing-3d__form-submit text-black" icon="mdi-whatsapp" label="Enviar e abrir WhatsApp" />
@@ -255,20 +255,13 @@
     <q-dialog v-model="authDialogOpen" persistent>
       <q-card class="landing-3d__dialog-card landing-3d__auth-card">
         <q-card-section class="landing-3d__dialog-head">
-          <div><div class="text-h6">Area do cliente</div></div>
+          <div><div class="text-h6">AitoLearn</div>
+        </div>
           <q-btn flat round dense icon="mdi-close" aria-label="Fechar" @click="authDialogOpen = false" />
         </q-card-section>
         <q-card-section class="landing-3d__auth-tabs">
           <button type="button" class="text-grey-6" :class="{ 'is-active': authMode === 'login' }" @click="authMode = 'login'">Entrar</button>
           <button type="button" class="text-grey-6" :class="{ 'is-active': authMode === 'register' }" @click="authMode = 'register'">Criar acesso</button>
-        </q-card-section>
-        <q-card-section class="landing-3d__auth-role-tabs">
-          <button type="button" :class="{ 'is-active': authRole === 'user' }" @click="authRole = 'user'">
-            <q-icon name="mdi-school-outline" /> Usuario / cursos
-          </button>
-          <button type="button" :class="{ 'is-active': authRole === 'customer' }" @click="authRole = 'customer'">
-            <q-icon name="mdi-briefcase-outline" /> Cliente / projetos
-          </button>
         </q-card-section>
         <q-card-section class="landing-3d__dialog-body">
           <q-form @submit.prevent="submitAuth">
@@ -284,6 +277,7 @@
             <q-icon name="mdi-google" size="18px" aria-hidden="true" />
             Continuar com Google
           </button>
+          <q-btn outline no-caps class="landing-3d__project-login full-width q-mt-sm" icon="mdi-briefcase-outline" label="Acompanhar projeto" @click="authDialogOpen = false; router.push('/customer/login')" />
         </q-card-section>
       </q-card>
     </q-dialog>
@@ -291,12 +285,12 @@
     <q-dialog v-model="coursePromptOpen">
       <q-card class="landing-3d__dialog-card landing-3d__course-prompt">
         <q-card-section class="landing-3d__dialog-head">
-          <div><span class="landing-3d__dialog-kicker">AitoLearn / Curso 1</span><h3>Seu proximo nivel pode virar um produto.</h3></div>
+          <div><span class="landing-3d__dialog-kicker">AitoLearn / Fullstack Developer</span><h3>Seu proximo nivel pode virar um produto.</h3></div>
           <q-btn flat round dense icon="mdi-close" aria-label="Fechar" @click="coursePromptOpen = false" />
         </q-card-section>
         <q-card-section class="landing-3d__dialog-body">
           <p>Aprenda a construir e vender sistemas high ticket com frontend, backend, pagamentos, cloud, IA e 3D.</p>
-          <q-btn unelevated no-caps class="landing-3d__auth-submit full-width" icon="mdi-lightbulb-on-outline" label="Conhecer o Curso 1" @click="router.push('/aitolearn'); coursePromptOpen = false" />
+          <q-btn unelevated no-caps class="landing-3d__auth-submit full-width" icon="mdi-lightbulb-on-outline" label="Conhecer o Fullstack Developer" @click="router.push('/aitolearn'); coursePromptOpen = false" />
         </q-card-section>
       </q-card>
     </q-dialog>
@@ -356,7 +350,6 @@ const brandDialogOpen = ref(false)
 const selectedBrand = ref(null)
 const authDialogOpen = ref(false)
 const authMode = ref('login')
-const authRole = ref('user')
 const authLoading = ref(false)
 const referralDialogOpen = ref(false)
 const iaChat = ref(false)
@@ -378,11 +371,11 @@ const requiredRule = (value) => Boolean(String(value || '').trim()) || 'Preencha
 const accountLabel = computed(() => {
   sessionVersion.value
   const raw = localStorage.getItem('aito_admin_user') || localStorage.getItem('aito_user')
-  if (!raw) return 'Area do cliente'
+  if (!raw) return 'Entrar'
   try {
-    return String(JSON.parse(raw).name || 'Area do cliente').trim().split(/\s+/)[0]
+    return String(JSON.parse(raw).name || 'Entrar').trim().split(/\s+/)[0]
   } catch (error) {
-    return 'Area do cliente'
+    return 'Entrar'
   }
 })
 
@@ -430,12 +423,11 @@ function openAuth(mode = 'login') {
   if (session?.role === 'admin') return router.push('/admin')
   if (session?.role === 'customer') return router.push('/customer')
   authMode.value = mode
-  authRole.value = 'user'
   authDialogOpen.value = true
 }
 
 function persistAuth(data) {
-  const role = data.user?.role === 'admin' ? 'admin' : data.user?.role === 'customer' ? 'customer' : 'user'
+  const role = data.user?.role === 'admin' ? 'admin' : 'user'
   ;['aito_admin_token', 'aito_admin_user', 'aito_user_token', 'aito_user', 'aito_seller_token', 'aito_seller_user'].forEach((key) => localStorage.removeItem(key))
   const tokenKey = role === 'admin' ? 'aito_admin_token' : USER_TOKEN_KEY
   const userKey = role === 'admin' ? 'aito_admin_user' : 'aito_user'
@@ -452,18 +444,16 @@ async function submitAuth() {
           name: authForm.name,
           email: authForm.email,
           phone: authForm.phone,
-          password: authForm.password,
-          role: authRole.value
+          password: authForm.password
         })
       : await api.post('/auth/login', {
           identifier: authForm.identifier,
-          password: authForm.password,
-          role: authRole.value
+          password: authForm.password
         })
     persistAuth(response.data)
     authDialogOpen.value = false
     $q.notify({ type: 'positive', message: 'Acesso realizado.' })
-    router.push(response.data.user?.role === 'admin' ? '/admin' : response.data.user?.role === 'customer' ? '/customer' : '/app')
+    router.push(response.data.user?.role === 'admin' ? '/admin' : '/app')
   } catch (error) {
     $q.notify({ type: 'negative', message: error.response?.data?.message || 'Nao foi possivel concluir o acesso.' })
   } finally {
@@ -815,15 +805,12 @@ onBeforeUnmount(() => {
 .landing-3d__auth-tabs { display: flex; padding: 0.5rem 1.1rem; gap: 0.45rem; border-top: 1px solid rgba(19, 188, 157, 0.16); border-bottom: 1px solid rgba(19, 188, 157, 0.16); }
 .landing-3d__auth-tabs button { padding: 0.42rem 0.65rem; border: 0; border-radius: 999px; color: rgba(225, 255, 249, 0.62); background: transparent; font-size: 0.68rem; cursor: pointer; }
 .landing-3d__auth-tabs button.is-active { color: #03120f; background: var(--aito-teal); font-weight: 800; }
-.landing-3d__auth-role-tabs { display: grid; padding: .65rem 1.1rem 0; grid-template-columns: 1fr 1fr; gap: .45rem; }
-.landing-3d__auth-role-tabs button { display: flex; min-height: 2.55rem; align-items: center; justify-content: center; gap: .35rem; border: 1px solid rgba(19,188,157,.2); border-radius: .55rem; color: rgba(225,255,249,.68); background: rgba(19,188,157,.05); cursor: pointer; font: inherit; font-size: .66rem; }
-.landing-3d__auth-role-tabs button.is-active { border-color: var(--aito-teal); color: #03120f; background: linear-gradient(135deg,var(--aito-aqua),var(--aito-teal)); font-weight: 800; }
-.landing-3d__auth-role-tabs .q-icon { font-size: 1rem; }
 .landing-3d__course-prompt { width: min(92vw, 34rem); }
 .landing-3d__auth-separator { display: flex; margin: 1rem 0; align-items: center; gap: 0.65rem; color: rgba(225, 255, 249, 0.4); font-size: 0.68rem; }
 .landing-3d__auth-separator::before, .landing-3d__auth-separator::after { flex: 1; height: 1px; content: ''; background: rgba(19, 188, 157, 0.2); }
 .landing-3d__google-button { display: flex; width: 100%; min-height: 2.7rem; align-items: center; justify-content: center; gap: 0.5rem; border: 1px solid rgba(19, 188, 157, 0.3); border-radius: 999px; color: #effffb; background: rgba(19, 188, 157, 0.08); font-size: 0.74rem; cursor: pointer; }
 .landing-3d__google-button .q-icon { color: var(--aito-aqua); }
+.landing-3d__project-login { min-height: 2.7rem; border-color: rgba(143, 255, 238, 0.42); border-radius: 999px; color: #8fffee; background: rgba(19, 188, 157, 0.04); font-size: 0.74rem; }
 .landing-3d__auth-note { display: block; margin-top: 0.9rem; color: rgba(225, 255, 249, 0.42); font-size: 0.62rem; line-height: 1.45; }
 
 @media (max-width: 1100px) {

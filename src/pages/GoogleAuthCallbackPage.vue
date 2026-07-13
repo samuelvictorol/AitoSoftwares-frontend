@@ -45,7 +45,7 @@ onMounted(() => {
 
   try {
     const user = JSON.parse(rawUser)
-    const role = user.role === 'admin' ? 'admin' : user.role === 'customer' ? 'customer' : 'user'
+    const role = user.role === 'admin' ? 'admin' : 'user'
     localStorage.removeItem('aito_admin_token')
     localStorage.removeItem('aito_admin_user')
     localStorage.removeItem('aito_user_token')
@@ -60,7 +60,7 @@ onMounted(() => {
 
     window.history.replaceState({}, document.title, '/auth/google/callback')
     message.value = 'Acesso confirmado. Redirecionando...'
-    router.replace(role === 'admin' ? '/admin' : role === 'customer' ? '/customer' : '/app')
+    router.replace(role === 'admin' ? '/admin' : '/app')
   } catch (error) {
     goHomeWithError('A resposta do Google estava invalida.')
   }

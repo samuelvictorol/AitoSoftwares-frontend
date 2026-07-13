@@ -46,11 +46,11 @@ export default defineRouter(function (/* { store, ssrContext } */) {
     }
 
     if (to.meta?.requiresAuth === 'customer' && !token) {
-      return '/'
+      return '/customer/login'
     }
 
     if (to.meta?.requiresAuth === 'customer' && sessionUser.role !== 'customer') {
-      return '/app'
+      return '/customer/login'
     }
 
     if (to.meta?.requiresAuth === 'admin' && !localStorage.getItem('aito_admin_token')) {

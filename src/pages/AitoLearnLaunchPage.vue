@@ -85,7 +85,7 @@
                   allowfullscreen
                 ></iframe>
               </div>
-              <span class="learn-launch__media-caption">Veja a mentalidade por tras de um projeto high ticket.</span>
+              <!-- <span class="learn-launch__media-caption">Veja a mentalidade por tras de um projeto high ticket.</span> -->
             </div>
 
             <div v-else-if="section.image" class="learn-launch__media-card">
@@ -106,18 +106,18 @@
           <div class="learn-launch__copy">
             <p class="learn-launch__eyebrow">05 / SUA PROXIMA FASE</p>
             <h2>Construa sistemas que clientes high ticket querem comprar.</h2>
-            <p class="learn-launch__description">Entre na lista do Curso 1 e receba os detalhes da turma, bonus de engenharia de prompt e os proximos passos.</p>
+            <p class="learn-launch__description">Entre na lista do Curso Fullstack Developer e receba os detalhes da turma, bonus de engenharia de prompt e os proximos passos.</p>
             <div class="learn-launch__mini-note"><q-icon name="mdi-lock-outline" /> Seus dados ficam protegidos e sao usados apenas para este contato.</div>
           </div>
 
           <q-form class="learn-launch__lead-form" @submit.prevent="submitLead">
-            <div class="learn-launch__form-title"><q-icon name="mdi-school-outline" /> AitoLearn / Curso 1</div>
+            <div class="learn-launch__form-title"><q-icon name="mdi-school-outline" /> AitoLearn / Fullstack Developer</div>
             <div class="learn-launch__form-grid">
               <q-input v-model="lead.name" outlined label="Seu nome" autocomplete="name" :rules="[requiredRule]" />
               <q-select v-model="lead.profileType" outlined label="Voce e..." :options="profileOptions" emit-value map-options :rules="[requiredRule]" />
               <q-input v-model="lead.email" outlined label="E-mail" type="email" autocomplete="email" />
               <q-input v-model="lead.phone" outlined label="WhatsApp" autocomplete="tel" />
-              <q-input v-model="lead.question" outlined type="textarea" autogrow class="learn-launch__form-full" label="O que voce quer aprender ou vender? (opcional)" />
+              <q-input v-model="lead.question" outlined type="textarea" autogrow class="learn-launch__form-full" label="Qual seu objetivo? (opcional)" />
             </div>
             <p class="learn-launch__form-help">Informe e-mail ou WhatsApp para receber o convite.</p>
             <q-btn unelevated no-caps type="submit" class="learn-launch__submit" icon="mdi-arrow-right" label="Quero conhecer o Curso 1" :loading="saving" />
@@ -162,8 +162,8 @@ const router = useRouter()
 const $q = useQuasar()
 const sections = Object.freeze([
   {
-    id: 'metodo', label: 'A promessa', kind: 'hero', eyebrow: 'AITOLEARN / CURSO 1',
-    title: 'Pare de vender horas. Aprenda a vender sistemas que mudam operacoes.',
+    id: 'metodo', label: 'A promessa', kind: 'hero', eyebrow: 'AITOLEARN / FULLSTACK DEVELOPER',
+    title: 'Aprenda a criar sistemas que geram valor.',
     description: 'Um projeto guiado para desenvolvedores que querem atender clientes high ticket, dominar uma stack moderna e entregar software real do zero ao ambiente em producao.', media: 'video'
   },
   {
@@ -179,7 +179,7 @@ const sections = Object.freeze([
   {
     id: 'engenharia', label: 'Metodo de engenharia', kind: 'method', eyebrow: '03 / CODEx, CLAUDE E INITIALIZERS',
     title: 'Automatize processos e lance apps rapidos, confiaveis e nao vibe codados.',
-    description: 'Use Codex e Claude para acelerar raciocinio, testes e implementacao sem abrir mao de engenharia: arquitetura, limites, revisao e seguranca vem antes do deploy.', items: ['Initializers seguros', 'Integracao de pagamento', 'Testes e observabilidade', 'Bonus de prompt engineering'], stack: ['Vue', 'Three.js', 'Node', 'MongoDB', 'Cloud', 'IA']
+    description: 'Use Codex e Claude para acelerar raciocinio, testes e implementacao sem abrir mao de engenharia: arquitetura, limites, revisao e seguranca vem antes do deploy.', items: ['Initializers seguros', 'Integracao de pagamento', 'Testes e observabilidade', 'Javascript e Python','Bonus de prompt engineering'], stack: ['Vue', 'Three.js', 'Node', 'MongoDB', 'Cloud', 'IA']
   }
 ])
 const navSections = Object.freeze([...sections, { id: 'inscricao', label: 'Inscricao' }, { id: 'sobre-aitolearn', label: 'AitoLearn' }])
@@ -187,7 +187,7 @@ const { activeSection, prefersReducedMotion, scrollProgress, scrollToSection } =
 const sceneReady = ref(false)
 const saving = ref(false)
 let loaderWatchdog
-const videoUrl = import.meta.env.VITE_AITOLEARN_VIDEO_URL || 'https://www.youtube.com/embed/aqz-KE-bpKQ'
+const videoUrl = import.meta.env.VITE_AITOLEARN_VIDEO_URL || 'https://www.youtube.com/embed/ekZtwCJvH1g?playsinline=1&rel=0'
 const profileOptions = [
   { label: 'Empresario', value: 'empresario' },
   { label: 'Desenvolvedor', value: 'desenvolvedor' },

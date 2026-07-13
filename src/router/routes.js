@@ -32,6 +32,11 @@ const routes = [
     component: () => import('pages/CustomerHomePage.vue'),
   },
   {
+    path: '/customer/login',
+    name: 'customer-login',
+    component: () => import('pages/CustomerLoginPage.vue'),
+  },
+  {
     path: '/politica-privacidade',
     name: 'privacy-policy',
     component: () => import('pages/LegalPage.vue'),
