@@ -57,14 +57,23 @@ const canvasElement = ref(null)
 
 const bundledModelUrls = import.meta.glob([
   '../../3d-models/obj1.glb',
+  '../../3d-models/obj1.desktop.glb',
   '../../3d-models/obj2.glb',
+  '../../3d-models/obj2.desktop.glb',
   '../../3d-models/obj3.glb',
+  '../../3d-models/obj3.desktop.glb',
   '../../3d-models/obj4.glb',
+  '../../3d-models/obj4.desktop.glb',
   '../../3d-models/obj4 - dance.glb',
+  '../../3d-models/obj4 - dance.desktop.glb',
   '../../3d-models/obj-samuel.glb',
+  '../../3d-models/obj-samuel.desktop.glb',
   '../../3d-models/obj-samuel-dance.glb',
+  '../../3d-models/obj-samuel-dance.desktop.glb',
   '../../3d-models/obj-dion.glb',
-  '../../3d-models/obj-dion-dance.glb'
+  '../../3d-models/obj-dion.desktop.glb',
+  '../../3d-models/obj-dion-dance.glb',
+  '../../3d-models/obj-dion-dance.desktop.glb'
 ], {
   eager: true,
   query: '?url',
@@ -184,6 +193,33 @@ function modelFileNames(fileName) {
 
 function describeModelFile(fileName) {
   return modelFileNames(fileName).join(' ou ')
+}
+
+function prefersHighQualityModels() {
+  const width = window.innerWidth
+  const navigatorConnection = navigator.connection
+  const isCoarsePointer = window.matchMedia?.('(pointer: coarse)').matches ?? false
+  const isSlowConnection = ['slow-2g', '2g'].includes(navigatorConnection?.effectiveType)
+  const saveData = Boolean(navigatorConnection?.saveData)
+  const hasDeviceMemory = Number.isFinite(Number(navigator.deviceMemory))
+  const hasHardwareConcurrency = Number.isFinite(Number(navigator.hardwareConcurrency))
+  const hasEnoughMemory = !hasDeviceMemory || Number(navigator.deviceMemory) >= 6
+  const hasEnoughCores = !hasHardwareConcurrency || Number(navigator.hardwareConcurrency) >= 6
+
+  return width >= 1024 &&
+    !isCoarsePointer &&
+    !isSlowConnection &&
+    !saveData &&
+    hasEnoughMemory &&
+    hasEnoughCores
+}
+
+function modelFileCandidates(config) {
+  const highQualityFiles = prefersHighQualityModels() && config.highQualityFileName
+    ? modelFileNames(config.highQualityFileName)
+    : []
+
+  return [...highQualityFiles, ...modelFileNames(config.fileName)]
 }
 
 function sceneModelEntries() {
@@ -599,7 +635,7 @@ function playModelAnimations(entry, mixerRoot, clips) {
 }
 
 function loadModelEntry(loader, key, config) {
-    const url = resolveModelUrl(config.fileName)
+    const url = resolveModelUrl(modelFileCandidates(config))
 
     if (!url) {
       console.warn(
