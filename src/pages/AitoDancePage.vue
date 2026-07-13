@@ -6,6 +6,7 @@
           solo-dance
           surprise-stage
           :surprise-focus="focusedDanceModel"
+          :surprise-zoom="zoomLevel"
           :scroll-progress="1"
           :section-count="10"
           :reduced-motion="prefersReducedMotion"
@@ -61,6 +62,33 @@
             @click="moveFocus(1)"
           >
             <q-icon name="mdi-chevron-right" aria-hidden="true" />
+          </button>
+        </div>
+
+        <div v-if="sceneReady" class="aito-dance__zoom-controls" aria-label="Zoom da cena">
+          <button
+            type="button"
+            aria-label="Diminuir zoom"
+            title="Diminuir zoom"
+            @click="adjustZoom(-0.08)"
+          >
+            <q-icon name="mdi-magnify-minus-outline" aria-hidden="true" />
+          </button>
+          <input
+            v-model.number="zoomLevel"
+            type="range"
+            min="0.82"
+            max="1.34"
+            step="0.01"
+            aria-label="Nível de zoom"
+          />
+          <button
+            type="button"
+            aria-label="Aumentar zoom"
+            title="Aumentar zoom"
+            @click="adjustZoom(0.08)"
+          >
+            <q-icon name="mdi-magnify-plus-outline" aria-hidden="true" />
           </button>
         </div>
 
@@ -173,6 +201,7 @@ const audioActive = ref(false)
 const creditsDialogOpen = ref(false)
 const prefersReducedMotion = ref(false)
 const focusedDanceModel = ref('obj4Dance')
+const zoomLevel = ref(1)
 
 const clickableDanceModels = new Set(['obj4Dance', 'samuelDance', 'dionDance'])
 const danceModelOrder = ['obj4Dance', 'samuelDance', 'dionDance']
@@ -190,6 +219,10 @@ const danceAudioUrl = Object.entries(bundledDanceAudioUrls).find(([path]) =>
 let mediaQuery
 let danceAudio = null
 let loadingWatchdog = null
+let pinchDistance = 0
+
+const ZOOM_MIN = 0.82
+const ZOOM_MAX = 1.34
 
 function ensureDanceAudio() {
   if (!danceAudioUrl) return null
@@ -270,6 +303,34 @@ function moveFocus(direction) {
   focusedDanceModel.value = danceModelOrder[nextIndex]
 }
 
+function adjustZoom(amount) {
+  zoomLevel.value = Math.min(ZOOM_MAX, Math.max(ZOOM_MIN, zoomLevel.value + amount))
+}
+
+function getTouchDistance(touches) {
+  if (touches.length < 2) return 0
+  const [first, second] = touches
+  return Math.hypot(second.clientX - first.clientX, second.clientY - first.clientY)
+}
+
+function handleTouchStart(event) {
+  pinchDistance = getTouchDistance(event.touches)
+}
+
+function handleTouchMove(event) {
+  const nextDistance = getTouchDistance(event.touches)
+  if (!pinchDistance || !nextDistance) return
+
+  const delta = nextDistance - pinchDistance
+  if (Math.abs(delta) > 0.5) adjustZoom(delta * 0.0022)
+  pinchDistance = nextDistance
+  if (event.cancelable) event.preventDefault()
+}
+
+function handleTouchEnd(event) {
+  if (event.touches.length < 2) pinchDistance = 0
+}
+
 function goBack() {
   void router.push('/')
 }
@@ -283,11 +344,17 @@ onMounted(() => {
   prefersReducedMotion.value = mediaQuery.matches
   mediaQuery.addEventListener?.('change', updateMotionPreference)
   loadingWatchdog = window.setTimeout(handleSceneReady, SURPRISE_LOADING_WATCHDOG_MS)
+  window.addEventListener('touchstart', handleTouchStart, { passive: true })
+  window.addEventListener('touchmove', handleTouchMove, { passive: false })
+  window.addEventListener('touchend', handleTouchEnd, { passive: true })
 })
 
 onBeforeUnmount(() => {
   if (loadingWatchdog) window.clearTimeout(loadingWatchdog)
   mediaQuery?.removeEventListener?.('change', updateMotionPreference)
+  window.removeEventListener('touchstart', handleTouchStart)
+  window.removeEventListener('touchmove', handleTouchMove)
+  window.removeEventListener('touchend', handleTouchEnd)
 
   if (!danceAudio) return
 
@@ -492,6 +559,56 @@ onBeforeUnmount(() => {
   outline: none;
   filter: brightness(1.14) saturate(1.12);
   transform: translateY(-50%) scale(1.08);
+}
+
+.aito-dance__zoom-controls {
+  position: fixed;
+  top: clamp(5.2rem, 9vh, 6.8rem);
+  left: 50%;
+  z-index: 5;
+  display: flex;
+  width: min(14rem, 42vw);
+  min-height: 2.35rem;
+  padding: 0.22rem 0.3rem;
+  align-items: center;
+  gap: 0.35rem;
+  border: 1px solid rgba(19, 188, 157, 0.3);
+  border-radius: 999px;
+  background: rgba(3, 20, 21, 0.46);
+  box-shadow: 0 12px 38px rgba(0, 0, 0, 0.18);
+  pointer-events: auto;
+  backdrop-filter: blur(8px);
+  transform: translateX(-50%);
+}
+
+.aito-dance__zoom-controls button {
+  display: grid;
+  width: 1.85rem;
+  height: 1.85rem;
+  flex: 0 0 auto;
+  padding: 0;
+  border: 1px solid rgba(143, 255, 238, 0.26);
+  border-radius: 50%;
+  place-items: center;
+  color: #dffff8;
+  background: rgba(19, 188, 157, 0.16);
+  cursor: pointer;
+  transition: background 180ms ease, border-color 180ms ease, transform 180ms ease;
+}
+
+.aito-dance__zoom-controls button:hover,
+.aito-dance__zoom-controls button:focus-visible {
+  border-color: #8fffee;
+  outline: none;
+  background: rgba(19, 188, 157, 0.34);
+  transform: scale(1.06);
+}
+
+.aito-dance__zoom-controls input {
+  width: 100%;
+  min-width: 0;
+  accent-color: var(--aito-teal);
+  cursor: pointer;
 }
 
 @keyframes dance-loader-spin {
@@ -884,6 +1001,17 @@ onBeforeUnmount(() => {
 
   .aito-dance__switcher .q-icon {
     font-size: 1.35rem;
+  }
+
+  .aito-dance__zoom-controls {
+    top: 5.1rem;
+    width: min(12.5rem, 48vw);
+    min-height: 2.15rem;
+  }
+
+  .aito-dance__zoom-controls button {
+    width: 1.7rem;
+    height: 1.7rem;
   }
 
   .aito-dance__speech {

@@ -13,6 +13,7 @@
 import { onBeforeUnmount, onMounted, ref } from 'vue'
 import * as THREE from 'three'
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js'
+import { MeshoptDecoder } from 'three/examples/jsm/libs/meshopt_decoder.module.js'
 import { landing3dModels } from 'src/data/landing3dModels'
 
 const props = defineProps({
@@ -43,6 +44,10 @@ const props = defineProps({
   surpriseFocus: {
     type: String,
     default: 'obj4Dance'
+  },
+  surpriseZoom: {
+    type: Number,
+    default: 1
   }
 })
 
@@ -50,7 +55,17 @@ const emit = defineEmits(['ready', 'model-select'])
 
 const canvasElement = ref(null)
 
-const bundledModelUrls = import.meta.glob('../../3d-models/*.glb', {
+const bundledModelUrls = import.meta.glob([
+  '../../3d-models/obj1.glb',
+  '../../3d-models/obj2.glb',
+  '../../3d-models/obj3.glb',
+  '../../3d-models/obj4.glb',
+  '../../3d-models/obj4 - dance.glb',
+  '../../3d-models/obj-samuel.glb',
+  '../../3d-models/obj-samuel-dance.glb',
+  '../../3d-models/obj-dion.glb',
+  '../../3d-models/obj-dion-dance.glb'
+], {
   eager: true,
   query: '?url',
   import: 'default'
@@ -62,6 +77,7 @@ const BRAND_GREEN = 0x1cbd6b
 const BRAND_NAVY = 0x0b1220
 const STAR_COLORS = [0x1fb694, 0x23917d, 0x50dcc4, 0x8fffee]
 const MODEL_LOAD_TIMEOUT_MS = 9000
+const MODEL_LOAD_CONCURRENCY = 2
 const LANDING_MODEL_KEYS = ['obj1', 'logo', 'obj2', 'obj3', 'obj4', 'samuel', 'dion']
 const SURPRISE_MODEL_KEYS = ['obj4', 'obj4Dance', 'samuelDance', 'dionDance']
 
@@ -136,10 +152,17 @@ let smoothProgress = 0
 let starField
 let starFieldIsDesktop = false
 let modelEntries = {}
+let modelLoader
+let modelLoadQueue = []
+let modelLoadActive = 0
+const modelLoadPromises = new Map()
+const modelLoadResolvers = new Map()
+const modelSettledKeys = new Set()
 let lastFrameTime = 0
 let readyEmitted = false
 let pageVisible = true
 let webglContextLost = false
+let baseCameraZ = 8.4
 let surpriseFocusFrom = 'obj4Dance'
 let surpriseFocusTarget = 'obj4Dance'
 let surpriseFocusMix = 1
@@ -546,6 +569,8 @@ function createModelRoots() {
     modelEntries[key] = {
       root,
       content: fallback,
+      fallback,
+      isLoaded: false,
       mixer: null,
       mixerRoot: null
     }
@@ -626,6 +651,7 @@ function loadModelEntry(loader, key, config) {
           entry.root.clear()
           entry.root.add(normalizedModel)
           entry.content = normalizedModel
+          entry.isLoaded = true
           playModelAnimations(entry, gltf.scene, gltf.animations)
           finish({ key, status: 'loaded' })
         },
@@ -644,22 +670,91 @@ function loadModelEntry(loader, key, config) {
     })
 }
 
-function loadModels() {
-  const loader = new GLTFLoader()
-  const entries = sceneModelEntries()
-  const concurrency = Math.min(2, entries.length)
-  let nextIndex = 0
+function pumpModelLoadQueue() {
+  while (modelLoader && modelLoadActive < MODEL_LOAD_CONCURRENCY && modelLoadQueue.length) {
+    const key = modelLoadQueue.shift()
+    const config = landing3dModels[key]
+    if (!config || modelSettledKeys.has(key)) continue
 
-  const worker = () => {
-    const entry = entries[nextIndex]
-    nextIndex += 1
+    modelLoadActive += 1
+    loadModelEntry(modelLoader, key, config)
+      .then((result) => {
+        modelSettledKeys.add(key)
+        modelLoadResolvers.get(key)?.(result)
+      })
+      .catch((error) => {
+        console.warn(`[Landing 3D] Falha inesperada ao carregar "${key}".`, error)
+        modelSettledKeys.add(key)
+        modelLoadResolvers.get(key)?.({ key, status: 'fallback' })
+      })
+      .finally(() => {
+        modelLoadResolvers.delete(key)
+        modelLoadPromises.delete(key)
+        modelLoadActive -= 1
+        pumpModelLoadQueue()
+      })
+  }
+}
 
-    if (!entry) return Promise.resolve()
-
-    return loadModelEntry(loader, entry[0], entry[1]).then(worker)
+function queueModelLoad(key) {
+  if (!landing3dModels[key] || !modelEntries[key] || modelSettledKeys.has(key)) {
+    return Promise.resolve({ key, status: 'skipped' })
   }
 
-  return Promise.all(Array.from({ length: concurrency }, worker))
+  if (modelLoadPromises.has(key)) return modelLoadPromises.get(key)
+
+  const promise = new Promise((resolve) => {
+    modelLoadResolvers.set(key, resolve)
+  })
+  modelLoadPromises.set(key, promise)
+  modelLoadQueue.push(key)
+  pumpModelLoadQueue()
+  return promise
+}
+
+function unloadModel(key) {
+  const entry = modelEntries[key]
+  if (!entry?.isLoaded || modelLoadPromises.has(key)) return
+
+  clearModelAnimation(entry)
+  disposeObject(entry.content)
+  entry.root.clear()
+  entry.root.add(entry.fallback)
+  entry.content = entry.fallback
+  entry.isLoaded = false
+  modelSettledKeys.delete(key)
+}
+
+function queueNearbyModelLoads(sectionPosition) {
+  if (props.surpriseStage) return
+
+  Object.entries(MODEL_KEYFRAMES).forEach(([key, keyframes]) => {
+    if (!modelEntries[key]) return
+
+    const visibleKeyframes = keyframes.filter((keyframe) => keyframe.opacity > 0.01)
+    const firstSection = visibleKeyframes[0]?.section ?? keyframes[0].section
+    const lastSection = visibleKeyframes[visibleKeyframes.length - 1]?.section ??
+      keyframes[keyframes.length - 1].section
+    const isNearViewport = firstSection <= sectionPosition + 1.35 &&
+      lastSection >= sectionPosition - 1.35
+
+    if (isNearViewport) {
+      queueModelLoad(key)
+    } else if (Math.abs(sectionPosition - lastSection) > 1.8) {
+      unloadModel(key)
+    }
+  })
+}
+
+function loadModels() {
+  modelLoader = new GLTFLoader()
+  modelLoader.setMeshoptDecoder(MeshoptDecoder)
+
+  const initialKeys = props.surpriseStage
+    ? SURPRISE_MODEL_KEYS
+    : ['obj1', 'logo']
+
+  return Promise.all(initialKeys.map(queueModelLoad))
 }
 
 function emitSceneReady() {
@@ -926,7 +1021,7 @@ function updateSurpriseStageModels(elapsedTime, isMobile) {
         const centerScale = isMobile ? 0.72 : window.innerWidth < 1100 ? 0.94 : 1.04
         scale = lerp(sideScale, centerScale, centerAmount)
       } else {
-        const sideScale = isMobile ? 0.39 : 0.56
+        const sideScale = isMobile ? 0.46 : 0.68
         scale = lerp(sideScale, sideScale * (isMobile ? 1.08 : 1.12), centerAmount)
       }
 
@@ -1095,9 +1190,13 @@ function updateScene(elapsedTime, deltaTime) {
     ? Math.max(props.sectionCount - 1, 9)
     : smoothProgress * Math.max(props.sectionCount - 1, 0)
 
+  queueNearbyModelLoads(sectionPosition)
+
   pointerCurrent.lerp(pointerTarget, props.reducedMotion ? 0.03 : 0.055)
   danceYawCurrent = lerp(danceYawCurrent, danceYawTarget, props.reducedMotion ? 0.055 : 0.09)
 
+  const zoom = props.surpriseStage ? clamp(props.surpriseZoom, 0.82, 1.34) : 1
+  camera.position.z = baseCameraZ / zoom
   camera.position.x = pointerCurrent.x * (props.reducedMotion ? 0.025 : 0.16)
   camera.position.y = pointerCurrent.y * (props.reducedMotion ? 0.02 : 0.1)
   camera.lookAt(0, 0, 0)
@@ -1130,6 +1229,18 @@ function renderFrame(time) {
     return
   }
 
+  const isMobile = window.innerWidth < 768
+  const isLowPowerDevice = Number(navigator.deviceMemory || 4) <= 4 ||
+    Number(navigator.hardwareConcurrency || 4) <= 4
+  const frameInterval = isMobile
+    ? 1000 / (isLowPowerDevice ? 30 : 45)
+    : 1000 / 60
+
+  if (lastFrameTime && time - lastFrameTime < frameInterval) {
+    animationFrame = window.requestAnimationFrame(renderFrame)
+    return
+  }
+
   const deltaTime = Math.min((time - lastFrameTime) / 1000, 0.05)
   lastFrameTime = time
   updateScene(time / 1000, deltaTime)
@@ -1148,7 +1259,10 @@ function renderFrame(time) {
 function rendererPixelRatio() {
   const isMobile = window.innerWidth < 768
   const deviceMemory = Number(navigator.deviceMemory || 4)
-  const maximum = isMobile ? 1.25 : deviceMemory <= 4 ? 1.5 : 1.75
+  const hardwareConcurrency = Number(navigator.hardwareConcurrency || 4)
+  const maximum = isMobile
+    ? deviceMemory <= 4 || hardwareConcurrency <= 4 ? 1 : 1.25
+    : deviceMemory <= 4 ? 1.5 : 1.75
   return Math.min(window.devicePixelRatio || 1, maximum)
 }
 
@@ -1167,7 +1281,8 @@ function handleResize() {
   }
 
   camera.aspect = width / Math.max(height, 1)
-  camera.position.z = width < 768 ? 9.4 : width < 1100 ? 9 : 8.4
+  baseCameraZ = width < 768 ? 9.4 : width < 1100 ? 9 : 8.4
+  camera.position.z = baseCameraZ / (props.surpriseStage ? clamp(props.surpriseZoom, 0.82, 1.34) : 1)
   camera.updateProjectionMatrix()
 
   renderer.setPixelRatio(rendererPixelRatio())
@@ -1305,13 +1420,14 @@ function initializeScene() {
   scene.fog = new THREE.FogExp2(0x05090c, 0.028)
 
   camera = new THREE.PerspectiveCamera(42, 1, 0.1, 100)
-  camera.position.set(0, 0, 8.4)
+  baseCameraZ = 8.4
+  camera.position.set(0, 0, baseCameraZ)
 
   renderer = new THREE.WebGLRenderer({
     canvas: canvasElement.value,
     alpha: true,
     antialias: window.innerWidth >= 768,
-    powerPreference: 'high-performance'
+    powerPreference: window.innerWidth < 768 ? 'low-power' : 'high-performance'
   })
   renderer.outputColorSpace = THREE.SRGBColorSpace
   renderer.toneMapping = THREE.ACESFilmicToneMapping
@@ -1380,6 +1496,12 @@ onBeforeUnmount(() => {
   renderer = null
   starField = null
   modelEntries = {}
+  modelLoader = undefined
+  modelLoadQueue = []
+  modelLoadActive = 0
+  modelLoadPromises.clear()
+  modelLoadResolvers.clear()
+  modelSettledKeys.clear()
 })
 </script>
 
