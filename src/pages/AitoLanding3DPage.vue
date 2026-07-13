@@ -293,7 +293,7 @@
 </template>
 
 <script setup>
-import { computed, onBeforeUnmount, reactive, ref } from 'vue'
+import { computed, onBeforeUnmount, onMounted, reactive, ref } from 'vue'
 import { useQuasar } from 'quasar'
 import { useRouter } from 'vue-router'
 import { api, apiBaseURL } from 'boot/axios'
@@ -314,6 +314,7 @@ const isMobile = computed(() => window.innerWidth < 768)
 const $q = useQuasar()
 const router = useRouter()
 const USER_TOKEN_KEY = 'aito_user_token'
+const LANDING_SCENE_WATCHDOG_MS = 9000
 
 const { activeSection, prefersReducedMotion, scrollProgress, scrollToSection: scrollTo, sectionPosition } = useLandingScroll(landing3dSections.length)
 
@@ -329,6 +330,7 @@ const authLoading = ref(false)
 const referralDialogOpen = ref(false)
 const iaChat = ref(false)
 let introTextTimer
+let sceneReadyWatchdog
 
 const lead = reactive({ name: '', phone: '', email: '', company: '', message: '' })
 const referral = reactive({ name: '', phone: '', leadName: '', notes: '' })
@@ -351,7 +353,10 @@ function sectionCopyStyle(index) {
   }
 }
 
-function handleSceneReady() { sceneReady.value = true }
+function handleSceneReady() {
+  sceneReady.value = true
+  if (sceneReadyWatchdog) window.clearTimeout(sceneReadyWatchdog)
+}
 function handleIntroReveal() {
   introRevealing.value = true
   window.clearTimeout(introTextTimer)
@@ -433,8 +438,15 @@ function sendReferral() {
   referralDialogOpen.value = false
 }
 
+onMounted(() => {
+  sceneReadyWatchdog = window.setTimeout(() => {
+    if (!sceneReady.value) sceneReady.value = true
+  }, LANDING_SCENE_WATCHDOG_MS)
+})
+
 onBeforeUnmount(() => {
   window.clearTimeout(introTextTimer)
+  if (sceneReadyWatchdog) window.clearTimeout(sceneReadyWatchdog)
 })
 </script>
 

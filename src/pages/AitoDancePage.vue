@@ -176,6 +176,7 @@ const focusedDanceModel = ref('obj4Dance')
 
 const clickableDanceModels = new Set(['obj4Dance', 'samuelDance', 'dionDance'])
 const danceModelOrder = ['obj4Dance', 'samuelDance', 'dionDance']
+const SURPRISE_LOADING_WATCHDOG_MS = 8000
 const danceModelLabels = {
   obj4Dance: 'o robo Aito',
   samuelDance: 'Samuel',
@@ -188,6 +189,7 @@ const danceAudioUrl = Object.entries(bundledDanceAudioUrls).find(([path]) =>
 
 let mediaQuery
 let danceAudio = null
+let loadingWatchdog = null
 
 function ensureDanceAudio() {
   if (!danceAudioUrl) return null
@@ -230,7 +232,10 @@ function handleAudioToggle() {
 }
 
 function handleSceneReady() {
+  if (sceneReady.value) return
+
   sceneReady.value = true
+  if (loadingWatchdog) window.clearTimeout(loadingWatchdog)
   window.requestAnimationFrame(() => {
     void setAudioMode(true, { restart: true })
   })
@@ -277,9 +282,11 @@ onMounted(() => {
   mediaQuery = window.matchMedia('(prefers-reduced-motion: reduce)')
   prefersReducedMotion.value = mediaQuery.matches
   mediaQuery.addEventListener?.('change', updateMotionPreference)
+  loadingWatchdog = window.setTimeout(handleSceneReady, SURPRISE_LOADING_WATCHDOG_MS)
 })
 
 onBeforeUnmount(() => {
+  if (loadingWatchdog) window.clearTimeout(loadingWatchdog)
   mediaQuery?.removeEventListener?.('change', updateMotionPreference)
 
   if (!danceAudio) return

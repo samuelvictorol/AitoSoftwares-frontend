@@ -65,6 +65,7 @@ let spinFrom = 0
 let spinTo = 0
 let spinStart = 0
 let spinActive = false
+let webglContextLost = false
 
 const easeInOut = (value) => value * value * (3 - 2 * value)
 const lerp = (start, end, amount) => start + (end - start) * amount
@@ -162,7 +163,7 @@ function createScene() {
   renderer = new THREE.WebGLRenderer({
     canvas: canvasElement.value,
     alpha: true,
-    antialias: true,
+    antialias: window.innerWidth >= 640,
     powerPreference: 'high-performance'
   })
   renderer.outputColorSpace = THREE.SRGBColorSpace
@@ -191,7 +192,8 @@ function handleResize() {
   if (!renderer || !camera) return
 
   const size = Math.min(window.innerWidth, window.innerHeight, 480)
-  renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2))
+  const maximumPixelRatio = window.innerWidth < 640 ? 1.25 : 1.75
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, maximumPixelRatio))
   renderer.setSize(size, size, false)
 
   camera.aspect = 1
@@ -212,7 +214,7 @@ function spinOnce() {
 }
 
 function renderFrame(time) {
-  if (destroyed || !renderer || !objectRoot) return
+  if (destroyed || !renderer || !objectRoot || webglContextLost) return
 
   if (spinActive) {
     const amount = Math.min((time - spinStart) / SPIN_DURATION, 1)
@@ -239,8 +241,31 @@ function renderFrame(time) {
 
   progress.value = lerp(progress.value, progressTarget, props.ready ? 0.08 : 0.04)
 
-  renderer.render(scene, camera)
+  try {
+    renderer.render(scene, camera)
+  } catch (error) {
+    webglContextLost = true
+    animationFrame = 0
+    console.warn('[Landing Loader] O navegador interrompeu o canvas WebGL. A transicao continuara sem o objeto.', error)
+    if (props.ready) startExitAnimation()
+    return
+  }
   animationFrame = window.requestAnimationFrame(renderFrame)
+}
+
+function handleContextLost(event) {
+  event.preventDefault()
+  webglContextLost = true
+  window.cancelAnimationFrame(animationFrame)
+  animationFrame = 0
+  if (props.ready) startExitAnimation()
+}
+
+function handleContextRestored() {
+  webglContextLost = false
+  if (!animationFrame && !destroyed) {
+    animationFrame = window.requestAnimationFrame(renderFrame)
+  }
 }
 
 function startExitAnimation() {
@@ -310,6 +335,8 @@ onMounted(() => {
 
   try {
     createScene()
+    canvasElement.value?.addEventListener('webglcontextlost', handleContextLost, false)
+    canvasElement.value?.addEventListener('webglcontextrestored', handleContextRestored, false)
     animationFrame = window.requestAnimationFrame(renderFrame)
     window.addEventListener('resize', handleResize, { passive: true })
     scheduleAutoStart()
@@ -325,6 +352,8 @@ onBeforeUnmount(() => {
   window.clearTimeout(exitTimer)
   window.cancelAnimationFrame(animationFrame)
   window.removeEventListener('resize', handleResize)
+  canvasElement.value?.removeEventListener('webglcontextlost', handleContextLost)
+  canvasElement.value?.removeEventListener('webglcontextrestored', handleContextRestored)
 
   disposeObject(scene)
   renderer?.renderLists?.dispose()

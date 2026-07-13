@@ -61,6 +61,9 @@ const BRAND_TEAL_SECONDARY = 0x0ea794
 const BRAND_GREEN = 0x1cbd6b
 const BRAND_NAVY = 0x0b1220
 const STAR_COLORS = [0x1fb694, 0x23917d, 0x50dcc4, 0x8fffee]
+const MODEL_LOAD_TIMEOUT_MS = 9000
+const LANDING_MODEL_KEYS = ['obj1', 'logo', 'obj2', 'obj3', 'obj4', 'samuel', 'dion']
+const SURPRISE_MODEL_KEYS = ['obj4', 'obj4Dance', 'samuelDance', 'dionDance']
 
 const STATE_DEFAULTS = {
   x: 0,
@@ -135,6 +138,8 @@ let starFieldIsDesktop = false
 let modelEntries = {}
 let lastFrameTime = 0
 let readyEmitted = false
+let pageVisible = true
+let webglContextLost = false
 let surpriseFocusFrom = 'obj4Dance'
 let surpriseFocusTarget = 'obj4Dance'
 let surpriseFocusMix = 1
@@ -156,6 +161,13 @@ function modelFileNames(fileName) {
 
 function describeModelFile(fileName) {
   return modelFileNames(fileName).join(' ou ')
+}
+
+function sceneModelEntries() {
+  const keys = props.surpriseStage ? SURPRISE_MODEL_KEYS : LANDING_MODEL_KEYS
+  return keys
+    .map((key) => [key, landing3dModels[key]])
+    .filter(([, config]) => config)
 }
 
 function resolveModelUrl(fileName) {
@@ -520,7 +532,7 @@ function normalizeModel(model) {
 }
 
 function createModelRoots() {
-  Object.entries(landing3dModels).forEach(([key, config]) => {
+  sceneModelEntries().forEach(([key, config]) => {
     const root = new THREE.Group()
     const fallback = createFallback(config.fallback)
     prepareMaterials(fallback, false)
@@ -561,10 +573,7 @@ function playModelAnimations(entry, mixerRoot, clips) {
   entry.mixerRoot = mixerRoot
 }
 
-function loadModels() {
-  const loader = new GLTFLoader()
-
-  return Promise.all(Object.entries(landing3dModels).map(([key, config]) => {
+function loadModelEntry(loader, key, config) {
     const url = resolveModelUrl(config.fileName)
 
     if (!url) {
@@ -576,12 +585,35 @@ function loadModels() {
     }
 
     return new Promise((resolve) => {
+      let settled = false
+      const timeoutId = window.setTimeout(() => {
+        settled = true
+        console.warn(
+          `[Landing 3D] O carregamento de "${describeModelFile(config.fileName)}" excedeu ` +
+          `${MODEL_LOAD_TIMEOUT_MS}ms. O fallback de "${key}" continuara ativo.`
+        )
+        resolve({ key, status: 'timeout' })
+      }, MODEL_LOAD_TIMEOUT_MS)
+
+      const finish = (result) => {
+        if (settled) return false
+        settled = true
+        window.clearTimeout(timeoutId)
+        resolve(result)
+        return true
+      }
+
       loader.load(
         url,
         (gltf) => {
+          if (settled) {
+            disposeObject(gltf.scene)
+            return
+          }
+
           if (destroyed) {
             disposeObject(gltf.scene)
-            resolve({ key, status: 'disposed' })
+            finish({ key, status: 'disposed' })
             return
           }
 
@@ -595,20 +627,39 @@ function loadModels() {
           entry.root.add(normalizedModel)
           entry.content = normalizedModel
           playModelAnimations(entry, gltf.scene, gltf.animations)
-          resolve({ key, status: 'loaded' })
+          finish({ key, status: 'loaded' })
         },
         undefined,
         (error) => {
+          if (settled) return
+
           console.warn(
             `[Landing 3D] Não foi possível carregar "${describeModelFile(config.fileName)}". ` +
             `O fallback de "${key}" continuará ativo.`,
             error
           )
-          resolve({ key, status: 'fallback' })
+          finish({ key, status: 'fallback' })
         }
       )
     })
-  }))
+}
+
+function loadModels() {
+  const loader = new GLTFLoader()
+  const entries = sceneModelEntries()
+  const concurrency = Math.min(2, entries.length)
+  let nextIndex = 0
+
+  const worker = () => {
+    const entry = entries[nextIndex]
+    nextIndex += 1
+
+    if (!entry) return Promise.resolve()
+
+    return loadModelEntry(loader, entry[0], entry[1]).then(worker)
+  }
+
+  return Promise.all(Array.from({ length: concurrency }, worker))
 }
 
 function emitSceneReady() {
@@ -700,13 +751,13 @@ function createStarField() {
   starFieldIsDesktop = window.innerWidth >= 768
 
   if (starFieldIsDesktop) {
-    group.add(createThreadStarLayer(420, 0.05, 0.11, 0.52, 32))
-    group.add(createThreadStarLayer(180, 0.08, 0.18, 0.62, 28))
-    group.add(createThreadStarLayer(80, 0.12, 0.24, 0.78, 24))
+    group.add(createThreadStarLayer(300, 0.05, 0.11, 0.52, 32))
+    group.add(createThreadStarLayer(120, 0.08, 0.18, 0.62, 28))
+    group.add(createThreadStarLayer(50, 0.12, 0.24, 0.78, 24))
   } else {
-    group.add(createStarLayer(620, 0.025, 0.42, 32, 0xb8c9cc))
-    group.add(createStarLayer(260, 0.045, 0.58, 28, BRAND_TEAL_SECONDARY))
-    group.add(createStarLayer(90, 0.072, 0.68, 24, BRAND_GREEN))
+    group.add(createStarLayer(360, 0.025, 0.42, 32, 0xb8c9cc))
+    group.add(createStarLayer(150, 0.045, 0.58, 28, BRAND_TEAL_SECONDARY))
+    group.add(createStarLayer(55, 0.072, 0.68, 24, BRAND_GREEN))
   }
 
   return group
@@ -1074,13 +1125,31 @@ function updateScene(elapsedTime, deltaTime) {
 }
 
 function renderFrame(time) {
-  if (destroyed || !renderer) return
+  if (destroyed || !renderer || !pageVisible || webglContextLost) {
+    animationFrame = 0
+    return
+  }
 
   const deltaTime = Math.min((time - lastFrameTime) / 1000, 0.05)
   lastFrameTime = time
   updateScene(time / 1000, deltaTime)
-  renderer.render(scene, camera)
+  try {
+    renderer.render(scene, camera)
+  } catch (error) {
+    webglContextLost = true
+    animationFrame = 0
+    console.warn('[Landing 3D] O navegador interrompeu a renderizacao WebGL. O conteudo HTML continuara disponivel.', error)
+    emitSceneReady()
+    return
+  }
   animationFrame = window.requestAnimationFrame(renderFrame)
+}
+
+function rendererPixelRatio() {
+  const isMobile = window.innerWidth < 768
+  const deviceMemory = Number(navigator.deviceMemory || 4)
+  const maximum = isMobile ? 1.25 : deviceMemory <= 4 ? 1.5 : 1.75
+  return Math.min(window.devicePixelRatio || 1, maximum)
 }
 
 function handleResize() {
@@ -1101,7 +1170,7 @@ function handleResize() {
   camera.position.z = width < 768 ? 9.4 : width < 1100 ? 9 : 8.4
   camera.updateProjectionMatrix()
 
-  renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2))
+  renderer.setPixelRatio(rendererPixelRatio())
   renderer.setSize(width, height, false)
 }
 
@@ -1193,7 +1262,40 @@ function disposeObject(root) {
   })
 }
 
+function handleVisibilityChange() {
+  pageVisible = !document.hidden
+
+  if (!pageVisible) {
+    window.cancelAnimationFrame(animationFrame)
+    animationFrame = 0
+    return
+  }
+
+  lastFrameTime = performance.now()
+  if (!animationFrame && renderer && !destroyed && !webglContextLost) {
+    animationFrame = window.requestAnimationFrame(renderFrame)
+  }
+}
+
+function handleContextLost(event) {
+  event.preventDefault()
+  webglContextLost = true
+  window.cancelAnimationFrame(animationFrame)
+  animationFrame = 0
+  emitSceneReady()
+}
+
+function handleContextRestored() {
+  webglContextLost = false
+  lastFrameTime = performance.now()
+  if (!animationFrame && renderer && !destroyed && pageVisible) {
+    animationFrame = window.requestAnimationFrame(renderFrame)
+  }
+}
+
 function initializeScene() {
+  pageVisible = !document.hidden
+  webglContextLost = false
   pointerTarget.set(0, 0)
   pointerCurrent.set(0, 0)
   danceYawTarget = 0
@@ -1208,13 +1310,15 @@ function initializeScene() {
   renderer = new THREE.WebGLRenderer({
     canvas: canvasElement.value,
     alpha: true,
-    antialias: true,
+    antialias: window.innerWidth >= 768,
     powerPreference: 'high-performance'
   })
   renderer.outputColorSpace = THREE.SRGBColorSpace
   renderer.toneMapping = THREE.ACESFilmicToneMapping
   renderer.toneMappingExposure = 1.03
   renderer.setClearColor(0x000000, 0)
+  canvasElement.value?.addEventListener('webglcontextlost', handleContextLost, false)
+  canvasElement.value?.addEventListener('webglcontextrestored', handleContextRestored, false)
 
   starField = createStarField()
   scene.add(starField)
@@ -1248,6 +1352,7 @@ onMounted(() => {
   window.addEventListener('resize', handleResize, { passive: true })
   window.addEventListener('pointermove', handlePointerMove, { passive: true })
   window.addEventListener('pointerdown', handlePointerDown, { passive: true })
+  document.addEventListener('visibilitychange', handleVisibilityChange)
   animationFrame = window.requestAnimationFrame(renderFrame)
 })
 
@@ -1257,11 +1362,18 @@ onBeforeUnmount(() => {
   window.removeEventListener('resize', handleResize)
   window.removeEventListener('pointermove', handlePointerMove)
   window.removeEventListener('pointerdown', handlePointerDown)
+  document.removeEventListener('visibilitychange', handleVisibilityChange)
+  canvasElement.value?.removeEventListener('webglcontextlost', handleContextLost)
+  canvasElement.value?.removeEventListener('webglcontextrestored', handleContextRestored)
   Object.values(modelEntries).forEach(clearModelAnimation)
   disposeObject(scene)
   renderer?.renderLists?.dispose()
   renderer?.dispose()
-  renderer?.forceContextLoss()
+  try {
+    renderer?.forceContextLoss?.()
+  } catch (error) {
+    console.warn('[Landing 3D] Nao foi possivel liberar o contexto WebGL.', error)
+  }
 
   scene = null
   camera = null
