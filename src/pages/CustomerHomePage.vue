@@ -8,6 +8,7 @@
       <main v-else-if="activeMenu === 'finance'" class="customer-app__main customer-app__wide"><FinanceDashboard title="Meu financeiro" /></main>
       <main v-else-if="activeMenu === 'tickets'" class="customer-app__main customer-app__wide"><SupportTicketsPanel /></main>
       <main v-else-if="activeMenu === 'contracts'" class="customer-app__main customer-app__wide"><ContractManager /></main>
+      <main v-else-if="activeMenu === 'credentials'" class="customer-app__main customer-app__wide"><CredentialManager /></main>
       <main v-else class="customer-app__main customer-app__profile"><p class="customer-app__eyebrow">Meu perfil</p><h1>Seus dados, sempre claros.</h1><q-form class="customer-app__profile-form" @submit.prevent="saveProfile"><q-input v-model="profile.name" outlined label="Nome" /><q-input v-model="profile.email" outlined label="E-mail" readonly /><q-input v-model="profile.phone" outlined label="Telefone" readonly /><q-btn unelevated no-caps type="submit" label="Salvar nome" icon="mdi-content-save" :loading="saving" /></q-form></main>
     </div></q-page></q-page-container>
   </q-layout>
@@ -20,9 +21,10 @@ import { useRouter } from 'vue-router'
 import FinanceDashboard from 'components/FinanceDashboard.vue'
 import SupportTicketsPanel from 'components/SupportTicketsPanel.vue'
 import ContractManager from 'components/ContractManager.vue'
+import CredentialManager from 'components/CredentialManager.vue'
 
 const router = useRouter(); const $q = useQuasar(); const sessionUser = ref({}); const activeMenu = ref('projects'); const saving = ref(false); const profile = reactive({ name: '', email: '', phone: '' })
-const menu = [{ id: 'projects', label: 'Dashboard', icon: 'mdi-view-dashboard-outline' }, { id: 'finance', label: 'Financeiro', icon: 'mdi-cash-multiple' }, { id: 'tickets', label: 'Meus chamados', icon: 'mdi-lifebuoy' }, { id: 'contracts', label: 'Contratos', icon: 'mdi-file-document-outline' }, { id: 'profile', label: 'Meu perfil', icon: 'mdi-account-outline' }]
+const menu = [{ id: 'projects', label: 'Dashboard', icon: 'mdi-view-dashboard-outline' }, { id: 'finance', label: 'Financeiro', icon: 'mdi-cash-multiple' }, { id: 'tickets', label: 'Meus chamados', icon: 'mdi-lifebuoy' }, { id: 'contracts', label: 'Contratos', icon: 'mdi-file-document-outline' }, { id: 'credentials', label: 'Credenciais', icon: 'mdi-key-chain-variant' }, { id: 'profile', label: 'Meu perfil', icon: 'mdi-account-outline' }]
 const firstName = computed(() => String(sessionUser.value.name || 'Cliente Aito').trim().split(/\s+/)[0])
 onMounted(() => { try { sessionUser.value = JSON.parse(localStorage.getItem('aito_user') || '{}'); Object.assign(profile, sessionUser.value) } catch (error) { sessionUser.value = {} } })
 function saveProfile () { saving.value = true; const next = { ...sessionUser.value, name: profile.name.trim() }; localStorage.setItem('aito_user', JSON.stringify(next)); sessionUser.value = next; saving.value = false; $q.notify({ type: 'positive', message: 'Perfil atualizado.' }) }

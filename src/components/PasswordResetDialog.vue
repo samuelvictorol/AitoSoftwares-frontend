@@ -14,23 +14,30 @@
 
       <q-card-section class="password-reset-card__body">
         <template v-if="step === 'request'">
-          <p>Informe o e-mail cadastrado. Enviaremos um código temporário para redefinir sua senha.</p>
+          <p>Informe o e-mail cadastrado. Enviaremos um codigo temporario para redefinir sua senha.</p>
           <q-form @submit.prevent="requestCode">
             <q-input v-model.trim="form.email" outlined autofocus type="email" autocomplete="email" label="E-mail cadastrado" :rules="[emailRule]" />
-            <q-btn unelevated no-caps class="password-reset-card__primary full-width q-mt-md" icon="mdi-email-fast-outline" label="Enviar código" type="submit" :loading="loading" />
+            <q-btn unelevated no-caps class="password-reset-card__primary full-width q-mt-md" icon="mdi-email-fast-outline" label="Enviar codigo" type="submit" :loading="loading" />
           </q-form>
         </template>
 
-        <template v-else>
-          <p>Digite o código de 6 dígitos recebido por e-mail e escolha uma nova senha.</p>
-          <q-form @submit.prevent="resetPassword">
+        <template v-else-if="step === 'verify'">
+          <p>Digite o codigo de 6 digitos recebido por e-mail para validar a troca.</p>
+          <q-form @submit.prevent="verifyCode">
             <q-input v-model="form.email" outlined readonly label="E-mail" />
-            <q-input v-model.trim="form.code" outlined autofocus inputmode="numeric" maxlength="6" label="Código temporário" class="q-mt-sm" :rules="[codeRule]" />
-            <q-input v-model="form.password" outlined type="password" autocomplete="new-password" label="Nova senha" class="q-mt-sm" :rules="[passwordRule]" />
+            <q-input v-model.trim="form.code" outlined autofocus inputmode="numeric" maxlength="6" label="Codigo temporario" class="q-mt-sm" :rules="[codeRule]" />
+            <q-btn unelevated no-caps class="password-reset-card__primary full-width q-mt-md" icon="mdi-shield-check-outline" label="Validar codigo" type="submit" :loading="loading" />
+          </q-form>
+          <q-btn flat no-caps class="password-reset-card__back full-width q-mt-sm" icon="mdi-arrow-left" label="Usar outro e-mail" @click="step = 'request'" />
+        </template>
+
+        <template v-else>
+          <p>Codigo validado. Agora escolha uma nova senha para sua conta.</p>
+          <q-form @submit.prevent="resetPassword">
+            <q-input v-model="form.password" outlined type="password" autocomplete="new-password" label="Nova senha" :rules="[passwordRule]" />
             <q-input v-model="form.passwordConfirmation" outlined type="password" autocomplete="new-password" label="Confirmar nova senha" class="q-mt-sm" :rules="[confirmationRule]" />
             <q-btn unelevated no-caps class="password-reset-card__primary full-width q-mt-md" icon="mdi-lock-check-outline" label="Redefinir senha" type="submit" :loading="loading" />
           </q-form>
-          <q-btn flat no-caps class="password-reset-card__back full-width q-mt-sm" icon="mdi-arrow-left" label="Usar outro e-mail" @click="step = 'request'" />
         </template>
       </q-card-section>
     </q-card>
@@ -52,6 +59,7 @@ const emit = defineEmits(['update:modelValue', 'completed'])
 const $q = useQuasar()
 const step = ref('request')
 const loading = ref(false)
+const resetToken = ref('')
 const form = reactive({ email: '', code: '', password: '', passwordConfirmation: '' })
 const isOpen = computed({
   get: () => props.modelValue,
@@ -60,9 +68,9 @@ const isOpen = computed({
 
 const emailRule = (value) => {
   const email = String(value || '').trim()
-  return (email && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) || 'Informe um e-mail válido.'
+  return (email && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) || 'Informe um e-mail valido.'
 }
-const codeRule = (value) => /^\d{6}$/.test(String(value || '').trim()) || 'Digite o código de 6 dígitos.'
+const codeRule = (value) => /^\d{6}$/.test(String(value || '').trim()) || 'Digite o codigo de 6 digitos.'
 const passwordRule = (value) => String(value || '').length >= 6 || 'Use pelo menos 6 caracteres.'
 const confirmationRule = (value) => String(value || '') === form.password || 'As senhas precisam ser iguais.'
 
@@ -74,10 +82,24 @@ async function requestCode() {
   loading.value = true
   try {
     const { data } = await api.post(endpoint('forgot-password'), { email: form.email })
-    step.value = 'reset'
+    step.value = 'verify'
     $q.notify({ type: 'positive', message: data.message || 'Confira seu e-mail para continuar.' })
   } catch (error) {
-    $q.notify({ type: 'negative', message: error.response?.data?.message || 'Não foi possível enviar o código.' })
+    $q.notify({ type: 'negative', message: error.response?.data?.message || 'Nao foi possivel enviar o codigo.' })
+  } finally {
+    loading.value = false
+  }
+}
+
+async function verifyCode() {
+  loading.value = true
+  try {
+    const { data } = await api.post(endpoint('verify-reset-code'), { email: form.email, code: form.code })
+    resetToken.value = data.resetToken
+    step.value = 'password'
+    $q.notify({ type: 'positive', message: data.message || 'Codigo validado.' })
+  } catch (error) {
+    $q.notify({ type: 'negative', message: error.response?.data?.message || 'Codigo invalido ou expirado.' })
   } finally {
     loading.value = false
   }
@@ -93,14 +115,14 @@ async function resetPassword() {
   try {
     const { data } = await api.post(endpoint('reset-password'), {
       email: form.email,
-      code: form.code,
-      password: form.password,
+      resetToken: resetToken.value,
+      newPassword: form.password,
     })
     $q.notify({ type: 'positive', message: data.message || 'Senha redefinida com sucesso.' })
     emit('completed', { email: form.email })
     isOpen.value = false
   } catch (error) {
-    $q.notify({ type: 'negative', message: error.response?.data?.message || 'Não foi possível redefinir a senha.' })
+    $q.notify({ type: 'negative', message: error.response?.data?.message || 'Nao foi possivel redefinir a senha.' })
   } finally {
     loading.value = false
   }
@@ -108,6 +130,7 @@ async function resetPassword() {
 
 function clearForm() {
   step.value = 'request'
+  resetToken.value = ''
   form.email = ''
   form.code = ''
   form.password = ''
