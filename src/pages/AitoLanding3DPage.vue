@@ -339,13 +339,24 @@ const $q = useQuasar()
 const router = useRouter()
 const USER_TOKEN_KEY = 'aito_user_token'
 const LANDING_SCENE_WATCHDOG_MS = 9000
+const LANDING_INTRO_CACHE_KEY = 'aito_landing_intro_seen_v1'
+
+function hasCachedIntro() {
+  try {
+    return window.sessionStorage.getItem(LANDING_INTRO_CACHE_KEY) === '1'
+  } catch (error) {
+    return false
+  }
+}
+
+const cachedIntro = hasCachedIntro()
 
 const { activeSection, prefersReducedMotion, scrollProgress, scrollToSection: scrollTo, sectionPosition } = useLandingScroll(landing3dSections.length)
 
-const sceneReady = ref(false)
-const introRevealing = ref(false)
-const introComplete = ref(false)
-const introTextVisible = ref(false)
+const sceneReady = ref(cachedIntro)
+const introRevealing = ref(cachedIntro)
+const introComplete = ref(cachedIntro)
+const introTextVisible = ref(cachedIntro)
 const brandDialogOpen = ref(false)
 const selectedBrand = ref(null)
 const authDialogOpen = ref(false)
@@ -406,6 +417,11 @@ function handleIntroReveal() {
 }
 function handleIntroComplete() {
   introComplete.value = true
+  try {
+    window.sessionStorage.setItem(LANDING_INTRO_CACHE_KEY, '1')
+  } catch (error) {
+    // Cache is optional when browser storage is blocked.
+  }
   scheduleCoursePrompt()
 }
 
@@ -521,6 +537,7 @@ function scheduleCoursePrompt() {
 }
 
 onMounted(() => {
+  if (cachedIntro) scheduleCoursePrompt()
   sceneReadyWatchdog = window.setTimeout(() => {
     if (!sceneReady.value) sceneReady.value = true
   }, LANDING_SCENE_WATCHDOG_MS)

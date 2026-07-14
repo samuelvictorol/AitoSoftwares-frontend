@@ -1,28 +1,55 @@
 <template>
   <q-layout view="lHh Lpr lFf" class="admin-app">
-    <q-page-container><q-page class="admin-app__page"><div class="admin-app__shell">
-      <header class="admin-app__header"><div class="admin-app__brand"><img src="/favicon.png" alt="" /><div><strong>AITOADMIN</strong></div></div><div class="admin-app__session"><span>{{ firstName }}</span><q-btn flat round icon="mdi-logout" aria-label="Sair" @click="logout"><q-tooltip>Sair</q-tooltip></q-btn></div></header>
-      <section class="admin-app__hero"><div><p class="admin-app__eyebrow">Painel admin</p>
-        </div><div class="admin-app__stats"><span><strong>{{ leads.length }}</strong>Leads</span><span><strong>{{ users.length }}</strong> Usuarios</span><span><strong>{{ customers.length }}</strong> Clientes</span></div></section>
+    <q-page-container>
+      <q-page class="admin-app__page">
+        <div class="admin-app__shell">
+          <header class="admin-app__header">
+            <div class="admin-app__brand"><img src="/favicon.png" alt="" /><div><strong>AITO / OPERACAO</strong><small>Gestao, financeiro e atendimento</small></div></div>
+            <div class="admin-app__session"><span>{{ firstName }}</span><q-btn flat round icon="mdi-logout" aria-label="Sair" @click="logout"><q-tooltip>Sair</q-tooltip></q-btn></div>
+          </header>
 
-      <q-tabs v-model="tab" dense align="left" outside-arrows mobile-arrows class="admin-app__tabs" active-color="teal-3" indicator-color="teal-4">
-        <q-tab name="overview" icon="mdi-view-dashboard-outline" label="Visao geral" />
-        <q-tab name="leads" icon="mdi-account-multiple-outline" label="Leads" />
-        <q-tab name="users" icon="mdi-account-outline" label="Usuarios" />
-        <q-tab name="customers" icon="mdi-briefcase-outline" label="Clientes" />
-        <q-tab name="lgpd" icon="mdi-shield-lock-outline" label="LGPD" />
-      </q-tabs>
+          <section class="admin-app__hero">
+            <div><p class="admin-app__eyebrow">Painel admin</p><h1>Operacao em um so lugar.</h1><p>Gerencie pessoas, custos, chamados, contratos e os documentos da AitoSoftwares.</p></div>
+            <div class="admin-app__stats"><span><strong>{{ leads.length }}</strong>Leads</span><span><strong>{{ users.length }}</strong>Usuarios</span><span><strong>{{ customers.length }}</strong>Clientes</span></div>
+          </section>
 
-      <q-tab-panels v-model="tab" animated class="admin-app__panels">
-        <q-tab-panel name="overview"><div class="admin-app__overview"><article><q-icon name="mdi-account-multiple-outline" /><strong>{{ leads.length }}</strong><span>respostas e indicacoes</span><q-btn flat no-caps label="Abrir Leads" @click="tab = 'leads'" /></article><article><q-icon name="mdi-school-outline" /><strong>{{ users.length }}</strong><span>acessos para cursos</span><q-btn flat no-caps label="Abrir Usuarios" @click="tab = 'users'" /></article><article><q-icon name="mdi-briefcase-outline" /><strong>{{ customers.length }}</strong><span>acessos de clientes</span><q-btn flat no-caps label="Abrir Clientes" @click="tab = 'customers'" /></article><article><q-icon name="mdi-file-document-edit-outline" /><strong>LGPD</strong><span>Politicas e termos versionados</span><q-btn flat no-caps label="Editar documentos" @click="tab = 'lgpd'" /></article></div></q-tab-panel>
+          <q-tabs v-model="tab" dense align="left" outside-arrows mobile-arrows class="admin-app__tabs" active-color="teal-3" indicator-color="teal-4">
+            <q-tab name="overview" icon="mdi-view-dashboard-outline" label="Dashboard" />
+            <q-tab name="leads" icon="mdi-account-multiple-outline" label="Leads" />
+            <q-tab name="users" icon="mdi-account-outline" label="Usuarios" />
+            <q-tab name="customers" icon="mdi-briefcase-outline" label="Clientes" />
+            <q-tab name="costs" icon="mdi-cash-multiple" label="Custos" />
+            <q-tab name="tickets" icon="mdi-lifebuoy" label="Chamados" />
+            <q-tab name="contracts" icon="mdi-file-document-outline" label="Contratos" />
+            <q-tab name="lgpd" icon="mdi-shield-lock-outline" label="LGPD" />
+          </q-tabs>
 
-        <q-tab-panel name="leads"><section class="admin-app__section"><div class="admin-app__section-head"><div><p class="admin-app__eyebrow">01 / CAPTACAO</p><h2>Leads</h2></div><q-btn unelevated no-caps class="admin-app__primary" icon="mdi-plus" label="Cadastrar lead" @click="openLeadDialog()" /></div><div class="admin-app__filters"><q-input v-model="leadSearch" outlined dense clearable label="Buscar por nome, email ou telefone" @keyup.enter="loadLeads"><template #prepend><q-icon name="mdi-magnify" /></template></q-input><q-select v-model="leadStatus" outlined dense clearable label="Status" :options="leadStatuses" emit-value map-options @update:model-value="loadLeads" /></div><q-table flat bordered wrap-cells row-key="_id" class="admin-app__table" :rows="leads" :columns="leadColumns" :loading="loading.leads" :pagination.sync="leadPagination" no-data-label="Nenhum lead encontrado"><template #body-cell-type="props"><q-td :props="props"><span class="admin-app__type">{{ props.row.flowType || props.row.source || 'landing' }}</span></q-td></template><template #body-cell-tags="props"><q-td :props="props"><span v-for="tag in props.row.tags || []" :key="tag" class="admin-app__tag">{{ tag }}</span></q-td></template><template #body-cell-actions="props"><q-td :props="props"><q-btn flat round dense icon="mdi-pencil" @click="openLeadDialog(props.row)" /><q-btn flat round dense color="negative" icon="mdi-delete-outline" @click="deleteLead(props.row)" /></q-td></template></q-table></section></q-tab-panel>
+          <q-tab-panels v-model="tab" animated class="admin-app__panels">
+            <q-tab-panel name="overview"><FinanceDashboard admin title="Dashboard financeiro" /></q-tab-panel>
 
-        <q-tab-panel v-for="personType in ['users', 'customers']" :key="personType" :name="personType"><section class="admin-app__section"><div class="admin-app__section-head"><div><p class="admin-app__eyebrow">{{ personType === 'users' ? '02 / AITOLEARN' : '03 / OPERACAO' }}</p><h2>{{ personType === 'users' ? 'Usuarios' : 'Clientes' }}</h2></div><q-btn unelevated no-caps class="admin-app__primary" icon="mdi-account-plus-outline" :label="personType === 'users' ? 'Cadastrar usuario' : 'Cadastrar cliente'" @click="openPersonDialog(personType === 'customers' ? 'customer' : 'user')" /></div><div class="admin-app__filters"><q-input v-model="personSearch" outlined dense clearable label="Buscar por nome, email ou telefone" @keyup.enter="loadPeople(personType === 'customers' ? 'customer' : 'user')"><template #prepend><q-icon name="mdi-magnify" /></template></q-input></div><q-table flat bordered wrap-cells row-key="_id" class="admin-app__table" :rows="personType === 'users' ? users : customers" :columns="personColumns" :loading="loading[personType]" :pagination.sync="personPagination" no-data-label="Nenhum cadastro encontrado"><template #body-cell-role="props"><q-td :props="props"><span class="admin-app__type">{{ props.row.role === 'customer' ? 'cliente' : 'usuario' }}</span></q-td></template><template #body-cell-active="props"><q-td :props="props"><q-icon :name="props.row.active ? 'mdi-check-circle' : 'mdi-close-circle'" :color="props.row.active ? 'positive' : 'negative'" /></q-td></template><template #body-cell-actions="props"><q-td :props="props"><q-btn flat round dense icon="mdi-pencil" @click="openPersonDialog(props.row.role, props.row)" /><q-btn flat round dense color="negative" icon="mdi-delete-outline" @click="deletePerson(props.row)" /></q-td></template></q-table></section></q-tab-panel>
+            <q-tab-panel name="leads">
+              <section class="admin-app__section"><div class="admin-app__section-head"><div><p class="admin-app__eyebrow">01 / CAPTACAO</p><h2>Leads</h2><span>Formularios, indicacoes, landing e atendimento da IA.</span></div><q-btn unelevated no-caps class="admin-app__primary" icon="mdi-plus" label="Cadastrar lead" @click="openLeadDialog()" /></div>
+                <div class="admin-app__filters"><q-input v-model="leadSearch" outlined dense clearable label="Buscar por nome, email ou telefone" @keyup.enter="loadLeads"><template #prepend><q-icon name="mdi-magnify" /></template></q-input><q-select v-model="leadStatus" outlined dense clearable label="Status" :options="leadStatuses" emit-value map-options @update:model-value="loadLeads" /></div>
+                <q-table flat bordered wrap-cells row-key="_id" class="admin-app__table" :rows="leads" :columns="leadColumns" :loading="loading.leads" :pagination.sync="leadPagination" no-data-label="Nenhum lead encontrado"><template #body-cell-type="props"><q-td :props="props"><span class="admin-app__tag">{{ props.row.flowType || props.row.source || 'landing' }}</span></q-td></template><template #body-cell-tags="props"><q-td :props="props"><span v-for="tag in props.row.tags || []" :key="tag" class="admin-app__tag">{{ tag }}</span></q-td></template><template #body-cell-actions="props"><q-td :props="props"><q-btn flat round dense icon="mdi-pencil" aria-label="Editar lead" @click="openLeadDialog(props.row)" /><q-btn flat round dense color="negative" icon="mdi-delete-outline" aria-label="Excluir lead" @click="deleteLead(props.row)" /></q-td></template></q-table>
+              </section>
+            </q-tab-panel>
 
-        <q-tab-panel name="lgpd"><section class="admin-app__section"><div class="admin-app__section-head"><div><p class="admin-app__eyebrow">04 / GOVERNANCA</p><h2>LGPD e documentos</h2></div><q-btn unelevated no-caps class="admin-app__primary" icon="mdi-content-save" label="Salvar documento" :loading="loading.policy" @click="savePolicy" /></div><div class="admin-app__policy-tabs"><button v-for="item in policies" :key="item.type" type="button" :class="{ 'is-active': policyDraft.type === item.type }" @click="selectPolicy(item)"><q-icon :name="item.type === 'privacy' ? 'mdi-shield-lock-outline' : 'mdi-file-document-outline'" /> {{ item.type === 'privacy' ? 'Politica de privacidade' : 'Termos de servico' }}</button></div><q-input v-model="policyDraft.title" outlined label="Titulo" /><q-input v-model="policyDraft.version" outlined label="Versao" class="q-mt-md" /><q-input v-model="policyDraft.content" outlined type="textarea" autogrow label="Conteudo" class="q-mt-md" /><div class="admin-app__policy-actions"><q-btn unelevated no-caps class="admin-app__primary" icon="mdi-content-save" label="Salvar" :loading="loading.policy" @click="savePolicy" /><q-btn flat no-caps color="negative" icon="mdi-delete-outline" label="Excluir documento salvo" @click="deletePolicy" /></div></section></q-tab-panel>
-      </q-tab-panels>
-    </div></q-page></q-page-container>
+            <q-tab-panel v-for="personType in ['users', 'customers']" :key="personType" :name="personType">
+              <section class="admin-app__section"><div class="admin-app__section-head"><div><p class="admin-app__eyebrow">{{ personType === 'users' ? '02 / AITOLEARN' : '03 / OPERACAO' }}</p><h2>{{ personType === 'users' ? 'Usuarios' : 'Clientes' }}</h2><span>{{ personType === 'users' ? 'Acessos para o Curso Fullstack.' : 'Clientes criados somente pelo admin.' }}</span></div><q-btn unelevated no-caps class="admin-app__primary" icon="mdi-account-plus-outline" :label="personType === 'users' ? 'Cadastrar usuario' : 'Cadastrar cliente'" @click="openPersonDialog(personType === 'customers' ? 'customer' : 'user')" /></div>
+                <div class="admin-app__filters"><q-input v-model="personSearch" outlined dense clearable label="Buscar por nome, email ou telefone" @keyup.enter="loadPeople(personType === 'customers' ? 'customer' : 'user')"><template #prepend><q-icon name="mdi-magnify" /></template></q-input></div>
+                <q-table flat bordered wrap-cells row-key="_id" class="admin-app__table" :rows="personType === 'users' ? users : customers" :columns="personColumns" :loading="loading[personType]" :pagination.sync="personPagination" no-data-label="Nenhum cadastro encontrado"><template #body-cell-role="props"><q-td :props="props"><span class="admin-app__tag">{{ props.row.role === 'customer' ? 'cliente' : 'usuario' }}</span></q-td></template><template #body-cell-active="props"><q-td :props="props"><q-icon :name="props.row.active ? 'mdi-check-circle' : 'mdi-close-circle'" :color="props.row.active ? 'positive' : 'negative'" /></q-td></template><template #body-cell-actions="props"><q-td :props="props"><q-btn flat round dense icon="mdi-pencil" aria-label="Editar cadastro" @click="openPersonDialog(props.row.role, props.row)" /><q-btn flat round dense color="negative" icon="mdi-delete-outline" aria-label="Excluir cadastro" @click="deletePerson(props.row)" /></q-td></template></q-table>
+              </section>
+            </q-tab-panel>
+
+            <q-tab-panel name="costs"><AdminCostManager /></q-tab-panel>
+            <q-tab-panel name="tickets"><SupportTicketsPanel admin /></q-tab-panel>
+            <q-tab-panel name="contracts"><ContractManager admin /></q-tab-panel>
+
+            <q-tab-panel name="lgpd"><section class="admin-app__section"><div class="admin-app__section-head"><div><p class="admin-app__eyebrow">08 / GOVERNANCA</p><h2>LGPD e documentos</h2><span>Edite a politica de privacidade e os termos do aplicativo.</span></div><q-btn unelevated no-caps class="admin-app__primary" icon="mdi-content-save" label="Salvar documento" :loading="loading.policy" @click="savePolicy" /></div><div class="admin-app__policy-tabs"><button v-for="item in policies" :key="item.type" type="button" :class="{ 'is-active': policyDraft.type === item.type }" @click="selectPolicy(item)"><q-icon :name="item.type === 'privacy' ? 'mdi-shield-lock-outline' : 'mdi-file-document-outline'" /> {{ item.type === 'privacy' ? 'Politica de privacidade' : 'Termos de servico' }}</button></div><q-input v-model="policyDraft.title" outlined label="Titulo" /><q-input v-model="policyDraft.version" outlined label="Versao" class="q-mt-md" /><q-input v-model="policyDraft.content" outlined type="textarea" autogrow label="Conteudo" class="q-mt-md" /><div class="admin-app__policy-actions"><q-btn unelevated no-caps class="admin-app__primary" icon="mdi-content-save" label="Salvar" :loading="loading.policy" @click="savePolicy" /><q-btn flat no-caps color="negative" icon="mdi-delete-outline" label="Excluir documento salvo" @click="deletePolicy" /></div></section></q-tab-panel>
+          </q-tab-panels>
+        </div>
+      </q-page>
+    </q-page-container>
 
     <q-dialog v-model="leadDialog"><q-card class="admin-app__dialog"><q-card-section class="admin-app__dialog-head"><h3>{{ leadForm._id ? 'Editar lead' : 'Cadastrar lead' }}</h3><q-btn flat round dense icon="mdi-close" @click="leadDialog = false" /></q-card-section><q-card-section><q-form @submit.prevent="saveLead"><q-input v-model="leadForm.name" outlined label="Nome" :rules="[requiredRule]" /><q-input v-model="leadForm.email" outlined label="E-mail" class="q-mt-sm" /><q-input v-model="leadForm.phone" outlined label="Telefone" class="q-mt-sm" /><q-input v-model="leadForm.company" outlined label="Empresa" class="q-mt-sm" /><q-input v-model="leadForm.flowType" outlined label="Tipo do fluxo" class="q-mt-sm" /><q-input v-model="leadForm.message" outlined type="textarea" autogrow label="Mensagem" class="q-mt-sm" /><q-select v-model="leadForm.status" outlined label="Status" :options="leadStatuses" emit-value map-options class="q-mt-sm" /><q-btn unelevated no-caps type="submit" class="admin-app__primary full-width q-mt-md" label="Salvar lead" :loading="loading.save" /></q-form></q-card-section></q-card></q-dialog>
 
@@ -32,9 +59,14 @@
 
 <script>
 import { api } from 'boot/axios'
+import FinanceDashboard from 'components/FinanceDashboard.vue'
+import AdminCostManager from 'components/AdminCostManager.vue'
+import SupportTicketsPanel from 'components/SupportTicketsPanel.vue'
+import ContractManager from 'components/ContractManager.vue'
 
 export default {
   name: 'AdminPanelPage',
+  components: { FinanceDashboard, AdminCostManager, SupportTicketsPanel, ContractManager },
   data () {
     return {
       tab: 'overview', token: localStorage.getItem('aito_admin_token'), admin: {}, leads: [], users: [], customers: [], policies: [], leadSearch: '', leadStatus: '', personSearch: '', leadDialog: false, personDialog: false, leadForm: this.emptyLead(), personForm: this.emptyPerson('user'), policyDraft: {},
@@ -59,7 +91,7 @@ export default {
     formatDate (value) { return value ? new Date(value).toLocaleDateString('pt-BR') : '-' },
     async loadAll () { await Promise.all([this.loadLeads(), this.loadPeople('user'), this.loadPeople('customer'), this.loadPolicies()]) },
     async loadLeads () { this.loading.leads = true; try { const { data } = await api.get('/admin/leads', { ...this.headers, params: { q: this.leadSearch, status: this.leadStatus } }); this.leads = data.data || [] } catch (error) { this.notifyError(error) } finally { this.loading.leads = false } },
-    async loadPeople (role) { const key = role === 'customer' ? 'customers' : 'users'; this.loading[key] = true; try { const { data } = await api.get(`/admin/${role === 'customer' ? 'customers' : 'users'}`, { ...this.headers, params: { q: this.personSearch } }); this[key] = data.data || [] } catch (error) { this.notifyError(error) } finally { this.loading[key] = false } },
+    async loadPeople (role) { const key = role === 'customer' ? 'customers' : 'users'; this.loading[key] = true; try { const { data } = await api.get(`/admin/${key}`, { ...this.headers, params: { q: this.personSearch } }); this[key] = data.data || [] } catch (error) { this.notifyError(error) } finally { this.loading[key] = false } },
     async loadPolicies () { try { const { data } = await api.get('/admin/policies', this.headers); this.policies = data.data || []; this.selectPolicy(this.policies[0]) } catch (error) { this.notifyError(error) } },
     selectPolicy (policy) { if (policy) this.policyDraft = { ...policy } },
     openLeadDialog (lead) { this.leadForm = lead ? { ...lead } : this.emptyLead(); this.leadDialog = true },
@@ -77,5 +109,42 @@ export default {
 </script>
 
 <style scoped>
-.admin-app{color:#ebfffb;background:#03090b}.admin-app__page{min-height:100vh;background:radial-gradient(circle at 90% 0,rgba(19,188,157,.15),transparent 30rem),#03090b}.admin-app__shell{width:min(1280px,calc(100% - 2rem));margin:auto;padding:1rem 0 3rem}.admin-app__header{display:flex;align-items:center;justify-content:space-between;padding-bottom:1rem;border-bottom:1px solid rgba(19,188,157,.2)}.admin-app__brand,.admin-app__session{display:flex;align-items:center;gap:.7rem}.admin-app__brand img{width:36px;height:36px}.admin-app__brand strong{display:block;color:#effffb;font-size:.78rem;letter-spacing:.12em}.admin-app__brand small{display:block;margin-top:.2rem;color:rgba(229,255,250,.55);font-size:.65rem}.admin-app__session{color:#8fffee;font-size:.76rem}.admin-app__hero{display:flex;align-items:end;justify-content:space-between;gap:1rem;padding:7vh 0 2.5rem}.admin-app__eyebrow{margin:0 0 .7rem;color:#8fffee;font-size:.67rem;font-weight:900;letter-spacing:.15em;text-transform:uppercase}.admin-app__hero h1,.admin-app__section h2{margin:0;color:#effffb;font-size:clamp(2rem,4vw,4rem);line-height:1}.admin-app__hero>div>p:last-child,.admin-app__section-head span{max-width:32rem;color:rgba(229,255,250,.62);line-height:1.5;font-size:.8rem}.admin-app__stats{display:flex;gap:.6rem}.admin-app__stats span{display:grid;gap:.25rem;padding:.7rem;border:1px solid rgba(19,188,157,.22);border-radius:.55rem;color:rgba(229,255,250,.58);font-size:.66rem}.admin-app__stats strong{color:#8fffee;font-size:1.2rem}.admin-app__tabs{border:1px solid rgba(19,188,157,.2);border-radius:.7rem .7rem 0 0;background:rgba(3,25,26,.7)}.admin-app__panels{border:1px solid rgba(19,188,157,.2);border-top:0;border-radius:0 0 .7rem .7rem;background:rgba(3,25,26,.7)}.admin-app__section{padding:.5rem}.admin-app__section-head{display:flex;align-items:end;justify-content:space-between;gap:1rem;margin-bottom:1.4rem}.admin-app__primary{color:#03110f;background:linear-gradient(135deg,#8fffee,#13bc9d);font-weight:800}.admin-app__filters{display:grid;grid-template-columns:minmax(240px,1fr) 180px;gap:.7rem;margin-bottom:1rem}.admin-app__filters :deep(.q-field__control),.admin-app__dialog :deep(.q-field__control),.admin-app__section :deep(.q-field__control){color:#effffb;background:rgba(7,40,40,.74)}.admin-app__filters :deep(.q-field__native),.admin-app__filters :deep(.q-field__label),.admin-app__dialog :deep(.q-field__native),.admin-app__dialog :deep(.q-field__label),.admin-app__section :deep(.q-field__native),.admin-app__section :deep(.q-field__label){color:rgba(239,255,251,.78)}.admin-app__table{color:#effffb;border-color:rgba(19,188,157,.2);background:rgba(3,16,18,.58)}.admin-app__table :deep(th){color:#8fffee;font-size:.7rem}.admin-app__table :deep(td){color:rgba(239,255,251,.78);font-size:.72rem}.admin-app__type,.admin-app__tag{display:inline-block;padding:.25rem .4rem;border:1px solid rgba(19,188,157,.26);border-radius:999px;color:#8fffee;background:rgba(19,188,157,.08);font-size:.6rem}.admin-app__tag{margin:.1rem;color:rgba(239,255,251,.68)}.admin-app__overview{display:grid;grid-template-columns:repeat(4,1fr);gap:.8rem}.admin-app__overview article{display:grid;gap:.5rem;padding:1.2rem;border:1px solid rgba(19,188,157,.24);border-radius:.7rem;background:rgba(4,24,25,.7)}.admin-app__overview .q-icon{color:#13bc9d;font-size:1.8rem}.admin-app__overview strong{color:#8fffee;font-size:2rem}.admin-app__overview span{color:rgba(229,255,250,.62);font-size:.75rem}.admin-app__overview .q-btn{justify-self:start;color:#8fffee}.admin-app__policy-tabs{display:flex;flex-wrap:wrap;gap:.5rem;margin-bottom:1.2rem}.admin-app__policy-tabs button{display:inline-flex;align-items:center;gap:.4rem;padding:.65rem .8rem;border:1px solid rgba(19,188,157,.22);border-radius:.55rem;color:rgba(239,255,251,.68);background:rgba(19,188,157,.06);cursor:pointer;font:inherit;font-size:.7rem}.admin-app__policy-tabs button.is-active{color:#03110f;background:linear-gradient(135deg,#8fffee,#13bc9d);font-weight:800}.admin-app__policy-actions{display:flex;gap:.6rem;margin-top:1rem}.admin-app__dialog{width:min(94vw,540px);color:#effffb;background:#061819;border:1px solid rgba(19,188,157,.3)}.admin-app__dialog-head{display:flex;align-items:center;justify-content:space-between}.admin-app__dialog h3{margin:0;font-size:1.1rem}@media(max-width:800px){.admin-app__hero,.admin-app__section-head{align-items:flex-start;flex-direction:column}.admin-app__stats{width:100%;flex-wrap:wrap}.admin-app__stats span{flex:1;min-width:8rem}.admin-app__overview{grid-template-columns:1fr 1fr}.admin-app__filters{grid-template-columns:1fr}.admin-app__table{max-width:calc(100vw - 2rem);overflow:auto}}@media(max-width:520px){.admin-app__overview{grid-template-columns:1fr}.admin-app__brand small{display:none}.admin-app__hero{padding-top:5vh}}
+.admin-app { color: #ebfffb; background: #03090b; }
+.admin-app__page { min-height: 100vh; background: radial-gradient(circle at 90% 0, rgba(19,188,157,.15), transparent 30rem), #03090b; }
+.admin-app__shell { width: min(1380px, calc(100% - 2rem)); margin: auto; padding: 1rem 0 3rem; }
+.admin-app__header { display: flex; align-items: center; justify-content: space-between; padding-bottom: 1rem; border-bottom: 1px solid rgba(19,188,157,.2); }
+.admin-app__brand, .admin-app__session { display: flex; align-items: center; gap: .7rem; }
+.admin-app__brand img { width: 36px; height: 36px; }
+.admin-app__brand strong { display: block; color: #effffb; font-size: .78rem; letter-spacing: .12em; }
+.admin-app__brand small { display: block; margin-top: .2rem; color: rgba(229,255,250,.55); font-size: .65rem; }
+.admin-app__session { color: #8fffee; font-size: .76rem; }
+.admin-app__hero { display: flex; align-items: flex-end; justify-content: space-between; gap: 1rem; padding: 7vh 0 2.5rem; }
+.admin-app__eyebrow { margin: 0 0 .7rem; color: #8fffee; font-size: .67rem; font-weight: 900; letter-spacing: .15em; text-transform: uppercase; }
+.admin-app__hero h1, .admin-app__section h2 { margin: 0; color: #effffb; font-size: clamp(2rem, 4vw, 4rem); line-height: 1; }
+.admin-app__hero p:last-child, .admin-app__section-head span { max-width: 32rem; color: rgba(229,255,250,.62); line-height: 1.5; font-size: .8rem; }
+.admin-app__stats { display: flex; gap: .6rem; }
+.admin-app__stats span { display: grid; gap: .25rem; min-width: 5rem; padding: .7rem; border: 1px solid rgba(19,188,157,.22); border-radius: .55rem; color: rgba(229,255,250,.58); font-size: .66rem; }
+.admin-app__stats strong { color: #8fffee; font-size: 1.2rem; }
+.admin-app__tabs { border: 1px solid rgba(19,188,157,.2); border-radius: .7rem .7rem 0 0; background: rgba(3,25,26,.7); }
+.admin-app__panels { border: 1px solid rgba(19,188,157,.2); border-top: 0; border-radius: 0 0 .7rem .7rem; background: rgba(3,25,26,.7); }
+.admin-app__section { padding: .5rem; }
+.admin-app__section-head { display: flex; align-items: flex-end; justify-content: space-between; gap: 1rem; margin-bottom: 1.4rem; }
+.admin-app__primary { color: #03110f; background: linear-gradient(135deg, #8fffee, #13bc9d); font-weight: 800; }
+.admin-app__filters { display: grid; grid-template-columns: minmax(240px, 1fr) 180px; gap: .7rem; margin-bottom: 1rem; }
+.admin-app__filters :deep(.q-field__control), .admin-app__dialog :deep(.q-field__control), .admin-app__section :deep(.q-field__control) { color: #effffb; background: rgba(7,40,40,.74); }
+.admin-app__filters :deep(.q-field__native), .admin-app__filters :deep(.q-field__label), .admin-app__dialog :deep(.q-field__native), .admin-app__dialog :deep(.q-field__label), .admin-app__section :deep(.q-field__native), .admin-app__section :deep(.q-field__label) { color: rgba(239,255,251,.78); }
+.admin-app__table { color: #effffb; border-color: rgba(19,188,157,.2); background: rgba(3,16,18,.58); }
+.admin-app__table :deep(th) { color: #8fffee; font-size: .7rem; }
+.admin-app__table :deep(td) { color: rgba(239,255,251,.78); font-size: .72rem; }
+.admin-app__tag { display: inline-block; margin: .1rem; padding: .25rem .4rem; border: 1px solid rgba(19,188,157,.26); border-radius: 999px; color: #8fffee; background: rgba(19,188,157,.08); font-size: .6rem; }
+.admin-app__overview { display: grid; grid-template-columns: repeat(4, 1fr); gap: .8rem; }
+.admin-app__policy-tabs { display: flex; flex-wrap: wrap; gap: .5rem; margin-bottom: 1.2rem; }
+.admin-app__policy-tabs button { display: inline-flex; align-items: center; gap: .4rem; padding: .65rem .8rem; border: 1px solid rgba(19,188,157,.22); border-radius: .55rem; color: rgba(239,255,251,.68); background: rgba(19,188,157,.06); cursor: pointer; font: inherit; font-size: .7rem; }
+.admin-app__policy-tabs button.is-active { color: #03110f; background: linear-gradient(135deg, #8fffee, #13bc9d); font-weight: 800; }
+.admin-app__policy-actions { display: flex; gap: .6rem; margin-top: 1rem; }
+.admin-app__dialog { width: min(94vw, 540px); color: #effffb; background: #061819; border: 1px solid rgba(19,188,157,.3); }
+.admin-app__dialog-head { display: flex; align-items: center; justify-content: space-between; }
+.admin-app__dialog h3 { margin: 0; font-size: 1.1rem; }
+@media (max-width: 900px) { .admin-app__hero, .admin-app__section-head { align-items: flex-start; flex-direction: column; } .admin-app__stats { width: 100%; flex-wrap: wrap; } .admin-app__stats span { flex: 1; } .admin-app__filters { grid-template-columns: 1fr; } }
+@media (max-width: 600px) { .admin-app__overview { grid-template-columns: 1fr; } .admin-app__brand small { display: none; } .admin-app__hero { padding-top: 5vh; } }
 </style>

@@ -120,7 +120,7 @@
               <q-input v-model="lead.question" outlined type="textarea" autogrow class="learn-launch__form-full" label="Qual seu objetivo? (opcional)" />
             </div>
             <p class="learn-launch__form-help">Informe e-mail ou WhatsApp para receber o convite.</p>
-            <q-btn unelevated no-caps type="submit" class="learn-launch__submit" icon="mdi-arrow-right" label="Quero conhecer o Curso 1" :loading="saving" />
+            <q-btn unelevated no-caps type="submit" class="learn-launch__submit" icon="mdi-arrow-right" label="Quero conhecer o Curso Fullstack" :loading="saving" />
           </q-form>
         </div>
       </section>
@@ -218,9 +218,9 @@ async function submitLead() {
       phone: lead.phone,
       message: lead.question,
       profileType: lead.profileType,
-      source: 'curso-1-lancamento',
+      source: 'curso-fullstack-lancamento',
       flowType: 'interesse-em-aprender',
-      tags: ['AitoLearn', 'curso 1', 'lancamento']
+      tags: ['AitoLearn', 'curso fullstack', 'lancamento']
     })
     $q.notify({ type: 'positive', message: 'Perfeito. Sua vaga de interesse foi registrada.' })
     lead.question = ''
