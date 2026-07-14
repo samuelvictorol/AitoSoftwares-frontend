@@ -15,7 +15,7 @@
           <q-input v-model="form.password" outlined dense label="Senha" type="password" autocomplete="current-password" class="q-mt-sm" :rules="[requiredRule]" />
 
           <q-btn unelevated no-caps class="full-width q-mt-md customer-login__button" icon="mdi-briefcase-outline" label="Entrar no portal" type="submit" :loading="loading" />
-          <q-btn flat no-caps class="full-width customer-login__forgot" icon="mdi-lock-reset" label="Esqueci minha senha" type="button" @click="forgotOpen = true" />
+          <q-btn flat no-caps class="full-width customer-login__forgot q-mt-md" icon="mdi-lock-reset" label="Esqueci minha senha" type="button" @click="forgotOpen = true" />
           <q-btn flat no-caps class="full-width q-mt-sm customer-login__back" icon="mdi-arrow-left" label="Voltar para a AitoSoftwares" type="button" @click="$router.push('/')" />
         </q-form>
       </q-page>

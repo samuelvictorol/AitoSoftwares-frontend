@@ -1,7 +1,7 @@
 <template>
   <section class="contracts-module portal-module">
     <div class="portal-module__head">
-      <div><span class="portal-module__eyebrow">{{ admin ? 'Operacao' : 'Documentos' }}</span><h2>{{ admin ? 'Contratos' : 'Meus contratos' }}</h2></div>
+      <div><span class="portal-module__eyebrow">{{ admin ? 'Contratos' : 'Meus contratos' }}</span></div>
       <q-btn v-if="admin" unelevated no-caps class="portal-module__primary" icon="mdi-plus" label="Novo contrato" @click="openCreate" />
     </div>
 
@@ -9,11 +9,12 @@
 
     <q-table flat bordered wrap-cells row-key="_id" class="portal-module__table" :rows="contracts" :columns="columns" :loading="loading" no-data-label="Nenhum contrato encontrado">
       <template #body-cell-targetUser="props"><q-td :props="props">{{ props.row.targetUser?.name || '-' }}</q-td></template>
+      <template #body-cell-description="props"><q-td :props="props"><span class="portal-module__description">{{ preview(props.row.description) }}</span></q-td></template>
       <template #body-cell-status="props"><q-td :props="props"><span class="portal-module__tag">{{ props.row.status }}</span></q-td></template>
       <template #body-cell-createdAt="props"><q-td :props="props">{{ formatDate(props.row.createdAt) }}</q-td></template>
       <template #body-cell-updatedAt="props"><q-td :props="props">{{ formatDate(props.row.updatedAt) }}</q-td></template>
       <template #body-cell-attachment="props"><q-td :props="props"><a v-if="props.row.attachment" :href="props.row.attachment.url" target="_blank" rel="noopener noreferrer" class="portal-module__link"><q-icon name="mdi-paperclip" /> Abrir</a><span v-else>-</span></q-td></template>
-      <template #body-cell-actions="props"><q-td :props="props"><q-btn v-if="admin" flat round dense icon="mdi-pencil" aria-label="Editar contrato" @click="openEdit(props.row)" /><q-btn v-if="admin" flat round dense color="negative" icon="mdi-delete-outline" aria-label="Excluir contrato" @click="remove(props.row)" /></q-td></template>
+      <template #body-cell-actions="props"><q-td :props="props"><q-btn flat round dense icon="mdi-eye-outline" aria-label="Ver descricao do contrato" @click="openDetails(props.row)"><q-tooltip>Ver detalhes</q-tooltip></q-btn><q-btn v-if="admin" flat round dense icon="mdi-pencil" aria-label="Editar contrato" @click="openEdit(props.row)" /><q-btn v-if="admin" flat round dense color="negative" icon="mdi-delete-outline" aria-label="Excluir contrato" @click="remove(props.row)" /></q-td></template>
     </q-table>
 
     <q-dialog v-model="dialog">
@@ -30,6 +31,13 @@
             <q-btn unelevated no-caps class="portal-module__primary full-width q-mt-md" type="submit" label="Salvar contrato" :loading="saving" />
           </q-form>
         </q-card-section>
+      </q-card>
+    </q-dialog>
+
+    <q-dialog v-model="detailDialog">
+      <q-card class="portal-module__dialog">
+        <q-card-section class="portal-module__dialog-head"><div><span class="portal-module__eyebrow">Detalhes do contrato</span><h3>{{ selectedDetail.title || 'Contrato' }}</h3></div><q-btn flat round dense icon="mdi-close" aria-label="Fechar" @click="detailDialog = false" /></q-card-section>
+        <q-card-section class="portal-module__detail-body"><p>{{ selectedDetail.description || 'Sem descricao cadastrada.' }}</p><div><span>Status</span><strong>{{ selectedDetail.status || '-' }}</strong></div></q-card-section>
       </q-card>
     </q-dialog>
   </section>
@@ -49,8 +57,10 @@ const customers = ref([])
 const loading = ref(false)
 const saving = ref(false)
 const dialog = ref(false)
+const detailDialog = ref(false)
 const form = ref(emptyForm())
 const search = ref('')
+const selectedDetail = ref({})
 const customerOptions = computed(() => customers.value.map((item) => ({ label: `${item.name} - ${item.email}`, value: item._id })))
 const columns = computed(() => props.admin
   ? [
@@ -69,15 +79,18 @@ const columns = computed(() => props.admin
       { name: 'status', label: 'Status', field: 'status', align: 'left' },
       { name: 'createdAt', label: 'Criado', field: 'createdAt', align: 'left' },
       { name: 'updatedAt', label: 'Editado', field: 'updatedAt', align: 'left' },
-      { name: 'attachment', label: 'Anexo', field: 'attachment', align: 'left' },
+       { name: 'attachment', label: 'Anexo', field: 'attachment', align: 'left' },
+       { name: 'actions', label: '', align: 'right' },
     ])
 
 function emptyForm() { return { _id: '', targetUserId: '', title: '', description: '', status: 'Em analise', attachment: null, file: null, removeAttachment: false } }
 function requiredRule(value) { return Boolean(String(value || '').trim()) || 'Preencha este campo.' }
 function formatDate(value) { return value ? new Date(value).toLocaleDateString('pt-BR') : '-' }
+function preview(value) { const text = String(value || '').trim(); return text.length > 48 ? `${text.slice(0, 48)}...` : text || '-' }
 function selectedFile(value) { return value?.item ? value.item(0) : Array.isArray(value) ? value[0] : value }
 function openCreate() { form.value = emptyForm(); dialog.value = true }
 function openEdit(contract) { form.value = { ...emptyForm(), ...contract, targetUserId: contract.targetUser?._id || contract.targetUser?.id || '', file: null, removeAttachment: false }; dialog.value = true }
+function openDetails(contract) { selectedDetail.value = contract; detailDialog.value = true }
 async function load() {
   loading.value = true
   try {
@@ -126,6 +139,11 @@ onMounted(load)
 .portal-module__table :deep(td) { color: rgba(239,255,251,.78); font-size: .72rem; }
 .portal-module__tag { padding: .25rem .45rem; border: 1px solid rgba(19,188,157,.28); border-radius: 999px; color: #8fffee; font-size: .62rem; }
 .portal-module__link { color: #8fffee; text-decoration: none; }
+.portal-module__description { display: inline-block; max-width: 18rem; white-space: normal; }
+.portal-module__detail-body { display: grid; gap: .8rem; color: rgba(239,255,251,.82); }
+.portal-module__detail-body p { margin: 0; white-space: pre-wrap; line-height: 1.6; }
+.portal-module__detail-body div { display: flex; justify-content: space-between; gap: 1rem; padding-top: .7rem; border-top: 1px solid rgba(143,255,238,.1); }
+.portal-module__detail-body span { color: rgba(229,255,250,.58); }
 .portal-module__dialog { width: min(94vw, 560px); color: #effffb; background: #061819; border: 1px solid rgba(19,188,157,.3); }
 .portal-module__dialog-head { display: flex; align-items: flex-start; justify-content: space-between; gap: .8rem; }
 .portal-module__dialog h3 { margin: .4rem 0 0; font-size: 1.15rem; }

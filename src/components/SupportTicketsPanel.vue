@@ -2,8 +2,7 @@
   <section class="portal-module tickets-panel">
     <div class="portal-module__head">
       <div>
-        <span class="portal-module__eyebrow">{{ admin ? 'Operacao' : 'Suporte' }}</span>
-        <h2>{{ admin ? 'Chamados de suporte' : 'Meus chamados' }}</h2>
+        <span class="portal-module__eyebrow">{{ admin ? 'Chamados' : 'Suporte' }}</span>
       </div>
       <q-btn unelevated no-caps class="portal-module__primary" icon="mdi-plus" :label="admin ? 'Novo chamado' : 'Abrir chamado'" :disable="!admin && activeCount >= 2" @click="openCreate" />
     </div>
@@ -30,10 +29,11 @@
 
     <q-table flat bordered wrap-cells row-key="_id" class="portal-module__table" :rows="tickets" :columns="columns" :loading="loading" no-data-label="Nenhum chamado encontrado">
       <template #body-cell-targetUser="props"><q-td :props="props">{{ props.row.targetUser?.name || 'Meu chamado' }}</q-td></template>
+      <template #body-cell-description="props"><q-td :props="props"><span class="portal-module__description">{{ preview(props.row.description) }}</span></q-td></template>
       <template #body-cell-status="props"><q-td :props="props"><span class="portal-module__tag">{{ statusLabel(props.row.status) }}</span></q-td></template>
       <template #body-cell-type="props"><q-td :props="props">{{ typeLabel(props.row.type) }}</q-td></template>
       <template #body-cell-createdAt="props"><q-td :props="props">{{ formatDate(props.row.createdAt) }}</q-td></template>
-      <template #body-cell-actions="props"><q-td :props="props"><q-btn flat round dense icon="mdi-pencil" aria-label="Editar chamado" @click="openEdit(props.row)" /><q-btn v-if="admin" flat round dense color="negative" icon="mdi-delete-outline" aria-label="Excluir chamado" @click="remove(props.row)" /></q-td></template>
+      <template #body-cell-actions="props"><q-td :props="props"><q-btn flat round dense icon="mdi-eye-outline" aria-label="Ver descricao do chamado" @click="openDetails(props.row)"><q-tooltip>Ver detalhes</q-tooltip></q-btn><q-btn flat round dense icon="mdi-pencil" aria-label="Editar chamado" @click="openEdit(props.row)" /><q-btn v-if="admin" flat round dense color="negative" icon="mdi-delete-outline" aria-label="Excluir chamado" @click="remove(props.row)" /></q-td></template>
     </q-table>
 
     <q-dialog v-model="dialog">
@@ -49,6 +49,13 @@
             <q-btn unelevated no-caps class="portal-module__primary full-width q-mt-md" type="submit" label="Salvar chamado" :loading="saving" />
           </q-form>
         </q-card-section>
+      </q-card>
+    </q-dialog>
+
+    <q-dialog v-model="detailDialog">
+      <q-card class="portal-module__dialog">
+        <q-card-section class="portal-module__dialog-head"><div><span class="portal-module__eyebrow">Detalhes do chamado</span><h3>{{ selectedDetail.title || 'Chamado' }}</h3></div><q-btn flat round dense icon="mdi-close" aria-label="Fechar" @click="detailDialog = false" /></q-card-section>
+        <q-card-section class="tickets-panel__detail-body"><p>{{ selectedDetail.description || 'Sem descricao cadastrada.' }}</p><div><span>Status</span><strong>{{ statusLabel(selectedDetail.status) }}</strong></div></q-card-section>
       </q-card>
     </q-dialog>
   </section>
@@ -69,7 +76,9 @@ const targets = ref([])
 const loading = ref(false)
 const saving = ref(false)
 const dialog = ref(false)
+const detailDialog = ref(false)
 const form = ref(emptyForm())
+const selectedDetail = ref({})
 const search = ref('')
 const filterStatus = ref('')
 const filterType = ref('')
@@ -95,6 +104,7 @@ const columns = computed(() => props.admin
       { name: 'title', label: 'Titulo', field: 'title', align: 'left', sortable: true },
       { name: 'targetUser', label: 'Vinculado a', field: row => row.targetUser?.name || '-', align: 'left' },
       { name: 'type', label: 'Tipo', field: 'type', align: 'left' },
+      { name: 'description', label: 'Descricao', field: 'description', align: 'left' },
       { name: 'status', label: 'Status', field: 'status', align: 'left' },
       { name: 'createdAt', label: 'Criado', field: 'createdAt', align: 'left' },
       { name: 'actions', label: '', align: 'right' },
@@ -102,6 +112,7 @@ const columns = computed(() => props.admin
   : [
       { name: 'title', label: 'Titulo', field: 'title', align: 'left', sortable: true },
       { name: 'type', label: 'Tipo', field: 'type', align: 'left' },
+      { name: 'description', label: 'Descricao', field: 'description', align: 'left' },
       { name: 'status', label: 'Status', field: 'status', align: 'left' },
       { name: 'createdAt', label: 'Criado', field: 'createdAt', align: 'left' },
       { name: 'actions', label: '', align: 'right' },
@@ -110,10 +121,12 @@ const columns = computed(() => props.admin
 function emptyForm() { return { _id: '', targetUserId: '', title: '', status: 'open', type: 'support', description: '' } }
 function requiredRule(value) { return Boolean(String(value || '').trim()) || 'Preencha este campo.' }
 function formatDate(value) { return value ? new Date(value).toLocaleDateString('pt-BR') : '-' }
+function preview(value) { const text = String(value || '').trim(); return text.length > 48 ? `${text.slice(0, 48)}...` : text || '-' }
 function statusLabel(value) { return statusOptions.find((item) => item.value === value)?.label || value || '-' }
 function typeLabel(value) { return typeOptions.find((item) => item.value === value)?.label || value || '-' }
 function openCreate() { form.value = emptyForm(); if (!props.admin) form.value.targetUserId = undefined; dialog.value = true }
 function openEdit(ticket) { form.value = { ...emptyForm(), ...ticket, targetUserId: ticket.targetUser?._id || ticket.targetUser?.id || '' }; dialog.value = true }
+function openDetails(ticket) { selectedDetail.value = ticket; detailDialog.value = true }
 async function load() {
   if (!token) return
   loading.value = true
@@ -168,6 +181,7 @@ onMounted(load)
 .portal-module__table :deep(th) { color: #8fffee; font-size: .68rem; }
 .portal-module__table :deep(td) { color: rgba(239,255,251,.78); font-size: .72rem; }
 .portal-module__tag { padding: .25rem .45rem; border: 1px solid rgba(19,188,157,.28); border-radius: 999px; color: #8fffee; font-size: .62rem; }
+.portal-module__description { display: inline-block; max-width: 18rem; white-space: normal; }
 .portal-module__dialog { width: min(94vw, 560px); color: #effffb; background: #061819; border: 1px solid rgba(19,188,157,.3); }
 .portal-module__dialog-head { display: flex; align-items: flex-start; justify-content: space-between; gap: .8rem; }
 .portal-module__dialog h3 { margin: .4rem 0 0; font-size: 1.15rem; }
@@ -187,6 +201,10 @@ onMounted(load)
 .tickets-panel__filters { display: grid; grid-template-columns: minmax(220px, 1fr) 180px 180px auto; gap: .6rem; }
 .tickets-panel__filters :deep(.q-field__control) { color: #effffb; background: rgba(7,40,40,.74); }
 .tickets-panel__filters :deep(.q-field__native), .tickets-panel__filters :deep(.q-field__label) { color: rgba(239,255,251,.8); }
+.tickets-panel__detail-body { display: grid; gap: .8rem; color: rgba(239,255,251,.82); }
+.tickets-panel__detail-body p { margin: 0; white-space: pre-wrap; line-height: 1.6; }
+.tickets-panel__detail-body div { display: flex; justify-content: space-between; gap: 1rem; padding-top: .7rem; border-top: 1px solid rgba(143,255,238,.1); }
+.tickets-panel__detail-body span { color: rgba(229,255,250,.58); }
 @media (max-width: 700px) { .portal-module__head { align-items: flex-start; flex-direction: column; } .portal-module__primary { width: 100%; } .portal-module__table { max-width: calc(100vw - 2rem); overflow: auto; } }
 @media (max-width: 760px) { .tickets-panel__filters { grid-template-columns: 1fr; } }
 </style>

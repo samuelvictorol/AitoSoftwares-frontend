@@ -1,7 +1,7 @@
 <template>
   <section class="credentials-module portal-module">
     <div class="portal-module__head">
-      <div><span class="portal-module__eyebrow">{{ admin ? 'Operacao' : 'Acesso seguro' }}</span><h2>{{ admin ? 'Credenciais' : 'Minhas credenciais' }}</h2><p>{{ admin ? 'Organize links e instrucoes privadas por cliente.' : 'Consulte os acessos e links liberados para o seu projeto.' }}</p></div>
+      <div><span class="portal-module__eyebrow">Credenciais</span><p>{{ admin ? '' : '' }}</p></div>
       <q-btn v-if="admin" unelevated no-caps class="portal-module__primary" icon="mdi-plus" label="Nova credencial" @click="openCreate" />
     </div>
 
@@ -12,10 +12,10 @@
 
     <q-table flat bordered wrap-cells row-key="_id" class="portal-module__table" :rows="credentials" :columns="columns" :loading="loading" no-data-label="Nenhuma credencial encontrada">
       <template #body-cell-targetUser="props"><q-td :props="props">{{ props.row.targetUser?.name || '-' }}</q-td></template>
-      <template #body-cell-description="props"><q-td :props="props"><span class="credentials-module__description">{{ props.row.description || '-' }}</span></q-td></template>
+      <template #body-cell-description="props"><q-td :props="props"><span class="credentials-module__description">{{ preview(props.row.description) }}</span></q-td></template>
       <template #body-cell-link="props"><q-td :props="props"><a v-if="props.row.link" :href="props.row.link" target="_blank" rel="noopener noreferrer" class="portal-module__link"><q-icon name="mdi-open-in-new" /> Abrir</a><span v-else>-</span></q-td></template>
       <template #body-cell-updatedAt="props"><q-td :props="props">{{ formatDate(props.row.updatedAt) }}</q-td></template>
-      <template #body-cell-actions="props"><q-td :props="props"><q-btn v-if="admin" flat round dense icon="mdi-pencil" aria-label="Editar credencial" @click="openEdit(props.row)" /><q-btn v-if="admin" flat round dense color="negative" icon="mdi-delete-outline" aria-label="Excluir credencial" @click="remove(props.row)" /></q-td></template>
+      <template #body-cell-actions="props"><q-td :props="props"><q-btn flat round dense icon="mdi-eye-outline" aria-label="Ver descricao da credencial" @click="openDetails(props.row)"><q-tooltip>Ver detalhes</q-tooltip></q-btn><q-btn v-if="admin" flat round dense icon="mdi-pencil" aria-label="Editar credencial" @click="openEdit(props.row)" /><q-btn v-if="admin" flat round dense color="negative" icon="mdi-delete-outline" aria-label="Excluir credencial" @click="remove(props.row)" /></q-td></template>
     </q-table>
 
     <q-dialog v-model="dialog">
@@ -30,6 +30,13 @@
             <q-btn unelevated no-caps class="portal-module__primary full-width q-mt-md" type="submit" label="Salvar credencial" :loading="saving" />
           </q-form>
         </q-card-section>
+      </q-card>
+    </q-dialog>
+
+    <q-dialog v-model="detailDialog">
+      <q-card class="portal-module__dialog">
+        <q-card-section class="portal-module__dialog-head"><div><span class="portal-module__eyebrow">Detalhes da credencial</span><h3>{{ selectedDetail.title || 'Credencial' }}</h3></div><q-btn flat round dense icon="mdi-close" aria-label="Fechar" @click="detailDialog = false" /></q-card-section>
+        <q-card-section class="credentials-module__detail-body"><p>{{ selectedDetail.description || 'Sem descricao cadastrada.' }}</p><a v-if="selectedDetail.link" :href="selectedDetail.link" target="_blank" rel="noopener noreferrer" class="portal-module__link">Abrir link</a></q-card-section>
       </q-card>
     </q-dialog>
   </section>
@@ -49,8 +56,10 @@ const customers = ref([])
 const loading = ref(false)
 const saving = ref(false)
 const dialog = ref(false)
+const detailDialog = ref(false)
 const search = ref('')
 const form = ref(emptyForm())
+const selectedDetail = ref({})
 const customerOptions = computed(() => customers.value.map((item) => ({ label: `${item.name} - ${item.email}`, value: item._id })))
 const columns = computed(() => props.admin
   ? [
@@ -66,13 +75,16 @@ const columns = computed(() => props.admin
       { name: 'description', label: 'Descricao', field: 'description', align: 'left' },
       { name: 'link', label: 'Link', field: 'link', align: 'left' },
       { name: 'updatedAt', label: 'Atualizado', field: 'updatedAt', align: 'left' },
+      { name: 'actions', label: '', align: 'right' },
     ])
 
 function emptyForm() { return { _id: '', targetUserId: '', title: '', description: '', link: '' } }
 function requiredRule(value) { return Boolean(String(value || '').trim()) || 'Preencha este campo.' }
 function formatDate(value) { return value ? new Date(value).toLocaleDateString('pt-BR') : '-' }
+function preview(value) { const text = String(value || '').trim(); return text.length > 48 ? `${text.slice(0, 48)}...` : text || '-' }
 function openCreate() { form.value = emptyForm(); dialog.value = true }
 function openEdit(item) { form.value = { ...emptyForm(), ...item, targetUserId: item.targetUser?._id || item.targetUser?.id || '' }; dialog.value = true }
+function openDetails(item) { selectedDetail.value = item; detailDialog.value = true }
 
 async function load() {
   loading.value = true
@@ -133,5 +145,7 @@ onMounted(load)
 .credentials-module__filters :deep(.q-field__control) { color: #effffb; background: rgba(7,40,40,.74); }
 .credentials-module__filters :deep(.q-field__native), .credentials-module__filters :deep(.q-field__label) { color: rgba(239,255,251,.8); }
 .credentials-module__description { display: inline-block; max-width: 26rem; white-space: normal; }
+.credentials-module__detail-body { display: grid; gap: .8rem; color: rgba(239,255,251,.82); }
+.credentials-module__detail-body p { margin: 0; white-space: pre-wrap; line-height: 1.6; }
 @media (max-width: 700px) { .portal-module__head { align-items: flex-start; flex-direction: column; } .portal-module__primary { width: 100%; } .portal-module__table { max-width: calc(100vw - 2rem); overflow: auto; } .credentials-module__filters { grid-template-columns: 1fr; } }
 </style>
