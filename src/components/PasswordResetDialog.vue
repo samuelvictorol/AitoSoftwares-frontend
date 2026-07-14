@@ -22,7 +22,7 @@
         </template>
 
         <template v-else-if="step === 'verify'">
-          <p>Digite o codigo de 6 digitos recebido por e-mail para validar a troca.</p>
+          <p>Confira o lixo eletrônico ou spam caso não encontre o e-mail. Digite o codigo temporario enviado para redefinir sua senha.</p>
           <q-form @submit.prevent="verifyCode">
             <q-input v-model="form.email" outlined readonly label="E-mail" />
             <q-input v-model.trim="form.code" outlined autofocus inputmode="numeric" maxlength="6" label="Codigo temporario" class="q-mt-sm" :rules="[codeRule]" />

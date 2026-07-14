@@ -293,7 +293,7 @@
         </q-card-section>
         <q-card-section class="landing-3d__dialog-body">
           <p>Aprenda a construir e vender sistemas high ticket com frontend, backend, pagamentos, cloud, IA e 3D.</p>
-          <q-btn unelevated no-caps class="landing-3d__auth-submit full-width" icon="mdi-lightbulb-on-outline" label="Conhecer o Fullstack Developer" @click="router.push('/aitolearn'); coursePromptOpen = false" />
+          <q-btn unelevated no-caps class="landing-3d__auth-submit q-mt-md full-width" icon="mdi-lightbulb-on-outline" label="Conhecer o Fullstack Developer" @click="router.push('/aitolearn'); coursePromptOpen = false" />
         </q-card-section>
       </q-card>
     </q-dialog>
