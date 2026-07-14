@@ -1,7 +1,7 @@
 <template>
   <section class="contracts-module portal-module">
     <div class="portal-module__head">
-      <div><span class="portal-module__eyebrow">{{ admin ? 'Operacao' : 'Documentos' }}</span><h2>{{ admin ? 'Contratos' : 'Meus contratos' }}</h2><p>{{ admin ? 'Crie e organize contratos por cliente.' : 'Visualize os documentos liberados para voce.' }}</p></div>
+      <div><span class="portal-module__eyebrow">{{ admin ? 'Operacao' : 'Documentos' }}</span><h2>{{ admin ? 'Contratos' : 'Meus contratos' }}</h2></div>
       <q-btn v-if="admin" unelevated no-caps class="portal-module__primary" icon="mdi-plus" label="Novo contrato" @click="openCreate" />
     </div>
 

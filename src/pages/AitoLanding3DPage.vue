@@ -272,6 +272,7 @@
             <q-input v-model="authForm.password" outlined dense lazy-rules label="Senha" type="password" autocomplete="current-password" class="q-mt-sm" :rules="[requiredRule]" />
             <q-btn unelevated no-caps class="landing-3d__auth-submit full-width q-mt-md" type="submit" :loading="authLoading" icon-right="mdi-login" :label="authMode === 'login' ? 'Entrar' : 'Cadastre-se'" />
           </q-form>
+          <q-btn v-if="authMode === 'login'" flat no-caps class="landing-3d__forgot-password full-width q-mt-sm" icon="mdi-lock-reset" label="Esqueci minha senha" @click="openPasswordReset" />
           <div class="landing-3d__auth-separator"><span>ou</span></div>
           <button type="button" class="landing-3d__google-button" @click="continueWithGoogle">
             <q-icon name="mdi-google" size="18px" aria-hidden="true" />
@@ -281,6 +282,8 @@
         </q-card-section>
       </q-card>
     </q-dialog>
+
+    <PasswordResetDialog v-model="passwordResetOpen" audience="user" :initial-email="authForm.identifier.includes('@') ? authForm.identifier : ''" @completed="handlePasswordResetCompleted" />
 
     <q-dialog v-model="coursePromptOpen">
       <q-card class="landing-3d__dialog-card landing-3d__course-prompt">
@@ -325,6 +328,7 @@ import AitoLoadingGate from 'components/landing3d/AitoLoadingGate.vue'
 import AitoThreeScene from 'components/landing3d/AitoThreeScene.vue'
 import AitoBrandCarousel from 'components/landing3d/AitoBrandCarousel.vue'
 import IAChatComponent from 'components/IAChatComponent.vue'
+import PasswordResetDialog from 'components/PasswordResetDialog.vue'
 import { useLandingScroll } from 'src/composables/useLandingScroll'
 import { landing3dSections } from 'src/data/landing3dSections'
 import {
@@ -362,6 +366,7 @@ const selectedBrand = ref(null)
 const authDialogOpen = ref(false)
 const authMode = ref('login')
 const authLoading = ref(false)
+const passwordResetOpen = ref(false)
 const referralDialogOpen = ref(false)
 const iaChat = ref(false)
 const coursePromptOpen = ref(false)
@@ -381,13 +386,8 @@ const requiredRule = (value) => Boolean(String(value || '').trim()) || 'Preencha
 
 const accountLabel = computed(() => {
   sessionVersion.value
-  const raw = localStorage.getItem('aito_admin_user') || localStorage.getItem('aito_user')
-  if (!raw) return 'Entrar'
-  try {
-    return String(JSON.parse(raw).name || 'Entrar').trim().split(/\s+/)[0]
-  } catch (error) {
-    return 'Entrar'
-  }
+  const session = getStoredSession()
+  return session?.name ? String(session.name).trim().split(/\s+/)[0] : 'Entrar'
 })
 
 function founderForSection(sectionId) {
@@ -438,7 +438,20 @@ function openAuth(mode = 'login') {
   const session = getStoredSession()
   if (session?.role === 'admin') return router.push('/admin')
   if (session?.role === 'customer') return router.push('/customer')
+  if (session?.role === 'user') return router.push('/app')
   authMode.value = mode
+  authDialogOpen.value = true
+}
+
+function openPasswordReset() {
+  authDialogOpen.value = false
+  passwordResetOpen.value = true
+}
+
+function handlePasswordResetCompleted({ email }) {
+  authMode.value = 'login'
+  authForm.identifier = email
+  authForm.password = ''
   authDialogOpen.value = true
 }
 
@@ -511,13 +524,26 @@ function sendReferral() {
 }
 
 function getStoredSession() {
-  const raw = localStorage.getItem('aito_admin_user') || localStorage.getItem('aito_user')
-  if (!raw) return null
-  try { return JSON.parse(raw) } catch (error) { return null }
+  const sessions = [
+    { tokenKey: 'aito_admin_token', userKey: 'aito_admin_user', fallbackRole: 'admin' },
+    { tokenKey: 'aito_user_token', userKey: 'aito_user', fallbackRole: 'user' },
+  ]
+
+  for (const session of sessions) {
+    if (!localStorage.getItem(session.tokenKey)) continue
+    try {
+      const data = JSON.parse(localStorage.getItem(session.userKey) || '{}')
+      return { ...data, role: data.role || session.fallbackRole }
+    } catch (error) {
+      return { role: session.fallbackRole }
+    }
+  }
+
+  return null
 }
 
 function hasAnySession() {
-  return Boolean(localStorage.getItem('aito_admin_token') || localStorage.getItem('aito_user_token'))
+  return Boolean(getStoredSession())
 }
 
 function scheduleCoursePrompt() {
@@ -825,6 +851,7 @@ onBeforeUnmount(() => {
 .landing-3d__course-prompt { width: min(92vw, 34rem); }
 .landing-3d__auth-separator { display: flex; margin: 1rem 0; align-items: center; gap: 0.65rem; color: rgba(225, 255, 249, 0.4); font-size: 0.68rem; }
 .landing-3d__auth-separator::before, .landing-3d__auth-separator::after { flex: 1; height: 1px; content: ''; background: rgba(19, 188, 157, 0.2); }
+.landing-3d__forgot-password { color: #8fffee; font-size: .7rem; }
 .landing-3d__google-button { display: flex; width: 100%; min-height: 2.7rem; align-items: center; justify-content: center; gap: 0.5rem; border: 1px solid rgba(19, 188, 157, 0.3); border-radius: 999px; color: #effffb; background: rgba(19, 188, 157, 0.08); font-size: 0.74rem; cursor: pointer; }
 .landing-3d__google-button .q-icon { color: var(--aito-aqua); }
 .landing-3d__project-login { min-height: 2.7rem; border-color: rgba(143, 255, 238, 0.42); border-radius: 999px; color: #8fffee; background: rgba(19, 188, 157, 0.04); font-size: 0.74rem; }

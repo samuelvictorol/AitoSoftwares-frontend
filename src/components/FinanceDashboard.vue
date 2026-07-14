@@ -1,7 +1,7 @@
 <template>
   <section class="finance-dashboard">
     <div class="finance-dashboard__head">
-      <div><span class="finance-dashboard__eyebrow">Financeiro</span><h2>{{ title }}</h2><p>Custos, recorrencias e valores reunidos em um painel vivo.</p></div>
+      <div><span class="finance-dashboard__eyebrow">Financeiro</span><h2>{{ title }}</h2></div>
       <q-btn flat round icon="mdi-refresh" aria-label="Atualizar financeiro" :loading="loading" @click="load"><q-tooltip>Atualizar</q-tooltip></q-btn>
     </div>
 

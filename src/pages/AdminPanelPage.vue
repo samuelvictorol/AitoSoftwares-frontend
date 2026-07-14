@@ -4,12 +4,12 @@
       <q-page class="admin-app__page">
         <div class="admin-app__shell">
           <header class="admin-app__header">
-            <div class="admin-app__brand"><img src="/favicon.png" alt="" /><div><strong>AITO / OPERACAO</strong><small>Gestao, financeiro e atendimento</small></div></div>
+            <div class="admin-app__brand"><img src="/favicon.png" alt="" /><div><strong>AITOADMIN</strong></div></div>
             <div class="admin-app__session"><span>{{ firstName }}</span><q-btn flat round icon="mdi-logout" aria-label="Sair" @click="logout"><q-tooltip>Sair</q-tooltip></q-btn></div>
           </header>
 
           <section class="admin-app__hero">
-            <div><p class="admin-app__eyebrow">Painel admin</p><h1>Operacao em um so lugar.</h1><p>Gerencie pessoas, custos, chamados, contratos e os documentos da AitoSoftwares.</p></div>
+            <div><p class="admin-app__eyebrow">Painel admin</p><h1>Operacao em um so lugar.</h1></div>
             <div class="admin-app__stats"><span><strong>{{ leads.length }}</strong>Leads</span><span><strong>{{ users.length }}</strong>Usuarios</span><span><strong>{{ customers.length }}</strong>Clientes</span></div>
           </section>
 
@@ -35,7 +35,7 @@
             </q-tab-panel>
 
             <q-tab-panel v-for="personType in ['users', 'customers']" :key="personType" :name="personType">
-              <section class="admin-app__section"><div class="admin-app__section-head"><div><p class="admin-app__eyebrow">{{ personType === 'users' ? '02 / AITOLEARN' : '03 / OPERACAO' }}</p><h2>{{ personType === 'users' ? 'Usuarios' : 'Clientes' }}</h2><span>{{ personType === 'users' ? 'Acessos para o Curso Fullstack.' : 'Clientes criados somente pelo admin.' }}</span></div><q-btn unelevated no-caps class="admin-app__primary" icon="mdi-account-plus-outline" :label="personType === 'users' ? 'Cadastrar usuario' : 'Cadastrar cliente'" @click="openPersonDialog(personType === 'customers' ? 'customer' : 'user')" /></div>
+              <section class="admin-app__section"><div class="admin-app__section-head"><div><p class="admin-app__eyebrow">{{ personType === 'users' ? '02 / AITOLEARN' : '03 / OPERACAO' }}</p><h2>{{ personType === 'users' ? 'Usuarios' : 'Clientes' }}</h2><span>{{ personType === 'users' ? 'Acessos para o Curso Fullstack.' : 'Clientes com projetos ativos na AitoSoftwares.' }}</span></div><q-btn unelevated no-caps class="admin-app__primary" icon="mdi-account-plus-outline" :label="personType === 'users' ? 'Cadastrar usuario' : 'Cadastrar cliente'" @click="openPersonDialog(personType === 'customers' ? 'customer' : 'user')" /></div>
                 <div class="admin-app__filters"><q-input v-model="personSearch" outlined dense clearable label="Buscar por nome, email ou telefone" @keyup.enter="loadPeople(personType === 'customers' ? 'customer' : 'user')"><template #prepend><q-icon name="mdi-magnify" /></template></q-input></div>
                 <q-table flat bordered wrap-cells row-key="_id" class="admin-app__table" :rows="personType === 'users' ? users : customers" :columns="personColumns" :loading="loading[personType]" :pagination.sync="personPagination" no-data-label="Nenhum cadastro encontrado"><template #body-cell-role="props"><q-td :props="props"><span class="admin-app__tag">{{ props.row.role === 'customer' ? 'cliente' : 'usuario' }}</span></q-td></template><template #body-cell-active="props"><q-td :props="props"><q-icon :name="props.row.active ? 'mdi-check-circle' : 'mdi-close-circle'" :color="props.row.active ? 'positive' : 'negative'" /></q-td></template><template #body-cell-actions="props"><q-td :props="props"><q-btn flat round dense icon="mdi-pencil" aria-label="Editar cadastro" @click="openPersonDialog(props.row.role, props.row)" /><q-btn flat round dense color="negative" icon="mdi-delete-outline" aria-label="Excluir cadastro" @click="deletePerson(props.row)" /></q-td></template></q-table>
               </section>

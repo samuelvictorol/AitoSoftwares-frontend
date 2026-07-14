@@ -15,21 +15,26 @@
           <q-input v-model="form.password" outlined dense label="Senha" type="password" autocomplete="current-password" class="q-mt-sm" :rules="[requiredRule]" />
 
           <q-btn unelevated no-caps class="full-width q-mt-md customer-login__button" icon="mdi-briefcase-outline" label="Entrar no portal" type="submit" :loading="loading" />
+          <q-btn flat no-caps class="full-width customer-login__forgot" icon="mdi-lock-reset" label="Esqueci minha senha" type="button" @click="forgotOpen = true" />
           <q-btn flat no-caps class="full-width q-mt-sm customer-login__back" icon="mdi-arrow-left" label="Voltar para a AitoSoftwares" type="button" @click="$router.push('/')" />
         </q-form>
       </q-page>
     </q-page-container>
+    <PasswordResetDialog v-model="forgotOpen" audience="customer" :initial-email="form.identifier.includes('@') ? form.identifier : ''" @completed="handlePasswordResetCompleted" />
   </q-layout>
 </template>
 
 <script>
 import { api } from 'boot/axios'
+import PasswordResetDialog from 'components/PasswordResetDialog.vue'
 
 export default {
   name: 'CustomerLoginPage',
+  components: { PasswordResetDialog },
   data () {
     return {
       loading: false,
+      forgotOpen: false,
       form: { identifier: '', password: '' }
     }
   },
@@ -51,6 +56,10 @@ export default {
       } finally {
         this.loading = false
       }
+    },
+    handlePasswordResetCompleted ({ email }) {
+      this.form.identifier = email
+      this.form.password = ''
     }
   }
 }
@@ -67,5 +76,6 @@ export default {
 .customer-login__panel :deep(.q-field__control) { color: #effffb; background: rgba(7,40,40,.7); }
 .customer-login__panel :deep(.q-field__native), .customer-login__panel :deep(.q-field__label) { color: rgba(239,255,251,.82); }
 .customer-login__button { color: #03110f; background: linear-gradient(135deg, #8fffee, #13bc9d); font-weight: 800; }
+.customer-login__forgot { color: #8fffee; font-size: .75rem; }
 .customer-login__back { color: #8fffee; }
 </style>

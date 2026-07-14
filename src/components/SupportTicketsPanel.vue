@@ -4,14 +4,13 @@
       <div>
         <span class="portal-module__eyebrow">{{ admin ? 'Operacao' : 'Suporte' }}</span>
         <h2>{{ admin ? 'Chamados de suporte' : 'Meus chamados' }}</h2>
-        <p>{{ admin ? 'Acompanhe e direcione chamados de usuarios e clientes.' : 'Abra chamados objetivos e acompanhe cada atualizacao.' }}</p>
       </div>
       <q-btn unelevated no-caps class="portal-module__primary" icon="mdi-plus" :label="admin ? 'Novo chamado' : 'Abrir chamado'" :disable="!admin && activeCount >= 2" @click="openCreate" />
     </div>
 
     <div v-if="!admin" class="tickets-panel__notice">
       <q-icon name="mdi-information-outline" />
-      <span>{{ activeCount }}/2 chamados ativos. Resolvidos e fechados liberam novos chamados.</span>
+      <span>{{ activeCount }}/2 chamados ativos.</span>
     </div>
 
     <div v-if="!admin && notifications.length" class="tickets-panel__notifications">
