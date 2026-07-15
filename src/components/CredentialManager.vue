@@ -12,6 +12,7 @@
 
     <q-table flat bordered wrap-cells row-key="_id" class="portal-module__table" :rows="credentials" :columns="columns" :loading="loading" no-data-label="Nenhuma credencial encontrada">
       <template #body-cell-targetUser="props"><q-td :props="props">{{ props.row.targetUser?.name || '-' }}</q-td></template>
+      <template #body-cell-project="props"><q-td :props="props">{{ props.row.projectId?.title || '-' }}</q-td></template>
       <template #body-cell-description="props"><q-td :props="props"><span class="credentials-module__description">{{ preview(props.row.description) }}</span></q-td></template>
       <template #body-cell-link="props"><q-td :props="props"><a v-if="props.row.link" :href="props.row.link" target="_blank" rel="noopener noreferrer" class="portal-module__link"><q-icon name="mdi-open-in-new" /> Abrir</a><span v-else>-</span></q-td></template>
       <template #body-cell-updatedAt="props"><q-td :props="props">{{ formatDate(props.row.updatedAt) }}</q-td></template>
@@ -24,6 +25,7 @@
         <q-card-section>
           <q-form @submit.prevent="save">
             <q-select v-model="form.targetUserId" outlined label="Cliente" :options="customerOptions" emit-value map-options :rules="[requiredRule]" />
+            <q-select v-model="form.projectId" outlined clearable label="Projeto" :options="projectOptions" emit-value map-options class="q-mt-sm" />
             <q-input v-model="form.title" outlined label="Titulo" class="q-mt-sm" :rules="[requiredRule]" />
             <q-input v-model="form.description" outlined type="textarea" autogrow label="Descricao" class="q-mt-sm" />
             <q-input v-model="form.link" outlined type="url" label="Link" class="q-mt-sm" hint="Pode ser um painel, ambiente ou documentacao." />
@@ -53,6 +55,7 @@ const token = localStorage.getItem(props.admin ? 'aito_admin_token' : 'aito_user
 const headers = { Authorization: `Bearer ${token}` }
 const credentials = ref([])
 const customers = ref([])
+const projects = ref([])
 const loading = ref(false)
 const saving = ref(false)
 const dialog = ref(false)
@@ -61,10 +64,12 @@ const search = ref('')
 const form = ref(emptyForm())
 const selectedDetail = ref({})
 const customerOptions = computed(() => customers.value.map((item) => ({ label: `${item.name} - ${item.email}`, value: item._id })))
+const projectOptions = computed(() => projects.value.filter((item) => !form.value.targetUserId || item.client?.id === form.value.targetUserId).map((item) => ({ label: item.title, value: item._id })))
 const columns = computed(() => props.admin
   ? [
       { name: 'title', label: 'Titulo', field: 'title', align: 'left', sortable: true },
       { name: 'targetUser', label: 'Cliente', field: row => row.targetUser?.name || '-', align: 'left' },
+      { name: 'project', label: 'Projeto', field: row => row.projectId?.title || '-', align: 'left' },
       { name: 'description', label: 'Descricao', field: 'description', align: 'left' },
       { name: 'link', label: 'Link', field: 'link', align: 'left' },
       { name: 'updatedAt', label: 'Atualizado', field: 'updatedAt', align: 'left' },
@@ -72,18 +77,19 @@ const columns = computed(() => props.admin
     ]
   : [
       { name: 'title', label: 'Titulo', field: 'title', align: 'left', sortable: true },
+      { name: 'project', label: 'Projeto', field: row => row.projectId?.title || '-', align: 'left' },
       { name: 'description', label: 'Descricao', field: 'description', align: 'left' },
       { name: 'link', label: 'Link', field: 'link', align: 'left' },
       { name: 'updatedAt', label: 'Atualizado', field: 'updatedAt', align: 'left' },
       { name: 'actions', label: '', align: 'right' },
     ])
 
-function emptyForm() { return { _id: '', targetUserId: '', title: '', description: '', link: '' } }
+function emptyForm() { return { _id: '', targetUserId: '', projectId: '', title: '', description: '', link: '' } }
 function requiredRule(value) { return Boolean(String(value || '').trim()) || 'Preencha este campo.' }
 function formatDate(value) { return value ? new Date(value).toLocaleDateString('pt-BR') : '-' }
 function preview(value) { const text = String(value || '').trim(); return text.length > 48 ? `${text.slice(0, 48)}...` : text || '-' }
 function openCreate() { form.value = emptyForm(); dialog.value = true }
-function openEdit(item) { form.value = { ...emptyForm(), ...item, targetUserId: item.targetUser?._id || item.targetUser?.id || '' }; dialog.value = true }
+function openEdit(item) { form.value = { ...emptyForm(), ...item, targetUserId: item.targetUser?._id || item.targetUser?.id || '', projectId: item.projectId?._id || item.projectId?.id || '' }; dialog.value = true }
 function openDetails(item) { selectedDetail.value = item; detailDialog.value = true }
 
 async function load() {
@@ -92,8 +98,9 @@ async function load() {
     const response = await api.get(props.admin ? '/admin/credentials' : '/credentials', { headers, params: props.admin ? { q: search.value } : undefined })
     credentials.value = response.data.data || []
     if (props.admin) {
-      const customersResponse = await api.get('/admin/customers', { headers })
+      const [customersResponse, projectsResponse] = await Promise.all([api.get('/admin/customers', { headers }), api.get('/admin/projects', { headers })])
       customers.value = customersResponse.data.data || []
+      projects.value = projectsResponse.data.data || []
     }
   } catch (error) { notifyError(error) } finally { loading.value = false }
 }
@@ -101,7 +108,7 @@ async function load() {
 async function save() {
   saving.value = true
   try {
-    const payload = { targetUserId: form.value.targetUserId, title: form.value.title, description: form.value.description, link: form.value.link }
+    const payload = { targetUserId: form.value.targetUserId, projectId: form.value.projectId || '', title: form.value.title, description: form.value.description, link: form.value.link }
     const endpoint = form.value._id ? `/admin/credentials/${form.value._id}` : '/admin/credentials'
     const response = form.value._id ? await api.put(endpoint, payload, { headers }) : await api.post(endpoint, payload, { headers })
     if (form.value._id) credentials.value = credentials.value.map((item) => item._id === form.value._id ? response.data.data : item)

@@ -9,6 +9,7 @@
 
     <q-table flat bordered wrap-cells row-key="_id" class="portal-module__table" :rows="contracts" :columns="columns" :loading="loading" no-data-label="Nenhum contrato encontrado">
       <template #body-cell-targetUser="props"><q-td :props="props">{{ props.row.targetUser?.name || '-' }}</q-td></template>
+      <template #body-cell-project="props"><q-td :props="props">{{ props.row.project?.title || '-' }}</q-td></template>
       <template #body-cell-description="props"><q-td :props="props"><span class="portal-module__description">{{ preview(props.row.description) }}</span></q-td></template>
       <template #body-cell-status="props"><q-td :props="props"><span class="portal-module__tag">{{ props.row.status }}</span></q-td></template>
       <template #body-cell-createdAt="props"><q-td :props="props">{{ formatDate(props.row.createdAt) }}</q-td></template>
@@ -23,6 +24,7 @@
         <q-card-section>
           <q-form @submit.prevent="save">
             <q-select v-model="form.targetUserId" outlined label="Cliente" :options="customerOptions" emit-value map-options :rules="[requiredRule]" />
+            <q-select v-model="form.projectId" outlined clearable label="Projeto" :options="projectOptions" emit-value map-options class="q-mt-sm" />
             <q-input v-model="form.title" outlined label="Titulo" class="q-mt-sm" :rules="[requiredRule]" />
             <q-input v-model="form.status" outlined label="Status descritivo" class="q-mt-sm" :rules="[requiredRule]" />
             <q-input v-model="form.description" outlined type="textarea" autogrow label="Descricao" class="q-mt-sm" />
@@ -54,6 +56,7 @@ const token = localStorage.getItem(props.admin ? 'aito_admin_token' : 'aito_user
 const headers = { Authorization: `Bearer ${token}` }
 const contracts = ref([])
 const customers = ref([])
+const projects = ref([])
 const loading = ref(false)
 const saving = ref(false)
 const dialog = ref(false)
@@ -62,10 +65,12 @@ const form = ref(emptyForm())
 const search = ref('')
 const selectedDetail = ref({})
 const customerOptions = computed(() => customers.value.map((item) => ({ label: `${item.name} - ${item.email}`, value: item._id })))
+const projectOptions = computed(() => projects.value.filter((item) => !form.value.targetUserId || item.client?.id === form.value.targetUserId).map((item) => ({ label: item.title, value: item._id })))
 const columns = computed(() => props.admin
   ? [
       { name: 'title', label: 'Titulo', field: 'title', align: 'left', sortable: true },
       { name: 'targetUser', label: 'Cliente', field: row => row.targetUser?.name || '-', align: 'left' },
+      { name: 'project', label: 'Projeto', field: row => row.project?.title || '-', align: 'left' },
       { name: 'description', label: 'Descricao', field: 'description', align: 'left' },
       { name: 'status', label: 'Status', field: 'status', align: 'left' },
       { name: 'createdAt', label: 'Criado', field: 'createdAt', align: 'left' },
@@ -75,6 +80,7 @@ const columns = computed(() => props.admin
     ]
   : [
       { name: 'title', label: 'Titulo', field: 'title', align: 'left', sortable: true },
+      { name: 'project', label: 'Projeto', field: row => row.project?.title || '-', align: 'left' },
       { name: 'description', label: 'Descricao', field: 'description', align: 'left' },
       { name: 'status', label: 'Status', field: 'status', align: 'left' },
       { name: 'createdAt', label: 'Criado', field: 'createdAt', align: 'left' },
@@ -83,20 +89,20 @@ const columns = computed(() => props.admin
        { name: 'actions', label: '', align: 'right' },
     ])
 
-function emptyForm() { return { _id: '', targetUserId: '', title: '', description: '', status: 'Em analise', attachment: null, file: null, removeAttachment: false } }
+function emptyForm() { return { _id: '', targetUserId: '', projectId: '', title: '', description: '', status: 'Em analise', attachment: null, file: null, removeAttachment: false } }
 function requiredRule(value) { return Boolean(String(value || '').trim()) || 'Preencha este campo.' }
 function formatDate(value) { return value ? new Date(value).toLocaleDateString('pt-BR') : '-' }
 function preview(value) { const text = String(value || '').trim(); return text.length > 48 ? `${text.slice(0, 48)}...` : text || '-' }
 function selectedFile(value) { return value?.item ? value.item(0) : Array.isArray(value) ? value[0] : value }
 function openCreate() { form.value = emptyForm(); dialog.value = true }
-function openEdit(contract) { form.value = { ...emptyForm(), ...contract, targetUserId: contract.targetUser?._id || contract.targetUser?.id || '', file: null, removeAttachment: false }; dialog.value = true }
+function openEdit(contract) { form.value = { ...emptyForm(), ...contract, targetUserId: contract.targetUser?._id || contract.targetUser?.id || '', projectId: contract.project?._id || contract.project?.id || '', file: null, removeAttachment: false }; dialog.value = true }
 function openDetails(contract) { selectedDetail.value = contract; detailDialog.value = true }
 async function load() {
   loading.value = true
   try {
     const response = await api.get(props.admin ? '/admin/contracts' : '/contracts', { headers, params: props.admin ? { q: search.value } : undefined })
     contracts.value = response.data.data || []
-    if (props.admin) { const responseCustomers = await api.get('/admin/customers', { headers }); customers.value = responseCustomers.data.data || [] }
+    if (props.admin) { const [responseCustomers, responseProjects] = await Promise.all([api.get('/admin/customers', { headers }), api.get('/admin/projects', { headers })]); customers.value = responseCustomers.data.data || []; projects.value = responseProjects.data.data || [] }
   } catch (error) { notifyError(error) } finally { loading.value = false }
 }
 async function save() {
@@ -104,6 +110,7 @@ async function save() {
   try {
     const body = new FormData()
     body.append('targetUserId', form.value.targetUserId)
+    body.append('projectId', form.value.projectId || '')
     body.append('title', form.value.title)
     body.append('status', form.value.status)
     body.append('description', form.value.description || '')

@@ -29,6 +29,7 @@
 
     <q-table flat bordered wrap-cells row-key="_id" class="portal-module__table" :rows="tickets" :columns="columns" :loading="loading" no-data-label="Nenhum chamado encontrado">
       <template #body-cell-targetUser="props"><q-td :props="props">{{ props.row.targetUser?.name || 'Meu chamado' }}</q-td></template>
+      <template #body-cell-project="props"><q-td :props="props">{{ props.row.project?.title || '-' }}</q-td></template>
       <template #body-cell-description="props"><q-td :props="props"><span class="portal-module__description">{{ preview(props.row.description) }}</span></q-td></template>
       <template #body-cell-status="props"><q-td :props="props"><span class="portal-module__tag">{{ statusLabel(props.row.status) }}</span></q-td></template>
       <template #body-cell-type="props"><q-td :props="props">{{ typeLabel(props.row.type) }}</q-td></template>
@@ -42,6 +43,7 @@
         <q-card-section>
           <q-form @submit.prevent="save">
             <q-select v-if="admin" v-model="form.targetUserId" outlined label="Vincular a usuario ou cliente" :options="targetOptions" emit-value map-options :rules="[requiredRule]" />
+            <q-select v-if="admin && selectedTarget?.role === 'customer'" v-model="form.projectId" outlined clearable label="Projeto" :options="projectOptions" emit-value map-options class="q-mt-sm" />
             <q-input v-model="form.title" outlined label="Titulo" class="q-mt-sm" :rules="[requiredRule]" />
             <q-select v-if="admin" v-model="form.status" outlined label="Status" class="q-mt-sm" :options="statusOptions" emit-value map-options />
             <q-select v-model="form.type" outlined label="Tipo" class="q-mt-sm" :options="typeOptions" emit-value map-options />
@@ -73,6 +75,7 @@ const headers = { headers: { Authorization: `Bearer ${token}` } }
 const tickets = ref([])
 const notifications = ref([])
 const targets = ref([])
+const projects = ref([])
 const loading = ref(false)
 const saving = ref(false)
 const dialog = ref(false)
@@ -98,11 +101,14 @@ const typeOptions = [
   { label: 'Outro', value: 'other' },
 ]
 const targetOptions = computed(() => targets.value.map((item) => ({ label: `${item.name} - ${item.role === 'customer' ? 'cliente' : 'usuario'}`, value: item._id })))
+const selectedTarget = computed(() => targets.value.find((item) => item._id === form.value.targetUserId) || null)
+const projectOptions = computed(() => projects.value.filter((item) => !form.value.targetUserId || item.client?.id === form.value.targetUserId).map((item) => ({ label: item.title, value: item._id })))
 const activeCount = computed(() => tickets.value.filter((item) => ['open', 'in_progress'].includes(item.status)).length)
 const columns = computed(() => props.admin
   ? [
       { name: 'title', label: 'Titulo', field: 'title', align: 'left', sortable: true },
       { name: 'targetUser', label: 'Vinculado a', field: row => row.targetUser?.name || '-', align: 'left' },
+      { name: 'project', label: 'Projeto', field: row => row.project?.title || '-', align: 'left' },
       { name: 'type', label: 'Tipo', field: 'type', align: 'left' },
       { name: 'description', label: 'Descricao', field: 'description', align: 'left' },
       { name: 'status', label: 'Status', field: 'status', align: 'left' },
@@ -111,6 +117,7 @@ const columns = computed(() => props.admin
     ]
   : [
       { name: 'title', label: 'Titulo', field: 'title', align: 'left', sortable: true },
+      { name: 'project', label: 'Projeto', field: row => row.project?.title || '-', align: 'left' },
       { name: 'type', label: 'Tipo', field: 'type', align: 'left' },
       { name: 'description', label: 'Descricao', field: 'description', align: 'left' },
       { name: 'status', label: 'Status', field: 'status', align: 'left' },
@@ -118,14 +125,14 @@ const columns = computed(() => props.admin
       { name: 'actions', label: '', align: 'right' },
     ])
 
-function emptyForm() { return { _id: '', targetUserId: '', title: '', status: 'open', type: 'support', description: '' } }
+function emptyForm() { return { _id: '', targetUserId: '', projectId: '', title: '', status: 'open', type: 'support', description: '' } }
 function requiredRule(value) { return Boolean(String(value || '').trim()) || 'Preencha este campo.' }
 function formatDate(value) { return value ? new Date(value).toLocaleDateString('pt-BR') : '-' }
 function preview(value) { const text = String(value || '').trim(); return text.length > 48 ? `${text.slice(0, 48)}...` : text || '-' }
 function statusLabel(value) { return statusOptions.find((item) => item.value === value)?.label || value || '-' }
 function typeLabel(value) { return typeOptions.find((item) => item.value === value)?.label || value || '-' }
 function openCreate() { form.value = emptyForm(); if (!props.admin) form.value.targetUserId = undefined; dialog.value = true }
-function openEdit(ticket) { form.value = { ...emptyForm(), ...ticket, targetUserId: ticket.targetUser?._id || ticket.targetUser?.id || '' }; dialog.value = true }
+function openEdit(ticket) { form.value = { ...emptyForm(), ...ticket, targetUserId: ticket.targetUser?._id || ticket.targetUser?.id || '', projectId: ticket.project?.id || ticket.project?._id || '' }; dialog.value = true }
 function openDetails(ticket) { selectedDetail.value = ticket; detailDialog.value = true }
 async function load() {
   if (!token) return
@@ -134,8 +141,9 @@ async function load() {
     const response = await api.get(props.admin ? '/admin/tickets' : '/tickets', { ...headers, params: props.admin ? { q: search.value, status: filterStatus.value, type: filterType.value } : undefined })
     tickets.value = response.data.data || []
     if (props.admin) {
-      const [users, customers] = await Promise.all([api.get('/admin/users', headers), api.get('/admin/customers', headers)])
+      const [users, customers, projectResponse] = await Promise.all([api.get('/admin/users', headers), api.get('/admin/customers', headers), api.get('/admin/projects', headers)])
       targets.value = [...(users.data.data || []), ...(customers.data.data || [])]
+      projects.value = projectResponse.data.data || []
     }
     if (!props.admin) await loadNotifications()
   } catch (error) { notifyError(error) } finally { loading.value = false }
@@ -154,7 +162,7 @@ async function save() {
     const endpoint = props.admin ? '/admin/tickets' : '/tickets'
     const response = form.value._id
       ? await api.put(`${endpoint}/${form.value._id}`, form.value, headers)
-      : await api.post(endpoint, props.admin ? form.value : { title: form.value.title, type: form.value.type, description: form.value.description }, headers)
+      : await api.post(endpoint, props.admin ? form.value : { title: form.value.title, type: form.value.type, description: form.value.description, projectId: form.value.projectId }, headers)
     if (form.value._id) tickets.value = tickets.value.map((item) => item._id === form.value._id ? response.data.data : item)
     else tickets.value.unshift(response.data.data)
     dialog.value = false

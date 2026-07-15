@@ -14,6 +14,7 @@
 
     <q-table flat bordered wrap-cells row-key="_id" class="portal-module__table" :rows="costs" :columns="columns" :loading="loading" no-data-label="Nenhum custo encontrado">
       <template #body-cell-owner="props"><q-td :props="props">{{ ownerLabel(props.row) }}</q-td></template>
+      <template #body-cell-project="props"><q-td :props="props">{{ props.row.projectRef?.title || props.row.project || '-' }}</q-td></template>
       <template #body-cell-description="props"><q-td :props="props"><span class="portal-module__description">{{ preview(props.row.description) }}</span></q-td></template>
       <template #body-cell-amount="props"><q-td :props="props">{{ money(props.row.amount, props.row.currency) }}</q-td></template>
       <template #body-cell-status="props"><q-td :props="props"><span class="portal-module__tag">{{ statusLabel(props.row.status) }}</span></q-td></template>
@@ -41,6 +42,7 @@
               <q-input v-model="form.date" outlined type="date" label="Data" :rules="[requiredRule]" />
             </div>
             <q-input v-model="form.project" outlined label="Projeto ou curso" class="q-mt-sm" />
+            <q-select v-model="form.projectId" outlined clearable label="Vincular a projeto" :options="projectOptions" emit-value map-options class="q-mt-sm" />
             <q-input v-model="form.description" outlined type="textarea" autogrow label="Descricao" class="q-mt-sm" />
             <q-file v-model="form.file" outlined label="Anexo imagem, DOC, PDF ou Excel" accept="image/*,.pdf,.doc,.docx,.xls,.xlsx,.csv" class="q-mt-sm"><template #prepend><q-icon name="mdi-paperclip" /></template></q-file>
             <q-toggle v-if="form._id && form.attachment" v-model="form.removeAttachment" label="Remover anexo atual" color="negative" class="q-mt-sm" />
@@ -74,6 +76,7 @@ const headers = { Authorization: `Bearer ${token}` }
 const costs = ref([])
 const users = ref([])
 const customers = ref([])
+const projects = ref([])
 const loading = ref(false)
 const saving = ref(false)
 const dialog = ref(false)
@@ -96,6 +99,7 @@ const targetOptions = computed(() => {
   const source = form.value.ownerType === 'customer' ? customers.value : users.value
   return source.map((item) => ({ label: `${item.name} - ${emailPreview(item.email)}`, value: item._id }))
 })
+const projectOptions = computed(() => projects.value.filter((item) => form.value.ownerType !== 'customer' || !form.value.ownerId || item.client?.id === form.value.ownerId).map((item) => ({ label: item.title, value: item._id })))
 const columns = [
   { name: 'title', label: 'Titulo', field: 'title', align: 'left', sortable: true },
   { name: 'owner', label: 'Destino', field: row => row.owner?.name || row.ownerType, align: 'left' },
@@ -109,7 +113,7 @@ const columns = [
   { name: 'actions', label: '', align: 'right' },
 ]
 
-function emptyForm() { return { _id: '', ownerType: 'company', ownerId: '', title: '', status: 'active', project: '', description: '', amount: 0, currency: 'BRL', date: new Date().toISOString().slice(0, 10), type: 'single', file: null, attachment: null, removeAttachment: false } }
+function emptyForm() { return { _id: '', ownerType: 'company', ownerId: '', title: '', status: 'active', project: '', projectId: '', description: '', amount: 0, currency: 'BRL', date: new Date().toISOString().slice(0, 10), type: 'single', file: null, attachment: null, removeAttachment: false } }
 function requiredRule(value) { return Boolean(String(value ?? '').trim()) || 'Preencha este campo.' }
 function money(value, currency = 'BRL') { return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: currency || 'BRL' }).format(Number(value || 0)) }
 function formatDate(value) { return value ? new Date(value).toLocaleDateString('pt-BR') : '-' }
@@ -120,20 +124,22 @@ function typeLabel(value) { return typeOptions.find((item) => item.value === val
 function ownerLabel(row) { return row.owner?.name || (row.ownerType === 'company' ? 'Empresa Aito' : row.ownerType === 'customer' ? 'Cliente' : 'Usuario') }
 function selectedFile(value) { return value?.item ? value.item(0) : Array.isArray(value) ? value[0] : value }
 function openCreate() { form.value = emptyForm(); dialog.value = true }
-function openEdit(row) { form.value = { ...emptyForm(), ...row, ownerId: row.owner?._id || row.owner?.id || '', date: row.date ? String(row.date).slice(0, 10) : '', file: null, removeAttachment: false }; dialog.value = true }
+function openEdit(row) { form.value = { ...emptyForm(), ...row, ownerId: row.owner?._id || row.owner?.id || '', projectId: row.projectRef?._id || row.projectRef?.id || '', date: row.date ? String(row.date).slice(0, 10) : '', file: null, removeAttachment: false }; dialog.value = true }
 function openDetails(row) { selectedDetail.value = row; detailDialog.value = true }
 function changeOwnerType() { form.value.ownerId = '' }
 async function load() {
   loading.value = true
   try {
-    const [costResponse, usersResponse, customersResponse] = await Promise.all([
+    const [costResponse, usersResponse, customersResponse, projectsResponse] = await Promise.all([
       api.get('/admin/costs', { params: { q: search.value, ownerType: filterOwner.value, status: filterStatus.value }, headers }),
       api.get('/admin/users', { headers }),
       api.get('/admin/customers', { headers }),
+      api.get('/admin/projects', { headers }),
     ])
     costs.value = costResponse.data.data || []
     users.value = usersResponse.data.data || []
     customers.value = customersResponse.data.data || []
+    projects.value = projectsResponse.data.data || []
   } catch (error) { notifyError(error) } finally { loading.value = false }
 }
 async function save() {

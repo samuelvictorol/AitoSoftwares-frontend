@@ -4,11 +4,12 @@
       <header class="customer-app__header"><router-link class="customer-app__brand" to="/"><img src="/favicon.png" alt="" /><span>AITO<span>SOFTWARES</span></span></router-link><div class="customer-app__session"><strong>{{ firstName }}</strong><q-btn flat round icon="mdi-logout" aria-label="Sair" @click="logout"><q-tooltip>Sair</q-tooltip></q-btn></div></header>
       <nav class="customer-app__nav" aria-label="Area do cliente"><button v-for="item in menu" :key="item.id" type="button" :class="{ 'is-active': activeMenu === item.id }" @click="activeMenu = item.id"><q-icon :name="item.icon" /> {{ item.label }}</button></nav>
 
-      <main v-if="activeMenu === 'projects'" class="customer-app__main"><p class="customer-app__eyebrow">Area do cliente</p><div class="customer-app__cards"><section><q-icon name="mdi-progress-check" size="28px" /><span>Projeto principal</span><strong>Planejamento inicial</strong><small>Esboco preparado para a proxima etapa.</small></section><section><q-icon name="mdi-calendar-clock-outline" size="28px" /><span>Proximo marco</span><strong>Em breve</strong><small>As atualizacoes aparecerao aqui.</small></section><section><q-icon name="mdi-file-document-outline" size="28px" /><span>Contratos</span><strong>Documentos liberados</strong><small>Consulte os contratos no menu.</small></section></div><div class="customer-app__dashboard"><FinanceDashboard title="Resumo financeiro" /></div></main>
+      <main v-if="activeMenu === 'projects'" class="customer-app__main customer-app__wide"><ProjectManager /></main>
       <main v-else-if="activeMenu === 'finance'" class="customer-app__main customer-app__wide"><FinanceDashboard /></main>
       <main v-else-if="activeMenu === 'tickets'" class="customer-app__main customer-app__wide"><SupportTicketsPanel /></main>
       <main v-else-if="activeMenu === 'contracts'" class="customer-app__main customer-app__wide"><ContractManager /></main>
       <main v-else-if="activeMenu === 'credentials'" class="customer-app__main customer-app__wide"><CredentialManager /></main>
+      <main v-else-if="activeMenu === 'invoices'" class="customer-app__main customer-app__wide"><InvoiceManager /></main>
       <main v-else class="customer-app__main customer-app__profile"><p class="customer-app__eyebrow">Meu perfil</p><q-form class="customer-app__profile-form" @submit.prevent="saveProfile"><q-input v-model="profile.name" outlined label="Nome" /><q-input v-model="profile.email" outlined label="E-mail" readonly /><q-input v-model="profile.phone" outlined label="Telefone" readonly /><q-btn unelevated no-caps type="submit" label="Salvar nome" icon="mdi-content-save" :loading="saving" /></q-form></main>
     </div></q-page></q-page-container>
   </q-layout>
@@ -22,9 +23,11 @@ import FinanceDashboard from 'components/FinanceDashboard.vue'
 import SupportTicketsPanel from 'components/SupportTicketsPanel.vue'
 import ContractManager from 'components/ContractManager.vue'
 import CredentialManager from 'components/CredentialManager.vue'
+import ProjectManager from 'components/ProjectManager.vue'
+import InvoiceManager from 'components/InvoiceManager.vue'
 
 const router = useRouter(); const $q = useQuasar(); const sessionUser = ref({}); const activeMenu = ref('projects'); const saving = ref(false); const profile = reactive({ name: '', email: '', phone: '' })
-const menu = [{ id: 'projects', label: 'Dashboard', icon: 'mdi-view-dashboard-outline' }, { id: 'finance', label: 'Financeiro', icon: 'mdi-cash-multiple' }, { id: 'tickets', label: 'Suporte', icon: 'mdi-help' }, { id: 'contracts', label: 'Contratos', icon: 'mdi-file-document-outline' }, { id: 'credentials', label: 'Credenciais', icon: 'mdi-key-chain-variant' }, { id: 'profile', label: 'Meu perfil', icon: 'mdi-account-outline' }]
+const menu = [{ id: 'projects', label: 'Projetos', icon: 'mdi-folder-star-outline' }, { id: 'finance', label: 'Financeiro', icon: 'mdi-cash-multiple' }, { id: 'tickets', label: 'Suporte', icon: 'mdi-help' }, { id: 'contracts', label: 'Contratos', icon: 'mdi-file-document-outline' }, { id: 'invoices', label: 'Notas fiscais', icon: 'mdi-receipt-text-outline' }, { id: 'credentials', label: 'Credenciais', icon: 'mdi-key-chain-variant' }, { id: 'profile', label: 'Meu perfil', icon: 'mdi-account-outline' }]
 const firstName = computed(() => String(sessionUser.value.name || 'Cliente Aito').trim().split(/\s+/)[0])
 onMounted(() => { try { sessionUser.value = JSON.parse(localStorage.getItem('aito_user') || '{}'); Object.assign(profile, sessionUser.value) } catch (error) { sessionUser.value = {} } })
 function saveProfile () { saving.value = true; const next = { ...sessionUser.value, name: profile.name.trim() }; localStorage.setItem('aito_user', JSON.stringify(next)); sessionUser.value = next; saving.value = false; $q.notify({ type: 'positive', message: 'Perfil atualizado.' }) }

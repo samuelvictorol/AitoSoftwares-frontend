@@ -22,6 +22,8 @@
             <q-tab name="tickets" icon="mdi-lifebuoy" label="Chamados" />
             <q-tab name="contracts" icon="mdi-file-document-outline" label="Contratos" />
             <q-tab name="credentials" icon="mdi-key-chain-variant" label="Credenciais" />
+            <q-tab name="projects" icon="mdi-folder-star-outline" label="Projetos" />
+            <q-tab name="invoices" icon="mdi-receipt-text-outline" label="Notas fiscais" />
             <q-tab name="lgpd" icon="mdi-shield-lock-outline" label="LGPD" />
           </q-tabs>
 
@@ -46,6 +48,8 @@
             <q-tab-panel name="tickets"><SupportTicketsPanel admin /></q-tab-panel>
             <q-tab-panel name="contracts"><ContractManager admin /></q-tab-panel>
             <q-tab-panel name="credentials"><CredentialManager admin /></q-tab-panel>
+            <q-tab-panel name="projects"><ProjectManager admin /></q-tab-panel>
+            <q-tab-panel name="invoices"><InvoiceManager admin /></q-tab-panel>
 
             <q-tab-panel name="lgpd"><section class="admin-app__section"><div class="admin-app__section-head"><div><p class="admin-app__eyebrow">08 / GOVERNANCA</p></div><q-btn unelevated no-caps class="admin-app__primary" icon="mdi-content-save" label="Salvar documento" :loading="loading.policy" @click="savePolicy" /></div><div class="admin-app__policy-tabs"><button v-for="item in policies" :key="item.type" type="button" :class="{ 'is-active': policyDraft.type === item.type }" @click="selectPolicy(item)"><q-icon :name="item.type === 'privacy' ? 'mdi-shield-lock-outline' : 'mdi-file-document-outline'" /> {{ item.type === 'privacy' ? 'Politica de privacidade' : 'Termos de servico' }}</button></div><q-input v-model="policyDraft.title" outlined label="Titulo" /><q-input v-model="policyDraft.version" outlined label="Versao" class="q-mt-md" /><q-input v-model="policyDraft.content" outlined type="textarea" autogrow label="Conteudo" class="q-mt-md" /><div class="admin-app__policy-actions"><q-btn unelevated no-caps class="admin-app__primary" icon="mdi-content-save" label="Salvar" :loading="loading.policy" @click="savePolicy" /><q-btn flat no-caps color="negative" icon="mdi-delete-outline" label="Excluir documento salvo" @click="deletePolicy" /></div></section></q-tab-panel>
           </q-tab-panels>
@@ -69,10 +73,12 @@ import SupportTicketsPanel from 'components/SupportTicketsPanel.vue'
 import ContractManager from 'components/ContractManager.vue'
 import CredentialManager from 'components/CredentialManager.vue'
 import GeneratedCredentialsDialog from 'components/GeneratedCredentialsDialog.vue'
+import ProjectManager from 'components/ProjectManager.vue'
+import InvoiceManager from 'components/InvoiceManager.vue'
 
 export default {
   name: 'AdminPanelPage',
-  components: { FinanceDashboard, AdminCostManager, SupportTicketsPanel, ContractManager, CredentialManager, GeneratedCredentialsDialog },
+  components: { FinanceDashboard, AdminCostManager, SupportTicketsPanel, ContractManager, CredentialManager, ProjectManager, InvoiceManager, GeneratedCredentialsDialog },
   data () {
     return {
       tab: 'overview', token: localStorage.getItem('aito_admin_token'), admin: {}, leads: [], users: [], customers: [], policies: [], leadSearch: '', leadStatus: '', personSearch: '', leadDialog: false, personDialog: false, detailDialog: false, selectedDetail: {}, credentialsDialogOpen: false, generatedCredentials: { customer: {}, password: '' }, leadForm: this.emptyLead(), personForm: this.emptyPerson('user'), policyDraft: {},
