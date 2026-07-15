@@ -14,7 +14,8 @@
           </section>
 
           <q-tabs v-model="tab" dense align="left" outside-arrows mobile-arrows class="admin-app__tabs" active-color="teal-3" indicator-color="teal-4">
-            <q-tab name="overview" icon="mdi-view-dashboard-outline" label="Dashboard" />
+            <q-tab name="projects" icon="mdi-folder-star-outline" label="Projetos" />
+            <q-tab name="overview" icon="mdi-finance" label="Dashboard" />
             <q-tab name="leads" icon="mdi-account-multiple-outline" label="Leads" />
             <q-tab name="users" icon="mdi-account-outline" label="Usuarios" />
             <q-tab name="customers" icon="mdi-briefcase-outline" label="Clientes" />
@@ -22,7 +23,6 @@
             <q-tab name="tickets" icon="mdi-lifebuoy" label="Chamados" />
             <q-tab name="contracts" icon="mdi-file-document-outline" label="Contratos" />
             <q-tab name="credentials" icon="mdi-key-chain-variant" label="Credenciais" />
-            <q-tab name="projects" icon="mdi-folder-star-outline" label="Projetos" />
             <q-tab name="invoices" icon="mdi-receipt-text-outline" label="Notas fiscais" />
             <q-tab name="lgpd" icon="mdi-shield-lock-outline" label="LGPD" />
           </q-tabs>
@@ -81,7 +81,7 @@ export default {
   components: { FinanceDashboard, AdminCostManager, SupportTicketsPanel, ContractManager, CredentialManager, ProjectManager, InvoiceManager, GeneratedCredentialsDialog },
   data () {
     return {
-      tab: 'overview', token: localStorage.getItem('aito_admin_token'), admin: {}, leads: [], users: [], customers: [], policies: [], leadSearch: '', leadStatus: '', personSearch: '', leadDialog: false, personDialog: false, detailDialog: false, selectedDetail: {}, credentialsDialogOpen: false, generatedCredentials: { customer: {}, password: '' }, leadForm: this.emptyLead(), personForm: this.emptyPerson('user'), policyDraft: {},
+      tab: 'projects', token: localStorage.getItem('aito_admin_token'), admin: {}, leads: [], users: [], customers: [], policies: [], leadSearch: '', leadStatus: '', personSearch: '', leadDialog: false, personDialog: false, detailDialog: false, selectedDetail: {}, credentialsDialogOpen: false, generatedCredentials: { customer: {}, password: '' }, leadForm: this.emptyLead(), personForm: this.emptyPerson('user'), policyDraft: {},
       leadStatuses: [{ label: 'Novo', value: 'new' }, { label: 'Contatado', value: 'contacted' }, { label: 'Qualificado', value: 'qualified' }, { label: 'Fechado', value: 'closed' }],
       leadColumns: [{ name: 'name', label: 'Nome', field: 'name', align: 'left', sortable: true }, { name: 'email', label: 'Contato', field: row => row.email || row.phone || '-', align: 'left' }, { name: 'type', label: 'Tipo', field: 'flowType', align: 'left' }, { name: 'message', label: 'Mensagem', field: 'message', align: 'left' }, { name: 'tags', label: 'Tags', field: 'tags', align: 'left' }, { name: 'status', label: 'Status', field: 'status', align: 'left' }, { name: 'createdAt', label: 'Entrada', field: row => this.formatDate(row.createdAt), align: 'left' }, { name: 'actions', label: '', align: 'right' }],
       personColumns: [{ name: 'name', label: 'Nome', field: 'name', align: 'left', sortable: true }, { name: 'email', label: 'E-mail', field: 'email', align: 'left' }, { name: 'phone', label: 'Telefone', field: 'phone', align: 'left' }, { name: 'role', label: 'Tipo', field: 'role', align: 'left' }, { name: 'active', label: 'Ativo', field: 'active', align: 'center' }, { name: 'actions', label: '', align: 'right' }],

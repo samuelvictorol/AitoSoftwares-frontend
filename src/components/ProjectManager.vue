@@ -4,7 +4,7 @@
   </section>
   <section v-else class="portal-module project-manager">
     <div class="portal-module__head">
-      <div><span class="portal-module__eyebrow">Projetos</span><h2>{{ admin ? 'Operacoes em um so lugar' : 'Seus projetos' }}</h2><p>{{ admin ? 'Acompanhe entregas, documentos, financeiro e board por cliente.' : 'Acompanhe o andamento e os documentos de cada projeto.' }}</p></div>
+      <div><span class="portal-module__eyebrow">Projetos</span></div>
       <q-btn v-if="admin" unelevated no-caps class="portal-module__primary" icon="mdi-plus" label="Novo projeto" @click="openCreate" />
     </div>
     <div class="project-manager__filters"><q-input v-if="admin" v-model="search" outlined dense clearable label="Buscar projeto" @keyup.enter="load"><template #prepend><q-icon name="mdi-magnify" /></template></q-input><q-btn flat round icon="mdi-refresh" aria-label="Atualizar projetos" :loading="loading" @click="load"><q-tooltip>Atualizar</q-tooltip></q-btn></div>
@@ -13,7 +13,7 @@
       <article v-for="project in projects" :key="project._id" class="project-card">
         <div class="project-card__logo"><img v-if="project.logo" :src="project.logo.url" :alt="project.title" /><q-icon v-else name="mdi-folder-star-outline" size="34px" /></div>
         <div class="project-card__body"><div class="project-card__top"><span class="project-card__status">{{ statusLabel(project.status) }}</span><span v-if="admin">{{ project.client?.name || 'Projeto interno' }}</span></div><h3>{{ project.title }}</h3><p>{{ preview(project.description) }}</p><div class="project-card__links"><a v-if="project.githubLink" :href="project.githubLink" target="_blank" rel="noopener noreferrer"><q-icon name="mdi-github" /> GitHub</a><a v-for="link in project.links || []" :key="`${project._id}-${link.link}`" :href="link.link" target="_blank" rel="noopener noreferrer"><q-icon name="mdi-open-in-new" /> {{ link.title }}</a></div></div>
-        <div class="project-card__footer"><div class="project-card__stats"><span><q-icon name="mdi-view-kanban-outline" /> {{ project.counts?.tasks || 0 }} tarefas</span><span><q-icon name="mdi-file-document-outline" /> {{ project.counts?.contracts || 0 }} docs</span><span><q-icon name="mdi-cash-multiple" /> {{ project.counts?.costs || 0 }} custos</span></div><div class="project-card__actions"><q-btn flat dense no-caps icon="mdi-view-dashboard-outline" label="Abrir board" @click="selectedProject = project" /><q-btn v-if="admin" flat round dense icon="mdi-pencil" aria-label="Editar projeto" @click="openEdit(project)" /><q-btn v-if="admin" flat round dense color="negative" icon="mdi-delete-outline" aria-label="Excluir projeto" @click="remove(project)" /></div></div>
+        <div class="project-card__footer"><div class="project-card__stats"><span><q-icon name="mdi-view-kanban-outline" /> {{ project.counts?.tasks || 0 }} tarefas</span><span><q-icon name="mdi-file-document-outline" /> {{ project.counts?.contracts || 0 }} docs</span><span><q-icon name="mdi-cash-multiple" /> {{ project.counts?.costs || 0 }} custos</span></div><div class="project-card__actions"><q-btn flat no-caps icon="mdi-view-dashboard-outline" label="Abrir board" @click="selectedProject = project" /><q-btn v-if="admin" flat round dense icon="mdi-pencil" aria-label="Editar projeto" @click="openEdit(project)" /><q-btn v-if="admin" flat round dense color="negative" icon="mdi-delete-outline" aria-label="Excluir projeto" @click="remove(project)" /></div></div>
       </article>
     </div>
 
