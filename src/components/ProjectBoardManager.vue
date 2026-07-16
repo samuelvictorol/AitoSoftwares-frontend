@@ -12,6 +12,8 @@
       </div>
     </template>
 
+    <ProjectLinkedPanels :project="project" :admin="admin" />
+
     <q-dialog v-model="taskDialog"><q-card class="portal-module__dialog board-module__dialog"><q-card-section class="portal-module__dialog-head"><div><span class="portal-module__eyebrow">Task</span><h3>{{ taskForm._id ? 'Editar tarefa' : 'Nova tarefa' }}</h3></div><q-btn flat round dense icon="mdi-close" aria-label="Fechar" @click="taskDialog = false" /></q-card-section><q-card-section><q-form @submit.prevent="saveTask"><q-input v-model="taskForm.title" outlined label="Titulo" :rules="[requiredRule]" /><q-input v-model="taskForm.description" outlined type="textarea" autogrow label="Descricao" class="q-mt-sm" /><q-select v-model="taskForm.columnKey" outlined label="Coluna" :options="columnOptions" emit-value map-options class="q-mt-sm" /><div class="board-module__dates"><q-input v-model="taskForm.startDate" outlined type="date" label="Data de inicio" /><q-input v-model="taskForm.dueDate" outlined type="date" label="Data limite" /></div><q-btn unelevated no-caps class="portal-module__primary full-width q-mt-md" type="submit" label="Salvar tarefa" :loading="saving" /></q-form></q-card-section></q-card></q-dialog>
 
     <q-dialog v-model="columnsDialog"><q-card class="portal-module__dialog board-module__dialog"><q-card-section class="portal-module__dialog-head"><div><span class="portal-module__eyebrow">Board</span><h3>Colunas</h3></div><q-btn flat round dense icon="mdi-close" aria-label="Fechar" @click="columnsDialog = false" /></q-card-section><q-card-section><div v-for="(column, index) in editableColumns" :key="column.key" class="board-module__column-edit"><q-input v-model="column.title" outlined dense label="Titulo" /><q-btn flat round dense color="negative" icon="mdi-delete-outline" aria-label="Remover coluna" :disable="editableColumns.length <= 1" @click="editableColumns.splice(index, 1)" /></div><div class="board-module__column-add"><q-input v-model="newColumnTitle" outlined dense label="Nova coluna" @keyup.enter="addColumn" /><q-btn flat round dense icon="mdi-plus" aria-label="Adicionar coluna" @click="addColumn" /></div><q-btn unelevated no-caps class="portal-module__primary full-width q-mt-md" label="Salvar colunas" :loading="saving" @click="saveColumns" /></q-card-section></q-card></q-dialog>
@@ -24,6 +26,7 @@
 import { computed, onMounted, ref } from 'vue'
 import { useQuasar } from 'quasar'
 import { api } from 'boot/axios'
+import ProjectLinkedPanels from 'components/ProjectLinkedPanels.vue'
 
 const props = defineProps({ project: { type: Object, required: true }, admin: { type: Boolean, default: false } })
 defineEmits(['back'])

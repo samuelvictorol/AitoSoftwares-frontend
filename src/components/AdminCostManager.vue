@@ -42,7 +42,7 @@
               <q-input v-model="form.date" outlined type="date" label="Data" :rules="[requiredRule]" />
             </div>
             <q-input v-model="form.project" outlined label="Projeto ou curso" class="q-mt-sm" />
-            <q-select v-model="form.projectId" outlined clearable label="Vincular a projeto" :options="projectOptions" emit-value map-options class="q-mt-sm" />
+            <q-select v-if="!projectId" v-model="form.projectId" outlined clearable label="Vincular a projeto" :options="projectOptions" emit-value map-options class="q-mt-sm" />
             <q-input v-model="form.description" outlined type="textarea" autogrow label="Descricao" class="q-mt-sm" />
             <q-file v-model="form.file" outlined label="Anexo imagem, DOC, PDF ou Excel" accept="image/*,.pdf,.doc,.docx,.xls,.xlsx,.csv" class="q-mt-sm"><template #prepend><q-icon name="mdi-paperclip" /></template></q-file>
             <q-toggle v-if="form._id && form.attachment" v-model="form.removeAttachment" label="Remover anexo atual" color="negative" class="q-mt-sm" />
@@ -71,6 +71,8 @@ import { useQuasar } from 'quasar'
 import { api } from 'boot/axios'
 
 const $q = useQuasar()
+const props = defineProps({ projectId: { type: String, default: '' }, project: { type: Object, default: null } })
+const projectId = props.projectId
 const token = localStorage.getItem('aito_admin_token')
 const headers = { Authorization: `Bearer ${token}` }
 const costs = ref([])
@@ -96,10 +98,13 @@ const statusOptions = [{ label: 'Ativo', value: 'active' }, { label: 'Inativo', 
 const typeOptions = [{ label: 'Unico', value: 'single' }, { label: 'Mensal', value: 'monthly' }, { label: 'Bimestral', value: 'bimonthly' }, { label: 'Trimestral', value: 'quarterly' }, { label: 'Semestral', value: 'semiannual' }, { label: 'Anual', value: 'annual' }]
 const currencyOptions = [{ label: 'Real (BRL)', value: 'BRL' }, { label: 'Dolar (USD)', value: 'USD' }]
 const targetOptions = computed(() => {
-  const source = form.value.ownerType === 'customer' ? customers.value : users.value
+  const projectClientIds = (props.project?.clients || []).map((item) => item.id || item._id || item)
+  const source = form.value.ownerType === 'customer'
+    ? customers.value.filter((item) => !projectId || !projectClientIds.length || projectClientIds.includes(item._id))
+    : users.value
   return source.map((item) => ({ label: `${item.name} - ${emailPreview(item.email)}`, value: item._id }))
 })
-const projectOptions = computed(() => projects.value.filter((item) => form.value.ownerType !== 'customer' || !form.value.ownerId || item.client?.id === form.value.ownerId).map((item) => ({ label: item.title, value: item._id })))
+const projectOptions = computed(() => projects.value.filter((item) => { const clients = item.clients?.length ? item.clients : (item.client ? [item.client] : []); return form.value.ownerType !== 'customer' || !form.value.ownerId || clients.some((client) => (client.id || client._id || client) === form.value.ownerId) }).map((item) => ({ label: item.title, value: item._id })))
 const columns = [
   { name: 'title', label: 'Titulo', field: 'title', align: 'left', sortable: true },
   { name: 'owner', label: 'Destino', field: row => row.owner?.name || row.ownerType, align: 'left' },
@@ -113,7 +118,7 @@ const columns = [
   { name: 'actions', label: '', align: 'right' },
 ]
 
-function emptyForm() { return { _id: '', ownerType: 'company', ownerId: '', title: '', status: 'active', project: '', projectId: '', description: '', amount: 0, currency: 'BRL', date: new Date().toISOString().slice(0, 10), type: 'single', file: null, attachment: null, removeAttachment: false } }
+function emptyForm() { return { _id: '', ownerType: 'company', ownerId: '', title: '', status: 'active', project: '', projectId, description: '', amount: 0, currency: 'BRL', date: new Date().toISOString().slice(0, 10), type: 'single', file: null, attachment: null, removeAttachment: false } }
 function requiredRule(value) { return Boolean(String(value ?? '').trim()) || 'Preencha este campo.' }
 function money(value, currency = 'BRL') { return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: currency || 'BRL' }).format(Number(value || 0)) }
 function formatDate(value) { return value ? new Date(value).toLocaleDateString('pt-BR') : '-' }
@@ -124,14 +129,14 @@ function typeLabel(value) { return typeOptions.find((item) => item.value === val
 function ownerLabel(row) { return row.owner?.name || (row.ownerType === 'company' ? 'Empresa Aito' : row.ownerType === 'customer' ? 'Cliente' : 'Usuario') }
 function selectedFile(value) { return value?.item ? value.item(0) : Array.isArray(value) ? value[0] : value }
 function openCreate() { form.value = emptyForm(); dialog.value = true }
-function openEdit(row) { form.value = { ...emptyForm(), ...row, ownerId: row.owner?._id || row.owner?.id || '', projectId: row.projectRef?._id || row.projectRef?.id || '', date: row.date ? String(row.date).slice(0, 10) : '', file: null, removeAttachment: false }; dialog.value = true }
+function openEdit(row) { form.value = { ...emptyForm(), ...row, ownerId: row.owner?._id || row.owner?.id || '', projectId: projectId || row.projectRef?._id || row.projectRef?.id || '', date: row.date ? String(row.date).slice(0, 10) : '', file: null, removeAttachment: false }; dialog.value = true }
 function openDetails(row) { selectedDetail.value = row; detailDialog.value = true }
 function changeOwnerType() { form.value.ownerId = '' }
 async function load() {
   loading.value = true
   try {
     const [costResponse, usersResponse, customersResponse, projectsResponse] = await Promise.all([
-      api.get('/admin/costs', { params: { q: search.value, ownerType: filterOwner.value, status: filterStatus.value }, headers }),
+      api.get('/admin/costs', { params: { q: search.value, ownerType: filterOwner.value, status: filterStatus.value, projectId: projectId || undefined }, headers }),
       api.get('/admin/users', { headers }),
       api.get('/admin/customers', { headers }),
       api.get('/admin/projects', { headers }),

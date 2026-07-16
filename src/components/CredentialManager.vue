@@ -25,7 +25,7 @@
         <q-card-section>
           <q-form @submit.prevent="save">
             <q-select v-model="form.targetUserId" outlined label="Cliente" :options="customerOptions" emit-value map-options :rules="[requiredRule]" />
-            <q-select v-model="form.projectId" outlined clearable label="Projeto" :options="projectOptions" emit-value map-options class="q-mt-sm" />
+            <q-select v-if="!projectId" v-model="form.projectId" outlined clearable label="Projeto" :options="projectOptions" emit-value map-options class="q-mt-sm" />
             <q-input v-model="form.title" outlined label="Titulo" class="q-mt-sm" :rules="[requiredRule]" />
             <q-input v-model="form.description" outlined type="textarea" autogrow label="Descricao" class="q-mt-sm" />
             <q-input v-model="form.link" outlined type="url" label="Link" class="q-mt-sm" hint="Pode ser um painel, ambiente ou documentacao." />
@@ -49,7 +49,8 @@ import { computed, onMounted, ref } from 'vue'
 import { useQuasar } from 'quasar'
 import { api } from 'boot/axios'
 
-const props = defineProps({ admin: { type: Boolean, default: false } })
+const props = defineProps({ admin: { type: Boolean, default: false }, projectId: { type: String, default: '' }, project: { type: Object, default: null } })
+const projectId = props.projectId
 const $q = useQuasar()
 const token = localStorage.getItem(props.admin ? 'aito_admin_token' : 'aito_user_token')
 const headers = { Authorization: `Bearer ${token}` }
@@ -63,8 +64,9 @@ const detailDialog = ref(false)
 const search = ref('')
 const form = ref(emptyForm())
 const selectedDetail = ref({})
-const customerOptions = computed(() => customers.value.map((item) => ({ label: `${item.name} - ${item.email}`, value: item._id })))
-const projectOptions = computed(() => projects.value.filter((item) => !form.value.targetUserId || item.client?.id === form.value.targetUserId).map((item) => ({ label: item.title, value: item._id })))
+const projectClientIds = computed(() => (props.project?.clients || []).map((item) => item.id || item._id || item))
+const customerOptions = computed(() => customers.value.filter((item) => !projectId || !projectClientIds.value.length || projectClientIds.value.includes(item._id)).map((item) => ({ label: `${item.name} - ${item.email}`, value: item._id })))
+const projectOptions = computed(() => projects.value.filter((item) => { const clients = item.clients?.length ? item.clients : (item.client ? [item.client] : []); return !form.value.targetUserId || clients.some((client) => (client.id || client._id || client) === form.value.targetUserId) }).map((item) => ({ label: item.title, value: item._id })))
 const columns = computed(() => props.admin
   ? [
       { name: 'title', label: 'Titulo', field: 'title', align: 'left', sortable: true },
@@ -84,18 +86,18 @@ const columns = computed(() => props.admin
       { name: 'actions', label: '', align: 'right' },
     ])
 
-function emptyForm() { return { _id: '', targetUserId: '', projectId: '', title: '', description: '', link: '' } }
+function emptyForm() { return { _id: '', targetUserId: '', projectId, title: '', description: '', link: '' } }
 function requiredRule(value) { return Boolean(String(value || '').trim()) || 'Preencha este campo.' }
 function formatDate(value) { return value ? new Date(value).toLocaleDateString('pt-BR') : '-' }
 function preview(value) { const text = String(value || '').trim(); return text.length > 48 ? `${text.slice(0, 48)}...` : text || '-' }
 function openCreate() { form.value = emptyForm(); dialog.value = true }
-function openEdit(item) { form.value = { ...emptyForm(), ...item, targetUserId: item.targetUser?._id || item.targetUser?.id || '', projectId: item.projectId?._id || item.projectId?.id || '' }; dialog.value = true }
+function openEdit(item) { form.value = { ...emptyForm(), ...item, targetUserId: item.targetUser?._id || item.targetUser?.id || '', projectId: projectId || item.projectId?._id || item.projectId?.id || '' }; dialog.value = true }
 function openDetails(item) { selectedDetail.value = item; detailDialog.value = true }
 
 async function load() {
   loading.value = true
   try {
-    const response = await api.get(props.admin ? '/admin/credentials' : '/credentials', { headers, params: props.admin ? { q: search.value } : undefined })
+    const response = await api.get(props.admin ? '/admin/credentials' : '/credentials', { headers, params: { ...(props.admin ? { q: search.value } : {}), projectId: projectId || undefined } })
     credentials.value = response.data.data || []
     if (props.admin) {
       const [customersResponse, projectsResponse] = await Promise.all([api.get('/admin/customers', { headers }), api.get('/admin/projects', { headers })])

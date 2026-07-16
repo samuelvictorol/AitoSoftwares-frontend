@@ -44,6 +44,7 @@ import CostChart from './CostChart.vue'
 const props = defineProps({
   title: { type: String, default: '' },
   admin: { type: Boolean, default: false },
+  projectId: { type: String, default: '' },
 })
 const $q = useQuasar()
 const loading = ref(false)
@@ -95,7 +96,8 @@ async function load() {
   if (!token) return
   loading.value = true
   try {
-    const [costResponse, summaryResponse] = await Promise.all([api.get(costsPath, headers), api.get(summaryPath, headers)])
+    const params = props.projectId ? { projectId: props.projectId } : undefined
+    const [costResponse, summaryResponse] = await Promise.all([api.get(costsPath, { ...headers, params }), api.get(summaryPath, { ...headers, params })])
     costs.value = costResponse.data.data || []
     summary.value = summaryResponse.data.data || summary.value
   } catch (error) {

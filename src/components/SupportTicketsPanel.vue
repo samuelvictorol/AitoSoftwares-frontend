@@ -43,7 +43,7 @@
         <q-card-section>
           <q-form @submit.prevent="save">
             <q-select v-if="admin" v-model="form.targetUserId" outlined label="Vincular a usuario ou cliente" :options="targetOptions" emit-value map-options :rules="[requiredRule]" />
-            <q-select v-if="admin && selectedTarget?.role === 'customer'" v-model="form.projectId" outlined clearable label="Projeto" :options="projectOptions" emit-value map-options class="q-mt-sm" />
+            <q-select v-if="admin && !projectId && selectedTarget?.role === 'customer'" v-model="form.projectId" outlined clearable label="Projeto" :options="projectOptions" emit-value map-options class="q-mt-sm" />
             <q-input v-model="form.title" outlined label="Titulo" class="q-mt-sm" :rules="[requiredRule]" />
             <q-select v-if="admin" v-model="form.status" outlined label="Status" class="q-mt-sm" :options="statusOptions" emit-value map-options />
             <q-select v-model="form.type" outlined label="Tipo" class="q-mt-sm" :options="typeOptions" emit-value map-options />
@@ -68,7 +68,8 @@ import { computed, onMounted, ref } from 'vue'
 import { useQuasar } from 'quasar'
 import { api } from 'boot/axios'
 
-const props = defineProps({ admin: { type: Boolean, default: false } })
+const props = defineProps({ admin: { type: Boolean, default: false }, projectId: { type: String, default: '' }, project: { type: Object, default: null } })
+const projectId = props.projectId
 const $q = useQuasar()
 const token = localStorage.getItem(props.admin ? 'aito_admin_token' : 'aito_user_token')
 const headers = { headers: { Authorization: `Bearer ${token}` } }
@@ -100,7 +101,8 @@ const typeOptions = [
   { label: 'Projeto', value: 'project' },
   { label: 'Outro', value: 'other' },
 ]
-const targetOptions = computed(() => targets.value.map((item) => ({ label: `${item.name} - ${item.role === 'customer' ? 'cliente' : 'usuario'}`, value: item._id })))
+const projectClientIds = computed(() => (props.project?.clients || []).map((item) => item.id || item._id || item))
+const targetOptions = computed(() => targets.value.filter((item) => !projectId || item.role !== 'customer' || !projectClientIds.value.length || projectClientIds.value.includes(item._id)).map((item) => ({ label: `${item.name} - ${item.role === 'customer' ? 'cliente' : 'usuario'}`, value: item._id })))
 const selectedTarget = computed(() => targets.value.find((item) => item._id === form.value.targetUserId) || null)
 const projectOptions = computed(() => projects.value.filter((item) => !form.value.targetUserId || item.client?.id === form.value.targetUserId).map((item) => ({ label: item.title, value: item._id })))
 const activeCount = computed(() => tickets.value.filter((item) => ['open', 'in_progress'].includes(item.status)).length)
@@ -125,20 +127,20 @@ const columns = computed(() => props.admin
       { name: 'actions', label: '', align: 'right' },
     ])
 
-function emptyForm() { return { _id: '', targetUserId: '', projectId: '', title: '', status: 'open', type: 'support', description: '' } }
+function emptyForm() { return { _id: '', targetUserId: '', projectId, title: '', status: 'open', type: 'support', description: '' } }
 function requiredRule(value) { return Boolean(String(value || '').trim()) || 'Preencha este campo.' }
 function formatDate(value) { return value ? new Date(value).toLocaleDateString('pt-BR') : '-' }
 function preview(value) { const text = String(value || '').trim(); return text.length > 48 ? `${text.slice(0, 48)}...` : text || '-' }
 function statusLabel(value) { return statusOptions.find((item) => item.value === value)?.label || value || '-' }
 function typeLabel(value) { return typeOptions.find((item) => item.value === value)?.label || value || '-' }
 function openCreate() { form.value = emptyForm(); if (!props.admin) form.value.targetUserId = undefined; dialog.value = true }
-function openEdit(ticket) { form.value = { ...emptyForm(), ...ticket, targetUserId: ticket.targetUser?._id || ticket.targetUser?.id || '', projectId: ticket.project?.id || ticket.project?._id || '' }; dialog.value = true }
+function openEdit(ticket) { form.value = { ...emptyForm(), ...ticket, targetUserId: ticket.targetUser?._id || ticket.targetUser?.id || '', projectId: projectId || ticket.project?.id || ticket.project?._id || '' }; dialog.value = true }
 function openDetails(ticket) { selectedDetail.value = ticket; detailDialog.value = true }
 async function load() {
   if (!token) return
   loading.value = true
   try {
-    const response = await api.get(props.admin ? '/admin/tickets' : '/tickets', { ...headers, params: props.admin ? { q: search.value, status: filterStatus.value, type: filterType.value } : undefined })
+    const response = await api.get(props.admin ? '/admin/tickets' : '/tickets', { ...headers, params: { ...(props.admin ? { q: search.value, status: filterStatus.value, type: filterType.value } : {}), projectId: projectId || undefined } })
     tickets.value = response.data.data || []
     if (props.admin) {
       const [users, customers, projectResponse] = await Promise.all([api.get('/admin/users', headers), api.get('/admin/customers', headers), api.get('/admin/projects', headers)])

@@ -24,7 +24,7 @@
         <q-card-section>
           <q-form @submit.prevent="save">
             <q-select v-model="form.targetUserId" outlined label="Cliente" :options="customerOptions" emit-value map-options :rules="[requiredRule]" />
-            <q-select v-model="form.projectId" outlined clearable label="Projeto" :options="projectOptions" emit-value map-options class="q-mt-sm" />
+            <q-select v-if="!projectId" v-model="form.projectId" outlined clearable label="Projeto" :options="projectOptions" emit-value map-options class="q-mt-sm" />
             <q-input v-model="form.title" outlined label="Titulo" class="q-mt-sm" :rules="[requiredRule]" />
             <q-input v-model="form.status" outlined label="Status descritivo" class="q-mt-sm" :rules="[requiredRule]" />
             <q-input v-model="form.description" outlined type="textarea" autogrow label="Descricao" class="q-mt-sm" />
@@ -50,7 +50,8 @@ import { computed, onMounted, ref } from 'vue'
 import { useQuasar } from 'quasar'
 import { api } from 'boot/axios'
 
-const props = defineProps({ admin: { type: Boolean, default: false } })
+const props = defineProps({ admin: { type: Boolean, default: false }, projectId: { type: String, default: '' }, project: { type: Object, default: null } })
+const projectId = props.projectId
 const $q = useQuasar()
 const token = localStorage.getItem(props.admin ? 'aito_admin_token' : 'aito_user_token')
 const headers = { Authorization: `Bearer ${token}` }
@@ -64,8 +65,9 @@ const detailDialog = ref(false)
 const form = ref(emptyForm())
 const search = ref('')
 const selectedDetail = ref({})
-const customerOptions = computed(() => customers.value.map((item) => ({ label: `${item.name} - ${item.email}`, value: item._id })))
-const projectOptions = computed(() => projects.value.filter((item) => !form.value.targetUserId || item.client?.id === form.value.targetUserId).map((item) => ({ label: item.title, value: item._id })))
+const projectClientIds = computed(() => (props.project?.clients || []).map((item) => item.id || item._id || item))
+const customerOptions = computed(() => customers.value.filter((item) => !projectId || !projectClientIds.value.length || projectClientIds.value.includes(item._id)).map((item) => ({ label: `${item.name} - ${item.email}`, value: item._id })))
+const projectOptions = computed(() => projects.value.filter((item) => { const clients = item.clients?.length ? item.clients : (item.client ? [item.client] : []); return !form.value.targetUserId || clients.some((client) => (client.id || client._id || client) === form.value.targetUserId) }).map((item) => ({ label: item.title, value: item._id })))
 const columns = computed(() => props.admin
   ? [
       { name: 'title', label: 'Titulo', field: 'title', align: 'left', sortable: true },
@@ -89,18 +91,18 @@ const columns = computed(() => props.admin
        { name: 'actions', label: '', align: 'right' },
     ])
 
-function emptyForm() { return { _id: '', targetUserId: '', projectId: '', title: '', description: '', status: 'Em analise', attachment: null, file: null, removeAttachment: false } }
+function emptyForm() { return { _id: '', targetUserId: '', projectId, title: '', description: '', status: 'Em analise', attachment: null, file: null, removeAttachment: false } }
 function requiredRule(value) { return Boolean(String(value || '').trim()) || 'Preencha este campo.' }
 function formatDate(value) { return value ? new Date(value).toLocaleDateString('pt-BR') : '-' }
 function preview(value) { const text = String(value || '').trim(); return text.length > 48 ? `${text.slice(0, 48)}...` : text || '-' }
 function selectedFile(value) { return value?.item ? value.item(0) : Array.isArray(value) ? value[0] : value }
 function openCreate() { form.value = emptyForm(); dialog.value = true }
-function openEdit(contract) { form.value = { ...emptyForm(), ...contract, targetUserId: contract.targetUser?._id || contract.targetUser?.id || '', projectId: contract.project?._id || contract.project?.id || '', file: null, removeAttachment: false }; dialog.value = true }
+function openEdit(contract) { form.value = { ...emptyForm(), ...contract, targetUserId: contract.targetUser?._id || contract.targetUser?.id || '', projectId: projectId || contract.project?._id || contract.project?.id || '', file: null, removeAttachment: false }; dialog.value = true }
 function openDetails(contract) { selectedDetail.value = contract; detailDialog.value = true }
 async function load() {
   loading.value = true
   try {
-    const response = await api.get(props.admin ? '/admin/contracts' : '/contracts', { headers, params: props.admin ? { q: search.value } : undefined })
+    const response = await api.get(props.admin ? '/admin/contracts' : '/contracts', { headers, params: { ...(props.admin ? { q: search.value } : {}), projectId: projectId || undefined } })
     contracts.value = response.data.data || []
     if (props.admin) { const [responseCustomers, responseProjects] = await Promise.all([api.get('/admin/customers', { headers }), api.get('/admin/projects', { headers })]); customers.value = responseCustomers.data.data || []; projects.value = responseProjects.data.data || [] }
   } catch (error) { notifyError(error) } finally { loading.value = false }
