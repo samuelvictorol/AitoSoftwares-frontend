@@ -13,22 +13,24 @@
             <div class="admin-app__stats"><span><strong>{{ leads.length }}</strong>Leads</span><span><strong>{{ users.length }}</strong>Usuarios</span><span><strong>{{ customers.length }}</strong>Clientes</span></div>
           </section>
 
-          <q-tabs v-model="tab" dense align="left" outside-arrows mobile-arrows class="admin-app__tabs" active-color="teal-3" indicator-color="teal-4">
+          <q-tabs v-model="navigationTab" dense align="left" outside-arrows mobile-arrows class="admin-app__tabs" active-color="teal-3" indicator-color="teal-4">
             <q-tab name="projects" icon="mdi-folder-star-outline" label="Projetos" />
             <q-tab name="overview" icon="mdi-finance" label="Dashboard" />
-            <q-tab name="leads" icon="mdi-account-multiple-outline" label="Leads" />
-            <q-tab name="users" icon="mdi-account-outline" label="Usuarios" />
-            <q-tab name="customers" icon="mdi-briefcase-outline" label="Clientes" />
-            <q-tab name="costs" icon="mdi-cash-multiple" label="Custos" />
-            <q-tab name="tickets" icon="mdi-lifebuoy" label="Chamados" />
-            <q-tab name="contracts" icon="mdi-file-document-outline" label="Contratos" />
-            <q-tab name="credentials" icon="mdi-key-chain-variant" label="Credenciais" />
-            <q-tab name="invoices" icon="mdi-receipt-text-outline" label="Notas fiscais" />
+            <q-tab name="detail" icon="mdi-view-grid-outline" label="Detalhar" />
             <q-tab name="lgpd" icon="mdi-shield-lock-outline" label="LGPD" />
           </q-tabs>
 
           <q-tab-panels v-model="tab" animated class="admin-app__panels">
             <q-tab-panel name="overview"><FinanceDashboard admin title="" /></q-tab-panel>
+
+            <q-tab-panel name="detail">
+              <section class="admin-app__section admin-detail-menu">
+                <div class="admin-app__section-head"><div><p class="admin-app__eyebrow">Gestao detalhada</p><h2>Escolha o que deseja abrir</h2><span>Todos os modulos administrativos reunidos em um unico lugar.</span></div></div>
+                <div class="admin-detail-menu__grid">
+                  <button v-for="item in detailOptions" :key="item.name" type="button" class="admin-detail-menu__item" @click="openDetail(item.name)"><q-icon :name="item.icon" size="26px" /><span>{{ item.label }}</span><small>{{ item.description }}</small><q-icon name="mdi-arrow-top-right" size="18px" class="admin-detail-menu__arrow" /></button>
+                </div>
+              </section>
+            </q-tab-panel>
 
             <q-tab-panel name="leads">
               <section class="admin-app__section"><div class="admin-app__section-head"><div><p class="admin-app__eyebrow">01 / CAPTACAO</p></div><q-btn unelevated no-caps class="admin-app__primary" icon="mdi-plus" label="Cadastrar lead" @click="openLeadDialog()" /></div>
@@ -82,6 +84,7 @@ export default {
   data () {
     return {
       tab: 'projects', token: localStorage.getItem('aito_admin_token'), admin: {}, leads: [], users: [], customers: [], policies: [], leadSearch: '', leadStatus: '', personSearch: '', leadDialog: false, personDialog: false, detailDialog: false, selectedDetail: {}, credentialsDialogOpen: false, generatedCredentials: { customer: {}, password: '' }, leadForm: this.emptyLead(), personForm: this.emptyPerson('user'), policyDraft: {},
+      detailOptions: [{ name: 'leads', label: 'Leads', description: 'Captacao e acompanhamento de oportunidades.', icon: 'mdi-account-multiple-outline' }, { name: 'users', label: 'Usuarios', description: 'Acessos, perfis e contas AitoLearn.', icon: 'mdi-account-outline' }, { name: 'customers', label: 'Clientes', description: 'Cadastros e acessos de clientes.', icon: 'mdi-briefcase-outline' }, { name: 'costs', label: 'Custos', description: 'Lancamentos financeiros e anexos.', icon: 'mdi-cash-multiple' }, { name: 'tickets', label: 'Chamados', description: 'Suporte e solicitacoes de atendimento.', icon: 'mdi-lifebuoy' }, { name: 'contracts', label: 'Contratos', description: 'Documentos e acordos vinculados.', icon: 'mdi-file-document-outline' }, { name: 'credentials', label: 'Credenciais', description: 'Chaves e acessos compartilhados.', icon: 'mdi-key-chain-variant' }, { name: 'invoices', label: 'Notas fiscais', description: 'Documentos fiscais e valores emitidos.', icon: 'mdi-receipt-text-outline' }],
       leadStatuses: [{ label: 'Novo', value: 'new' }, { label: 'Contatado', value: 'contacted' }, { label: 'Qualificado', value: 'qualified' }, { label: 'Fechado', value: 'closed' }],
       leadColumns: [{ name: 'name', label: 'Nome', field: 'name', align: 'left', sortable: true }, { name: 'email', label: 'Contato', field: row => row.email || row.phone || '-', align: 'left' }, { name: 'type', label: 'Tipo', field: 'flowType', align: 'left' }, { name: 'message', label: 'Mensagem', field: 'message', align: 'left' }, { name: 'tags', label: 'Tags', field: 'tags', align: 'left' }, { name: 'status', label: 'Status', field: 'status', align: 'left' }, { name: 'createdAt', label: 'Entrada', field: row => this.formatDate(row.createdAt), align: 'left' }, { name: 'actions', label: '', align: 'right' }],
       personColumns: [{ name: 'name', label: 'Nome', field: 'name', align: 'left', sortable: true }, { name: 'email', label: 'E-mail', field: 'email', align: 'left' }, { name: 'phone', label: 'Telefone', field: 'phone', align: 'left' }, { name: 'role', label: 'Tipo', field: 'role', align: 'left' }, { name: 'active', label: 'Ativo', field: 'active', align: 'center' }, { name: 'actions', label: '', align: 'right' }],
@@ -90,7 +93,11 @@ export default {
   },
   computed: {
     firstName () { return String(this.admin.name || 'Admin Aito').trim().split(/\s+/)[0] },
-    headers () { return { headers: { Authorization: `Bearer ${this.token}` } } }
+    headers () { return { headers: { Authorization: `Bearer ${this.token}` } } },
+    navigationTab: {
+      get () { return ['projects', 'overview', 'detail', 'lgpd'].includes(this.tab) ? this.tab : 'detail' },
+      set (value) { this.tab = value }
+    }
   },
   mounted () {
     try { this.admin = JSON.parse(localStorage.getItem('aito_admin_user') || '{}') } catch (error) { this.admin = {} }
@@ -107,6 +114,7 @@ export default {
     async loadPeople (role) { const key = role === 'customer' ? 'customers' : 'users'; this.loading[key] = true; try { const { data } = await api.get(`/admin/${key}`, { ...this.headers, params: { q: this.personSearch } }); this[key] = data.data || [] } catch (error) { this.notifyError(error) } finally { this.loading[key] = false } },
     async loadPolicies () { try { const { data } = await api.get('/admin/policies', this.headers); this.policies = data.data || []; this.selectPolicy(this.policies[0]) } catch (error) { this.notifyError(error) } },
     selectPolicy (policy) { if (policy) this.policyDraft = { ...policy } },
+    openDetail (name) { this.tab = name },
     openLeadDialog (lead) { this.leadForm = lead ? { ...lead } : this.emptyLead(); this.leadDialog = true },
     openDetails (lead) { this.selectedDetail = lead; this.detailDialog = true },
     async saveLead () { this.loading.save = true; try { const id = this.leadForm._id; const result = id ? await api.put(`/admin/leads/${id}`, this.leadForm, this.headers) : await api.post('/admin/leads', this.leadForm, this.headers); if (id) this.leads = this.leads.map(item => item._id === id ? result.data.data : item); else this.leads.unshift(result.data.data); this.leadDialog = false; this.$q.notify({ type: 'positive', message: 'Lead salvo.' }) } catch (error) { this.notifyError(error) } finally { this.loading.save = false } },
@@ -165,6 +173,14 @@ export default {
 .admin-app__detail-body p { margin: 0; white-space: pre-wrap; line-height: 1.6; }
 .admin-app__detail-body div { display: flex; justify-content: space-between; gap: 1rem; padding-top: .7rem; border-top: 1px solid rgba(143,255,238,.1); }
 .admin-app__detail-body span { color: rgba(229,255,250,.58); }
+.admin-detail-menu__grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: .75rem; }
+.admin-detail-menu__item { position: relative; display: grid; gap: .45rem; min-height: 138px; padding: 1rem; border: 1px solid rgba(19,188,157,.22); border-radius: .7rem; color: #effffb; background: linear-gradient(145deg, rgba(9,48,47,.76), rgba(3,20,21,.72)); text-align: left; cursor: pointer; font: inherit; transition: border-color .2s ease, transform .2s ease, background .2s ease; }
+.admin-detail-menu__item:hover, .admin-detail-menu__item:focus-visible { border-color: rgba(143,255,238,.7); background: linear-gradient(145deg, rgba(13,75,70,.82), rgba(3,24,25,.78)); transform: translateY(-2px); outline: none; }
+.admin-detail-menu__item > .q-icon:first-child { color: #50dcc4; }
+.admin-detail-menu__item span { color: #8fffee; font-size: .82rem; font-weight: 900; }
+.admin-detail-menu__item small { max-width: 22ch; color: rgba(229,255,250,.58); font-size: .68rem; line-height: 1.45; }
+.admin-detail-menu__arrow { position: absolute; right: .8rem; bottom: .8rem; color: #8fffee; }
 @media (max-width: 900px) { .admin-app__hero, .admin-app__section-head { align-items: flex-start; flex-direction: column; } .admin-app__stats { width: 100%; flex-wrap: wrap; } .admin-app__stats span { flex: 1; } .admin-app__filters { grid-template-columns: 1fr; } }
-@media (max-width: 600px) { .admin-app__overview { grid-template-columns: 1fr; } .admin-app__brand small { display: none; } .admin-app__hero { padding-top: 5vh; } }
+@media (max-width: 900px) { .admin-detail-menu__grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media (max-width: 600px) { .admin-app__overview { grid-template-columns: 1fr; } .admin-app__brand small { display: none; } .admin-app__hero { padding-top: 5vh; } .admin-detail-menu__grid { grid-template-columns: 1fr; } .admin-detail-menu__item { min-height: 112px; } }
 </style>
