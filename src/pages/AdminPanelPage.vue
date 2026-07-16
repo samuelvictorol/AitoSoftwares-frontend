@@ -149,6 +149,11 @@ export default {
 .admin-app__stats span { display: grid; gap: .25rem; min-width: 5rem; padding: .7rem; border: 1px solid rgba(19,188,157,.22); border-radius: .55rem; color: rgba(229,255,250,.58); font-size: .66rem; }
 .admin-app__stats strong { color: #8fffee; font-size: 1.2rem; }
 .admin-app__tabs { border: 1px solid rgba(19,188,157,.2); border-radius: .7rem .7rem 0 0; background: rgba(3,25,26,.7); }
+.admin-app__tabs :deep(.q-tab) { min-height: 68px; padding: .55rem 1.15rem; color: rgba(239,255,251,.68); transition: color .2s ease, background .2s ease; }
+.admin-app__tabs :deep(.q-tab:hover) { color: #effffb; background: rgba(19,188,157,.08); }
+.admin-app__tabs :deep(.q-tab--active) { color: #8fffee; background: rgba(19,188,157,.12); }
+.admin-app__tabs :deep(.q-tab__icon) { margin-bottom: .2rem; font-size: 1.35rem; }
+.admin-app__tabs :deep(.q-tab__label) { font-size: .72rem; font-weight: 800; letter-spacing: .02em; }
 .admin-app__panels { border: 1px solid rgba(19,188,157,.2); border-top: 0; border-radius: 0 0 .7rem .7rem; background: rgba(3,25,26,.7); }
 .admin-app__section { padding: .5rem; }
 .admin-app__section-head { display: flex; align-items: flex-end; justify-content: space-between; gap: 1rem; margin-bottom: 1.4rem; }
@@ -174,8 +179,8 @@ export default {
 .admin-app__detail-body div { display: flex; justify-content: space-between; gap: 1rem; padding-top: .7rem; border-top: 1px solid rgba(143,255,238,.1); }
 .admin-app__detail-body span { color: rgba(229,255,250,.58); }
 .admin-detail-menu__grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: .75rem; }
-.admin-detail-menu__item { position: relative; display: grid; gap: .45rem; min-height: 138px; padding: 1rem; border: 1px solid rgba(19,188,157,.22); border-radius: .7rem; color: #effffb; background: linear-gradient(145deg, rgba(9,48,47,.76), rgba(3,20,21,.72)); text-align: left; cursor: pointer; font: inherit; transition: border-color .2s ease, transform .2s ease, background .2s ease; }
-.admin-detail-menu__item:hover, .admin-detail-menu__item:focus-visible { border-color: rgba(143,255,238,.7); background: linear-gradient(145deg, rgba(13,75,70,.82), rgba(3,24,25,.78)); transform: translateY(-2px); outline: none; }
+.admin-detail-menu__item { position: relative; display: grid; gap: .45rem; min-height: 138px; padding: 1rem; border: 1px solid rgba(19,188,157,.22); border-radius: .7rem; color: #effffb; background: linear-gradient(145deg, rgba(9,48,47,.76), rgba(3,20,21,.72)); text-align: left; cursor: pointer; font: inherit; transition: border-color .2s ease, transform .2s ease, background .2s ease, box-shadow .2s ease; }
+.admin-detail-menu__item:hover, .admin-detail-menu__item:focus-visible { border-color: rgba(143,255,238,.7); background: linear-gradient(145deg, rgba(13,75,70,.82), rgba(3,24,25,.78)); box-shadow: 0 12px 28px rgba(0,0,0,.18), 0 0 22px rgba(19,188,157,.1); transform: translateY(-2px); outline: none; }
 .admin-detail-menu__item > .q-icon:first-child { color: #50dcc4; }
 .admin-detail-menu__item span { color: #8fffee; font-size: .82rem; font-weight: 900; }
 .admin-detail-menu__item small { max-width: 22ch; color: rgba(229,255,250,.58); font-size: .68rem; line-height: 1.45; }
