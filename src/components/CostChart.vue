@@ -22,6 +22,7 @@ const props = defineProps({
   values: { type: Array, default: () => [] },
   colors: { type: Array, default: () => ['#13bc9d', '#8fffee', '#23917d', '#50dcc4', '#12ad89'] },
 })
+const emit = defineEmits(['select'])
 
 const canvasElement = ref(null)
 let chart
@@ -49,7 +50,7 @@ async function renderChart() {
         borderRadius: props.type === 'bar' ? 6 : 0,
       }],
     },
-    options: {
+      options: {
       responsive: true,
       maintainAspectRatio: false,
       animation: { duration: 500 },
@@ -59,6 +60,10 @@ async function renderChart() {
           labels: { color: '#bffaf0', boxWidth: 12, usePointStyle: true },
         },
         tooltip: { callbacks: { label: (context) => `${context.label}: ${formatMoney(context.raw)}` } },
+        onClick: (_event, elements) => {
+          const element = elements?.[0]
+          if (element) emit('select', { index: element.index, label: props.labels[element.index] })
+        },
       },
       scales: props.type === 'bar'
         ? {
