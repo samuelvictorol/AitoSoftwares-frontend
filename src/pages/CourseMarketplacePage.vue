@@ -4,7 +4,7 @@
       <header class="course-store__header"><router-link to="/" class="course-store__brand"><img src="/favicon.png" alt="" /><span>AITO<span>LEARN</span></span></router-link><div class="course-store__actions"><router-link v-if="isUser" to="/app" class="course-store__link">Minha area</router-link><router-link v-else to="/app" class="course-store__link">Entrar</router-link></div></header>
       <section class="course-store__hero"><div><p class="course-store__eyebrow">AITOLEARN / CURSOS</p><h1>Cursos que levam para o próximo nível</h1></div><q-icon name="mdi-school-outline" size="84px" /></section>
       <div class="course-store__search"><q-input v-model="search" outlined clearable label="Buscar cursos" @keyup.enter="load"><template #prepend><q-icon name="mdi-magnify" /></template></q-input>
-        <q-btn unelevated flat icon="mdi-school" dense label="Saiba Mais" :loading="loading" @click="load" />
+        <q-btn unelevated flat icon="mdi-school" dense label="Saiba Mais" @click="router.push('/aitolearn')" />
         <q-btn unelevated class="course-store__button" icon="mdi-magnify" label="Buscar" :loading="loading" @click="load" />
       </div>
       <div v-if="loading" class="course-store__loading"><q-spinner color="teal-3" size="34px" /> Carregando cursos...</div>

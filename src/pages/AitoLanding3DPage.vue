@@ -320,9 +320,9 @@
 </template>
 
 <script setup>
-import { computed, onBeforeUnmount, onMounted, reactive, ref } from 'vue'
+import { computed, onBeforeUnmount, onMounted, reactive, ref, watch } from 'vue'
 import { useQuasar } from 'quasar'
-import { useRouter } from 'vue-router'
+import { useRoute, useRouter } from 'vue-router'
 import { api, apiBaseURL } from 'boot/axios'
 import AitoLoadingGate from 'components/landing3d/AitoLoadingGate.vue'
 import AitoThreeScene from 'components/landing3d/AitoThreeScene.vue'
@@ -341,6 +341,7 @@ import {
 const isMobile = computed(() => window.innerWidth < 768)
 const $q = useQuasar()
 const router = useRouter()
+const route = useRoute()
 const USER_TOKEN_KEY = 'aito_user_token'
 const LANDING_SCENE_WATCHDOG_MS = 9000
 const LANDING_INTRO_CACHE_KEY = 'aito_landing_intro_seen_v1'
@@ -446,6 +447,15 @@ function openAuth(mode = 'login') {
 function openPasswordReset() {
   authDialogOpen.value = false
   passwordResetOpen.value = true
+}
+
+function openAuthFromQuery() {
+  if (route.query.auth !== 'login') return
+  authMode.value = 'login'
+  authDialogOpen.value = true
+  const query = { ...route.query }
+  delete query.auth
+  router.replace({ query })
 }
 
 function handlePasswordResetCompleted({ email }) {
@@ -563,11 +573,14 @@ function scheduleCoursePrompt() {
 }
 
 onMounted(() => {
+  openAuthFromQuery()
   if (cachedIntro) scheduleCoursePrompt()
   sceneReadyWatchdog = window.setTimeout(() => {
     if (!sceneReady.value) sceneReady.value = true
   }, LANDING_SCENE_WATCHDOG_MS)
 })
+
+watch(() => route.query.auth, openAuthFromQuery)
 
 onBeforeUnmount(() => {
   window.clearTimeout(introTextTimer)
