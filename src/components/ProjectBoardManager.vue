@@ -3,7 +3,7 @@
     <div class="portal-module__head"><div><span class="portal-module__eyebrow">KANBAN</span><h2>{{ project.title }}</h2></div><div class="board-module__head-actions"><q-btn v-if="admin" unelevated no-caps class="portal-module__primary" icon="mdi-plus" label="Nova tarefa" @click="openTask()" /><q-btn v-if="admin" flat no-caps icon="mdi-view-column-outline" label="Colunas" @click="openColumns" /></div></div>
     <div v-if="loading" class="board-module__loading"><q-spinner color="teal-3" size="32px" /> Carregando board...</div>
     <template v-else>
-      <div class="board-module__mobile-controls"><q-select v-model="mobileColumn" outlined dense label="Coluna" :options="columnOptions" emit-value map-options /><q-btn v-if="admin" unelevated no-caps class="portal-module__primary" icon="mdi-plus" label="Adicionar task" @click="openTask(null, mobileColumn)" /></div>
+      <div class="board-module__mobile-controls"><q-select v-model="mobileColumn" outlined dense color="accent" bg-color="white" label="Coluna" :options="columnOptions" emit-value map-options /><q-btn v-if="admin" unelevated no-caps class="portal-module__primary" icon="mdi-plus" label="Adicionar task" @click="openTask(null, mobileColumn)" /></div>
       <div class="board-module__columns">
         <section v-for="column in board.columns" :key="column.key" class="board-column" :class="{ 'board-column--mobile-hidden': column.key !== mobileColumn }" @dragover.prevent @drop="dropTask(column.key)">
           <header class="board-column__head"><div><span>{{ String(column.position + 1).padStart(2, '0') }}</span><h3>{{ column.title }}</h3></div><b>{{ tasksFor(column.key).length }}</b></header>
