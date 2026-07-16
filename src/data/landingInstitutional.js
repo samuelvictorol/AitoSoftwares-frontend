@@ -102,7 +102,7 @@ export const institutionalServices = Object.freeze([
 
 export const institutionalCases = Object.freeze([
   {
-    icon: 'mdi-car-outline',
+    icon: 'mdi-account-circle-outline',
     title: 'FlaviaKamila App',
     subtitle: 'Formulários inteligentes, monitoramento e pagamentos integrados.',
     text: 'App para delegada com foco em concurseiros, com formulários inteligentes, diagnóstico automatizado, monitoramento e pagamentos integrados.',
@@ -170,7 +170,7 @@ export const institutionalFounders = Object.freeze([
     role: 'Arquitetura, cloud e segurança',
     summary: 'Desenha sistemas preparados para a operação real, com arquitetura clara, escala e segurança.',
     image: '/dion.png',
-    instagram: 'https://www.instagram.com/dionvitor/',
+    instagram: 'https://www.instagram.com/dionn_vitor/',
     portfolio: 'https://www.linkedin.com/in/dion-v%C3%ADtor-a519631aa/'
   }
 ])

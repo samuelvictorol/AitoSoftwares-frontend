@@ -53,10 +53,10 @@
 
             <div v-if="section.kind === 'hero'" class="learn-launch__actions">
               <button type="button" class="learn-launch__button learn-launch__button--primary" @click="scrollToSection('inscricao')">
-                Quero entrar na turma
+                Acessar Cursos
                 <q-icon name="mdi-arrow-down" aria-hidden="true" />
               </button>
-              <button type="button" class="learn-launch__button learn-launch__button--ghost" @click="scrollToSection('metodo')">
+              <button type="button" class="learn-launch__button learn-launch__button--ghost" @click="goTo('/cursos')">
                 Ver como funciona
                 <q-icon name="mdi-play-circle-outline" aria-hidden="true" />
               </button>
@@ -107,14 +107,14 @@
             <p class="learn-launch__eyebrow">05 / SUA PROXIMA FASE</p>
             <h2>Construa sistemas que clientes high ticket querem comprar.</h2>
             <p class="learn-launch__description">Conheca as trilhas AitoLearn e receba novidades sobre novos cursos, projetos reais, certificados e os proximos passos para evoluir.</p>
-            <div class="learn-launch__mini-note"><q-icon name="mdi-lock-outline" /> Seus dados ficam protegidos e sao usados apenas para este contato.</div>
+            <!-- <div class="learn-launch__mini-note"><q-icon name="mdi-lock-outline" /> Seus dados ficam protegidos e sao usados apenas .</div> -->
           </div>
 
           <q-form class="learn-launch__lead-form" @submit.prevent="submitLead">
             <div class="learn-launch__form-title"><q-icon name="mdi-school-outline" /> AitoLearn / Plataforma de cursos</div>
             <div class="learn-launch__form-grid">
               <q-input v-model="lead.name" outlined label="Seu nome" autocomplete="name" :rules="[requiredRule]" />
-              <q-select v-model="lead.profileType" outlined label="Voce e..." :options="profileOptions" emit-value map-options :rules="[requiredRule]" />
+              <q-select v-model="lead.profileType" outlined label="Meu perfil" :options="profileOptions" emit-value map-options :rules="[requiredRule]" />
               <q-input v-model="lead.email" outlined label="E-mail" type="email" autocomplete="email" />
               <q-input v-model="lead.phone" outlined label="WhatsApp" autocomplete="tel" />
               <q-input v-model="lead.question" outlined type="textarea" autogrow class="learn-launch__form-full" label="Qual seu objetivo? (opcional)" />
@@ -162,19 +162,19 @@ const router = useRouter()
 const $q = useQuasar()
 const sections = Object.freeze([
   {
-    id: 'metodo', label: 'A plataforma', kind: 'hero', eyebrow: 'AITOLEARN / PLATAFORMA DE SOFTWARE',
+    id: 'metodo', label: 'A plataforma', kind: 'hero', eyebrow: 'AITOLEARN / CURSOS DE SOFTWARE',
     title: 'Aprenda a construir software do zero ao deploy.',
     description: 'Uma plataforma de cursos para transformar conhecimento em produto: trilhas praticas, projetos reais, certificados verificaveis e engenharia aplicada para entregar sistemas de verdade.', media: 'video'
   },
   {
     id: 'frontend', label: 'Frontend e experiencia', kind: 'stack', eyebrow: '01 / FRONTEND, UI/UX E 3D',
-    title: 'Interfaces que impressionam no primeiro toque e funcionam no mundo real.',
-    description: 'Aprenda frontend responsivo, UI/UX orientado a conversao e cenas 3D com performance pensada para desktop, Android, iPhone e Safari.', image: '/landing.avif', icon: 'mdi-monitor-cellphone-star', mediaLabel: 'Experiencia que vende', mediaAlt: 'Experiencia visual AitoSoftwares', mediaCaption: 'Design, movimento e clareza sem sacrificar usabilidade.'
+    title: 'Interface é o primeiro contato com o cliente. Aprenda a encantar e converter.',
+    description: '', image: '/aprenda-front.png', icon: 'mdi-monitor-cellphone-star', mediaLabel: 'Experiencia que vende', mediaAlt: 'Experiencia visual AitoSoftwares', mediaCaption: 'Design, movimento e clareza sem sacrificar usabilidade.'
   },
   {
     id: 'backend', label: 'Backend e dados', kind: 'stack', eyebrow: '02 / BACKEND, APIS E IA',
-    title: 'Do formulario ao banco: tudo conectado, seguro e pronto para escalar.',
-    description: 'Construa APIs, autenticacao, pagamentos, banco de dados na nuvem e automacoes com IA para criar produtos confiaveis.', image: '/chat.png', icon: 'mdi-api', mediaLabel: 'Operacao conectada', mediaAlt: 'Atendimento digital conectado', mediaCaption: 'Backend que sustenta experiencia, receita e crescimento.'
+    title: 'Da ideia ao deploy, construa sistemas confiáveis e escaláveis.',
+    description: '', image: '/construa-app.png', icon: 'mdi-api', mediaLabel: 'Operacao conectada', mediaAlt: 'Atendimento digital conectado', mediaCaption: 'Backend que sustenta experiencia, receita e crescimento.'
   },
   {
     id: 'engenharia', label: 'Metodo de engenharia', kind: 'method', eyebrow: '03 / CODEx, CLAUDE E INITIALIZERS',
@@ -189,6 +189,7 @@ const saving = ref(false)
 let loaderWatchdog
 const videoUrl = import.meta.env.VITE_AITOLEARN_VIDEO_URL || 'https://www.youtube.com/embed/ekZtwCJvH1g?playsinline=1&rel=0'
 const profileOptions = [
+  { label: 'Iniciante', value: 'iniciante' },
   { label: 'Empresario', value: 'empresario' },
   { label: 'Desenvolvedor', value: 'desenvolvedor' },
   { label: 'Estudante', value: 'estudante' },
@@ -202,6 +203,10 @@ const requiredRule = (value) => Boolean(String(value || '').trim()) || 'Preencha
 function handleSceneReady() {
   sceneReady.value = true
   window.clearTimeout(loaderWatchdog)
+}
+function goTo(path) {
+  router.push(path)
+  window.scrollTo({ top: 0, behavior: 'smooth' })
 }
 
 async function submitLead() {
