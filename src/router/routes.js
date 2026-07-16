@@ -20,6 +20,32 @@ const routes = [
     component: () => import('pages/AitoLearnLaunchPage.vue'),
   },
   {
+    path: '/cursos/pagamento',
+    name: 'course-payment',
+    component: () => import('pages/CoursePaymentPage.vue'),
+  },
+  {
+    path: '/cursos',
+    name: 'course-marketplace',
+    component: () => import('pages/CourseMarketplacePage.vue'),
+  },
+  {
+    path: '/cursos/:slug/aulas',
+    name: 'course-learning',
+    meta: { requiresAuth: 'user' },
+    component: () => import('pages/CourseLearningPage.vue'),
+  },
+  {
+    path: '/cursos/:slug',
+    name: 'course-preview',
+    component: () => import('pages/CoursePreviewPage.vue'),
+  },
+  {
+    path: '/certificados/verificar/:token',
+    name: 'certificate-verification',
+    component: () => import('pages/CertificateVerificationPage.vue'),
+  },
+  {
     path: '/app',
     name: 'user-app',
     meta: { requiresAuth: 'user' },

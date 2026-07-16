@@ -25,7 +25,7 @@
 
             <q-tab-panel name="detail">
               <section class="admin-app__section admin-detail-menu">
-                <div class="admin-app__section-head"><div><p class="admin-app__eyebrow">Gestao detalhada</p><h2>Escolha o que deseja abrir</h2><span>Todos os modulos administrativos reunidos em um unico lugar.</span></div></div>
+                <div class="admin-app__section-head"><div><p class="admin-app__eyebrow">Gestao detalhada</p></div></div>
                 <div class="admin-detail-menu__grid">
                   <button v-for="item in detailOptions" :key="item.name" type="button" class="admin-detail-menu__item" @click="openDetail(item.name)"><q-icon :name="item.icon" size="26px" /><span>{{ item.label }}</span><small>{{ item.description }}</small><q-icon name="mdi-arrow-top-right" size="18px" class="admin-detail-menu__arrow" /></button>
                 </div>
@@ -52,6 +52,10 @@
             <q-tab-panel name="credentials"><CredentialManager admin /></q-tab-panel>
             <q-tab-panel name="projects"><ProjectManager admin /></q-tab-panel>
             <q-tab-panel name="invoices"><InvoiceManager admin /></q-tab-panel>
+            <q-tab-panel name="courses"><CourseManager /></q-tab-panel>
+            <q-tab-panel name="purchases"><CoursePurchaseManager /></q-tab-panel>
+            <q-tab-panel name="certificates"><CertificateManager /></q-tab-panel>
+            <q-tab-panel name="course-comments"><CourseCommentManager /></q-tab-panel>
 
             <q-tab-panel name="lgpd"><section class="admin-app__section"><div class="admin-app__section-head"><div><p class="admin-app__eyebrow">08 / GOVERNANCA</p></div><q-btn unelevated no-caps class="admin-app__primary" icon="mdi-content-save" label="Salvar documento" :loading="loading.policy" @click="savePolicy" /></div><div class="admin-app__policy-tabs"><button v-for="item in policies" :key="item.type" type="button" :class="{ 'is-active': policyDraft.type === item.type }" @click="selectPolicy(item)"><q-icon :name="item.type === 'privacy' ? 'mdi-shield-lock-outline' : 'mdi-file-document-outline'" /> {{ item.type === 'privacy' ? 'Politica de privacidade' : 'Termos de servico' }}</button></div><q-input v-model="policyDraft.title" outlined label="Titulo" /><q-input v-model="policyDraft.version" outlined label="Versao" class="q-mt-md" /><q-input v-model="policyDraft.content" outlined type="textarea" autogrow label="Conteudo" class="q-mt-md" /><div class="admin-app__policy-actions"><q-btn unelevated no-caps class="admin-app__primary" icon="mdi-content-save" label="Salvar" :loading="loading.policy" @click="savePolicy" /><q-btn flat no-caps color="negative" icon="mdi-delete-outline" label="Excluir documento salvo" @click="deletePolicy" /></div></section></q-tab-panel>
           </q-tab-panels>
@@ -77,14 +81,18 @@ import CredentialManager from 'components/CredentialManager.vue'
 import GeneratedCredentialsDialog from 'components/GeneratedCredentialsDialog.vue'
 import ProjectManager from 'components/ProjectManager.vue'
 import InvoiceManager from 'components/InvoiceManager.vue'
+import CourseManager from 'components/CourseManager.vue'
+import CoursePurchaseManager from 'components/CoursePurchaseManager.vue'
+import CertificateManager from 'components/CertificateManager.vue'
+import CourseCommentManager from 'components/CourseCommentManager.vue'
 
 export default {
   name: 'AdminPanelPage',
-  components: { FinanceDashboard, AdminCostManager, SupportTicketsPanel, ContractManager, CredentialManager, ProjectManager, InvoiceManager, GeneratedCredentialsDialog },
+  components: { FinanceDashboard, AdminCostManager, SupportTicketsPanel, ContractManager, CredentialManager, ProjectManager, InvoiceManager, CourseManager, CoursePurchaseManager, CertificateManager, CourseCommentManager, GeneratedCredentialsDialog },
   data () {
     return {
       tab: 'projects', token: localStorage.getItem('aito_admin_token'), admin: {}, leads: [], users: [], customers: [], policies: [], leadSearch: '', leadStatus: '', personSearch: '', leadDialog: false, personDialog: false, detailDialog: false, selectedDetail: {}, credentialsDialogOpen: false, generatedCredentials: { customer: {}, password: '' }, leadForm: this.emptyLead(), personForm: this.emptyPerson('user'), policyDraft: {},
-      detailOptions: [{ name: 'leads', label: 'Leads', description: 'Captacao e acompanhamento de oportunidades.', icon: 'mdi-account-multiple-outline' }, { name: 'users', label: 'Usuarios', description: 'Acessos, perfis e contas AitoLearn.', icon: 'mdi-account-outline' }, { name: 'customers', label: 'Clientes', description: 'Cadastros e acessos de clientes.', icon: 'mdi-briefcase-outline' }, { name: 'costs', label: 'Custos', description: 'Lancamentos financeiros e anexos.', icon: 'mdi-cash-multiple' }, { name: 'tickets', label: 'Chamados', description: 'Suporte e solicitacoes de atendimento.', icon: 'mdi-lifebuoy' }, { name: 'contracts', label: 'Contratos', description: 'Documentos e acordos vinculados.', icon: 'mdi-file-document-outline' }, { name: 'credentials', label: 'Credenciais', description: 'Chaves e acessos compartilhados.', icon: 'mdi-key-chain-variant' }, { name: 'invoices', label: 'Notas fiscais', description: 'Documentos fiscais e valores emitidos.', icon: 'mdi-receipt-text-outline' }],
+      detailOptions: [{ name: 'courses', label: 'Cursos', description: 'Trilhas, aulas, materiais e marketplace.', icon: 'mdi-school-outline' }, { name: 'leads', label: 'Leads', description: 'Captacao e acompanhamento de oportunidades.', icon: 'mdi-account-multiple-outline' }, { name: 'users', label: 'Usuarios', description: 'Acessos, perfis e contas AitoLearn.', icon: 'mdi-account-outline' }, { name: 'customers', label: 'Clientes', description: 'Cadastros e acessos de clientes.', icon: 'mdi-briefcase-outline' }, { name: 'costs', label: 'Custos', description: 'Lancamentos financeiros e anexos.', icon: 'mdi-cash-multiple' }, { name: 'tickets', label: 'Chamados', description: 'Suporte e solicitacoes de atendimento.', icon: 'mdi-lifebuoy' }, { name: 'contracts', label: 'Contratos', description: 'Documentos e acordos vinculados.', icon: 'mdi-file-document-outline' }, { name: 'credentials', label: 'Credenciais', description: 'Chaves e acessos compartilhados.', icon: 'mdi-key-chain-variant' }, { name: 'invoices', label: 'Notas fiscais', description: 'Documentos fiscais e valores emitidos.', icon: 'mdi-receipt-text-outline' }, { name: 'purchases', label: 'Compras de cursos', description: 'Pagamentos e interesse por curso.', icon: 'mdi-cart-check-outline' }, { name: 'certificates', label: 'Certificados', description: 'Certificados gerados e verificacao.', icon: 'mdi-certificate-outline' }, { name: 'course-comments', label: 'Comentarios', description: 'Moderacao das conversas nas aulas.', icon: 'mdi-comment-text-multiple-outline' }],
       leadStatuses: [{ label: 'Novo', value: 'new' }, { label: 'Contatado', value: 'contacted' }, { label: 'Qualificado', value: 'qualified' }, { label: 'Fechado', value: 'closed' }],
       leadColumns: [{ name: 'name', label: 'Nome', field: 'name', align: 'left', sortable: true }, { name: 'email', label: 'Contato', field: row => row.email || row.phone || '-', align: 'left' }, { name: 'type', label: 'Tipo', field: 'flowType', align: 'left' }, { name: 'message', label: 'Mensagem', field: 'message', align: 'left' }, { name: 'tags', label: 'Tags', field: 'tags', align: 'left' }, { name: 'status', label: 'Status', field: 'status', align: 'left' }, { name: 'createdAt', label: 'Entrada', field: row => this.formatDate(row.createdAt), align: 'left' }, { name: 'actions', label: '', align: 'right' }],
       personColumns: [{ name: 'name', label: 'Nome', field: 'name', align: 'left', sortable: true }, { name: 'email', label: 'E-mail', field: 'email', align: 'left' }, { name: 'phone', label: 'Telefone', field: 'phone', align: 'left' }, { name: 'role', label: 'Tipo', field: 'role', align: 'left' }, { name: 'active', label: 'Ativo', field: 'active', align: 'center' }, { name: 'actions', label: '', align: 'right' }],

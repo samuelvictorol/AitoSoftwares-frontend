@@ -1,10 +1,11 @@
 <template>
   <q-layout view="lHh Lpr lFf" class="user-app">
     <q-page-container><q-page class="user-app__page"><div class="user-app__shell">
-      <header class="user-app__header"><router-link class="user-app__brand" to="/"><img src="/favicon.png" alt="" /><span>AITO<span>SOFTWARES</span></span></router-link><div class="user-app__session"><div><strong>{{ firstName }}</strong><small>{{ sessionUser.email }}</small></div><q-btn flat round icon="mdi-logout" aria-label="Sair" @click="logout"><q-tooltip>Sair</q-tooltip></q-btn></div></header>
+      <header class="user-app__header"><router-link class="user-app__brand" to="/"><img src="/favicon.png" alt="" /><span>AITO<span>SOFTWARES</span></span></router-link><div class="user-app__session"><NotificationBell /><div><strong>{{ firstName }}</strong><small>{{ sessionUser.email }}</small></div><q-btn flat round icon="mdi-logout" aria-label="Sair" @click="logout"><q-tooltip>Sair</q-tooltip></q-btn></div></header>
       <nav class="user-app__nav" aria-label="Area do usuario"><button v-for="item in menu" :key="item.id" type="button" :class="{ 'is-active': activeMenu === item.id }" @click="activeMenu = item.id"><q-icon :name="item.icon" /> {{ item.label }}</button></nav>
 
-      <main v-if="activeMenu === 'home'" class="user-app__main"><span class="user-app__eyebrow">AitoLearn / Area do usuario</span><h1>Seu acesso a aulas, materiais e suporte fica reunido aqui.</h1><div class="user-app__grid"><section><q-icon name="mdi-school-outline" size="30px" /><strong>Curso Fullstack Developer</strong><span>Frontend, backend, pagamentos, cloud, IA e 3D.</span><q-btn unelevated no-caps label="Conhecer lancamento" icon="mdi-arrow-top-right" @click="router.push('/aitolearn')" /></section><section><q-icon name="mdi-progress-check" size="30px" /><strong>Seu progresso</strong><span>A trilha de fundamentos sera liberada em breve.</span></section><section><q-icon name="mdi-lifebuoy" size="30px" /><strong>Suporte</strong><span>Abra um chamado quando precisar da equipe.</span></section></div></main>
+      <main v-if="activeMenu === 'courses'" class="user-app__main user-app__wide"><UserCoursesPanel /></main>
+      <main v-else-if="activeMenu === 'certificates'" class="user-app__main user-app__wide"><UserCertificatesPanel /></main>
       <main v-else-if="activeMenu === 'profile'" class="user-app__main user-app__profile"><span class="user-app__eyebrow">Meu perfil</span><h1>Seu acesso, do seu jeito.</h1><q-form class="user-app__profile-form" @submit.prevent="saveProfile"><q-input v-model="profile.name" outlined label="Nome" /><q-input v-model="profile.email" outlined label="E-mail" readonly /><q-input v-model="profile.phone" outlined label="Telefone" readonly /><q-btn unelevated no-caps type="submit" label="Salvar nome" icon="mdi-content-save" :loading="saving" /></q-form></main>
       <main v-else-if="activeMenu === 'finance'" class="user-app__main user-app__wide"><FinanceDashboard title="Meu financeiro" /></main>
       <main v-else class="user-app__main user-app__wide"><SupportTicketsPanel /></main>
@@ -18,9 +19,12 @@ import { useQuasar } from 'quasar'
 import { useRouter } from 'vue-router'
 import FinanceDashboard from 'components/FinanceDashboard.vue'
 import SupportTicketsPanel from 'components/SupportTicketsPanel.vue'
+import UserCoursesPanel from 'components/UserCoursesPanel.vue'
+import UserCertificatesPanel from 'components/UserCertificatesPanel.vue'
+import NotificationBell from 'components/NotificationBell.vue'
 
-const router = useRouter(); const $q = useQuasar(); const sessionUser = ref({}); const activeMenu = ref('home'); const saving = ref(false); const profile = reactive({ name: '', email: '', phone: '' })
-const menu = [{ id: 'home', label: 'Inicio', icon: 'mdi-view-dashboard-outline' }, { id: 'profile', label: 'Meu perfil', icon: 'mdi-account-outline' }, { id: 'finance', label: 'Financeiro', icon: 'mdi-cash-multiple' }, { id: 'tickets', label: 'Meus chamados', icon: 'mdi-lifebuoy' }]
+const router = useRouter(); const $q = useQuasar(); const sessionUser = ref({}); const activeMenu = ref('courses'); const saving = ref(false); const profile = reactive({ name: '', email: '', phone: '' })
+const menu = [{ id: 'courses', label: 'Meus cursos', icon: 'mdi-school-outline' }, { id: 'certificates', label: 'Certificados', icon: 'mdi-certificate-outline' }, { id: 'profile', label: 'Meu perfil', icon: 'mdi-account-outline' }, { id: 'finance', label: 'Financeiro', icon: 'mdi-cash-multiple' }, { id: 'tickets', label: 'Meus chamados', icon: 'mdi-lifebuoy' }]
 const firstName = computed(() => String(sessionUser.value.name || 'Usuario Aito').trim().split(/\s+/)[0])
 onMounted(() => { try { sessionUser.value = JSON.parse(localStorage.getItem('aito_user') || '{}'); Object.assign(profile, sessionUser.value) } catch (error) { sessionUser.value = {} } })
 function saveProfile () { saving.value = true; const next = { ...sessionUser.value, name: profile.name.trim() }; localStorage.setItem('aito_user', JSON.stringify(next)); sessionUser.value = next; saving.value = false; $q.notify({ type: 'positive', message: 'Perfil atualizado.' }) }

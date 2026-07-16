@@ -12,7 +12,7 @@ export const landing3dSections = Object.freeze([
     },
     secondaryCta: {
       label: 'AitoLearn: estude conosco',
-      to: '/aitolearn'
+      to: '/cursos'
     },
     surpriseCta: {
       label: 'Surpreenda-me',

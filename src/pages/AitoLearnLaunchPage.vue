@@ -106,12 +106,12 @@
           <div class="learn-launch__copy">
             <p class="learn-launch__eyebrow">05 / SUA PROXIMA FASE</p>
             <h2>Construa sistemas que clientes high ticket querem comprar.</h2>
-            <p class="learn-launch__description">Entre na lista do Curso Fullstack Developer e receba os detalhes da turma, bonus de engenharia de prompt e os proximos passos.</p>
+            <p class="learn-launch__description">Conheca as trilhas AitoLearn e receba novidades sobre novos cursos, projetos reais, certificados e os proximos passos para evoluir.</p>
             <div class="learn-launch__mini-note"><q-icon name="mdi-lock-outline" /> Seus dados ficam protegidos e sao usados apenas para este contato.</div>
           </div>
 
           <q-form class="learn-launch__lead-form" @submit.prevent="submitLead">
-            <div class="learn-launch__form-title"><q-icon name="mdi-school-outline" /> AitoLearn / Fullstack Developer</div>
+            <div class="learn-launch__form-title"><q-icon name="mdi-school-outline" /> AitoLearn / Plataforma de cursos</div>
             <div class="learn-launch__form-grid">
               <q-input v-model="lead.name" outlined label="Seu nome" autocomplete="name" :rules="[requiredRule]" />
               <q-select v-model="lead.profileType" outlined label="Voce e..." :options="profileOptions" emit-value map-options :rules="[requiredRule]" />
@@ -120,7 +120,7 @@
               <q-input v-model="lead.question" outlined type="textarea" autogrow class="learn-launch__form-full" label="Qual seu objetivo? (opcional)" />
             </div>
             <p class="learn-launch__form-help">Informe e-mail ou WhatsApp para receber o convite.</p>
-            <q-btn unelevated no-caps type="submit" class="learn-launch__submit" icon="mdi-arrow-right" label="Quero conhecer o Curso Fullstack" :loading="saving" />
+            <q-btn unelevated no-caps type="submit" class="learn-launch__submit" icon="mdi-arrow-right" label="Quero conhecer a AitoLearn" :loading="saving" />
           </q-form>
         </div>
       </section>
@@ -128,12 +128,12 @@
       <section id="sobre-aitolearn" data-landing-3d-section class="learn-launch__section learn-launch__section--about">
         <div class="learn-launch__about-panel">
           <p class="learn-launch__eyebrow">AITOLEARN</p>
-          <h2>Aprenda a pensar como quem entrega software de verdade.</h2>
-          <p>Da primeira conversa ao deploy: produto, frontend, backend, pagamentos, dados, IA e uma forma mais segura de trabalhar com Codex e Claude.</p>
+          <h2>Uma plataforma para sair da teoria e chegar ao produto.</h2>
+          <p>Aprenda com projetos reais, do primeiro arquivo ao deploy: frontend, backend, dados, pagamentos, IA e boas decisoes de engenharia.</p>
           <div class="learn-launch__about-grid">
-            <span><q-icon name="mdi-source-branch-check" /> Metodologia por etapas</span>
-            <span><q-icon name="mdi-database-check-outline" /> Banco escalavel na nuvem</span>
-            <span><q-icon name="mdi-message-text-outline" /> Bonus de prompt engineering</span>
+            <span><q-icon name="mdi-certificate-outline" /> Certificados verificaveis</span>
+            <span><q-icon name="mdi-source-branch-check" /> Projetos reais do zero ao deploy</span>
+            <span><q-icon name="mdi-message-text-outline" /> IA aplicada com criterio</span>
           </div>
           <button type="button" class="learn-launch__button learn-launch__button--primary" @click="scrollToSection('inscricao')">Entrar na lista <q-icon name="mdi-arrow-up" /></button>
         </div>
@@ -162,24 +162,24 @@ const router = useRouter()
 const $q = useQuasar()
 const sections = Object.freeze([
   {
-    id: 'metodo', label: 'A promessa', kind: 'hero', eyebrow: 'AITOLEARN / FULLSTACK DEVELOPER',
-    title: 'Aprenda a criar sistemas que geram valor.',
-    description: 'Um projeto guiado para desenvolvedores que querem atender clientes high ticket, dominar uma stack moderna e entregar software real do zero ao ambiente em producao.', media: 'video'
+    id: 'metodo', label: 'A plataforma', kind: 'hero', eyebrow: 'AITOLEARN / PLATAFORMA DE SOFTWARE',
+    title: 'Aprenda a construir software do zero ao deploy.',
+    description: 'Uma plataforma de cursos para transformar conhecimento em produto: trilhas praticas, projetos reais, certificados verificaveis e engenharia aplicada para entregar sistemas de verdade.', media: 'video'
   },
   {
     id: 'frontend', label: 'Frontend e experiencia', kind: 'stack', eyebrow: '01 / FRONTEND, UI/UX E 3D',
     title: 'Interfaces que impressionam no primeiro toque e funcionam no mundo real.',
-    description: 'Construa frontend responsivo, UI/UX orientado a conversao e cenas 3D com performance pensada para desktop, Android, iPhone e Safari.', image: '/landing.avif', icon: 'mdi-monitor-cellphone-star', mediaLabel: 'Experiencia que vende', mediaAlt: 'Experiencia visual AitoSoftwares', mediaCaption: 'Design, movimento e clareza sem sacrificar usabilidade.'
+    description: 'Aprenda frontend responsivo, UI/UX orientado a conversao e cenas 3D com performance pensada para desktop, Android, iPhone e Safari.', image: '/landing.avif', icon: 'mdi-monitor-cellphone-star', mediaLabel: 'Experiencia que vende', mediaAlt: 'Experiencia visual AitoSoftwares', mediaCaption: 'Design, movimento e clareza sem sacrificar usabilidade.'
   },
   {
     id: 'backend', label: 'Backend e dados', kind: 'stack', eyebrow: '02 / BACKEND, APIS E IA',
     title: 'Do formulario ao banco: tudo conectado, seguro e pronto para escalar.',
-    description: 'Aprenda a integrar APIs, autenticacao, pagamentos, banco de dados na nuvem e automacoes com IA para criar produtos confiaveis.', image: '/chat.png', icon: 'mdi-api', mediaLabel: 'Operacao conectada', mediaAlt: 'Atendimento digital conectado', mediaCaption: 'Backend que sustenta experiencia, receita e crescimento.'
+    description: 'Construa APIs, autenticacao, pagamentos, banco de dados na nuvem e automacoes com IA para criar produtos confiaveis.', image: '/chat.png', icon: 'mdi-api', mediaLabel: 'Operacao conectada', mediaAlt: 'Atendimento digital conectado', mediaCaption: 'Backend que sustenta experiencia, receita e crescimento.'
   },
   {
     id: 'engenharia', label: 'Metodo de engenharia', kind: 'method', eyebrow: '03 / CODEx, CLAUDE E INITIALIZERS',
-    title: 'Automatize processos e lance apps rapidos, confiaveis e nao vibe codados.',
-    description: 'Use Codex e Claude para acelerar raciocinio, testes e implementacao sem abrir mao de engenharia: arquitetura, limites, revisao e seguranca vem antes do deploy.', items: ['Initializers seguros', 'Integracao de pagamento', 'Testes e observabilidade', 'Javascript e Python','Bonus de prompt engineering'], stack: ['Vue', 'Three.js', 'Node', 'MongoDB', 'Cloud', 'IA']
+    title: 'Automatize processos sem abrir mao da engenharia.',
+    description: 'Use Codex e Claude para acelerar raciocinio, testes e implementacao com arquitetura, limites, revisao e seguranca antes do deploy.', items: ['Initializers seguros', 'Integracao de pagamento', 'Testes e observabilidade', 'Javascript e Python','Bonus de prompt engineering'], stack: ['Vue', 'Three.js', 'Node', 'MongoDB', 'Cloud', 'IA']
   }
 ])
 const navSections = Object.freeze([...sections, { id: 'inscricao', label: 'Inscricao' }, { id: 'sobre-aitolearn', label: 'AitoLearn' }])
@@ -218,9 +218,9 @@ async function submitLead() {
       phone: lead.phone,
       message: lead.question,
       profileType: lead.profileType,
-      source: 'curso-fullstack-lancamento',
+      source: 'aitolearn-plataforma',
       flowType: 'interesse-em-aprender',
-      tags: ['AitoLearn', 'curso fullstack', 'lancamento']
+      tags: ['AitoLearn', 'plataforma de cursos', 'projetos reais']
     })
     $q.notify({ type: 'positive', message: 'Perfeito. Sua vaga de interesse foi registrada.' })
     lead.question = ''
