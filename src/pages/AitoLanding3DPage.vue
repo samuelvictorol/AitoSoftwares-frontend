@@ -252,38 +252,7 @@
       </q-card>
     </q-dialog>
 
-    <q-dialog v-model="authDialogOpen" persistent>
-      <q-card class="landing-3d__dialog-card landing-3d__auth-card">
-        <q-card-section class="landing-3d__dialog-head">
-          <div><div class="text-h6">AitoLearn</div>
-        </div>
-          <q-btn flat round dense icon="mdi-close" aria-label="Fechar" @click="authDialogOpen = false" />
-        </q-card-section>
-        <q-card-section class="landing-3d__auth-tabs">
-          <button type="button" class="text-grey-6" :class="{ 'is-active': authMode === 'login' }" @click="authMode = 'login'">Entrar</button>
-          <button type="button" class="text-grey-6" :class="{ 'is-active': authMode === 'register' }" @click="authMode = 'register'">Criar acesso</button>
-        </q-card-section>
-        <q-card-section class="landing-3d__dialog-body">
-          <q-form @submit.prevent="submitAuth">
-            <q-input v-if="authMode === 'login'" v-model="authForm.identifier" outlined dense lazy-rules label="E-mail ou telefone" autocomplete="username" :rules="[requiredRule]" />
-            <q-input v-if="authMode === 'register'" v-model="authForm.name" outlined dense lazy-rules label="Nome" autocomplete="name" :rules="[requiredRule]" />
-            <q-input v-if="authMode === 'register'" v-model="authForm.email" outlined dense lazy-rules label="E-mail" type="email" autocomplete="email" class="q-mt-sm" :rules="[requiredRule]" />
-            <q-input v-if="authMode === 'register'" v-model="authForm.phone" outlined dense lazy-rules label="Telefone unico" autocomplete="tel" class="q-mt-sm" :rules="[requiredRule]" />
-            <q-input v-model="authForm.password" outlined dense lazy-rules label="Senha" type="password" autocomplete="current-password" class="q-mt-sm" :rules="[requiredRule]" />
-            <q-btn unelevated no-caps class="landing-3d__auth-submit full-width q-mt-md" type="submit" :loading="authLoading" icon-right="mdi-login" :label="authMode === 'login' ? 'Entrar' : 'Cadastre-se'" />
-          </q-form>
-          <q-btn v-if="authMode === 'login'" flat no-caps class="landing-3d__forgot-password full-width q-mt-sm" icon="mdi-lock-reset" label="Esqueci minha senha" @click="openPasswordReset" />
-          <div class="landing-3d__auth-separator"><span>ou</span></div>
-          <button type="button" class="landing-3d__google-button" @click="continueWithGoogle">
-            <q-icon name="mdi-google" size="18px" aria-hidden="true" />
-            Continuar com Google
-          </button>
-          <q-btn outline no-caps class="landing-3d__project-login full-width q-mt-sm" icon="mdi-briefcase-outline" label="Acompanhar projeto" @click="authDialogOpen = false; router.push('/customer/login')" />
-        </q-card-section>
-      </q-card>
-    </q-dialog>
-
-    <PasswordResetDialog v-model="passwordResetOpen" audience="user" :initial-email="authForm.identifier.includes('@') ? authForm.identifier : ''" @completed="handlePasswordResetCompleted" />
+    <AuthDialog v-model="authDialogOpen" :initial-mode="authMode" @authenticated="handleAuthSuccess" />
 
     <q-dialog v-model="coursePromptOpen">
       <q-card class="landing-3d__dialog-card landing-3d__course-prompt">
@@ -323,12 +292,12 @@
 import { computed, onBeforeUnmount, onMounted, reactive, ref, watch } from 'vue'
 import { useQuasar } from 'quasar'
 import { useRoute, useRouter } from 'vue-router'
-import { api, apiBaseURL } from 'boot/axios'
+import { api } from 'boot/axios'
 import AitoLoadingGate from 'components/landing3d/AitoLoadingGate.vue'
 import AitoThreeScene from 'components/landing3d/AitoThreeScene.vue'
 import AitoBrandCarousel from 'components/landing3d/AitoBrandCarousel.vue'
 import IAChatComponent from 'components/IAChatComponent.vue'
-import PasswordResetDialog from 'components/PasswordResetDialog.vue'
+import AuthDialog from 'components/AuthDialog.vue'
 import { useLandingScroll } from 'src/composables/useLandingScroll'
 import { landing3dSections } from 'src/data/landing3dSections'
 import {
@@ -366,8 +335,6 @@ const brandDialogOpen = ref(false)
 const selectedBrand = ref(null)
 const authDialogOpen = ref(false)
 const authMode = ref('login')
-const authLoading = ref(false)
-const passwordResetOpen = ref(false)
 const referralDialogOpen = ref(false)
 const iaChat = ref(false)
 const coursePromptOpen = ref(false)
@@ -380,7 +347,6 @@ let coursePromptInterval
 
 const lead = reactive({ name: '', phone: '', email: '', company: '', message: '' })
 const referral = reactive({ name: '', phone: '', leadName: '', notes: '' })
-const authForm = reactive({ identifier: '', name: '', email: '', phone: '', password: '' })
 
 const landingPageStyle = computed(() => ({ minHeight: `${landing3dSections.length * 100}vh` }))
 const requiredRule = (value) => Boolean(String(value || '').trim()) || 'Preencha este campo.'
@@ -444,11 +410,6 @@ function openAuth(mode = 'login') {
   authDialogOpen.value = true
 }
 
-function openPasswordReset() {
-  authDialogOpen.value = false
-  passwordResetOpen.value = true
-}
-
 function openAuthFromQuery() {
   if (route.query.auth !== 'login') return
   authMode.value = 'login'
@@ -458,50 +419,9 @@ function openAuthFromQuery() {
   router.replace({ query })
 }
 
-function handlePasswordResetCompleted({ email }) {
-  authMode.value = 'login'
-  authForm.identifier = email
-  authForm.password = ''
-  authDialogOpen.value = true
-}
-
-function persistAuth(data) {
-  const role = data.user?.role === 'admin' ? 'admin' : 'user'
-  ;['aito_admin_token', 'aito_admin_user', 'aito_user_token', 'aito_user', 'aito_seller_token', 'aito_seller_user'].forEach((key) => localStorage.removeItem(key))
-  const tokenKey = role === 'admin' ? 'aito_admin_token' : USER_TOKEN_KEY
-  const userKey = role === 'admin' ? 'aito_admin_user' : 'aito_user'
-  localStorage.setItem(tokenKey, data.token)
-  localStorage.setItem(userKey, JSON.stringify({ ...data.user, role }))
+function handleAuthSuccess(data) {
   sessionVersion.value += 1
-}
-
-async function submitAuth() {
-  authLoading.value = true
-  try {
-    const response = authMode.value === 'register'
-      ? await api.post('/auth/register', {
-          name: authForm.name,
-          email: authForm.email,
-          phone: authForm.phone,
-          password: authForm.password
-        })
-      : await api.post('/auth/login', {
-          identifier: authForm.identifier,
-          password: authForm.password
-        })
-    persistAuth(response.data)
-    authDialogOpen.value = false
-    $q.notify({ type: 'positive', message: 'Acesso realizado.' })
-    router.push(response.data.user?.role === 'admin' ? '/admin' : '/app')
-  } catch (error) {
-    $q.notify({ type: 'negative', message: error.response?.data?.message || 'Nao foi possivel concluir o acesso.' })
-  } finally {
-    authLoading.value = false
-  }
-}
-
-function continueWithGoogle() {
-  window.location.assign(`${apiBaseURL.replace(/\/$/, '')}/auth/google`)
+  router.push(data.user?.role === 'admin' ? '/admin' : '/app')
 }
 
 function buildWhatsappUrl(message) {

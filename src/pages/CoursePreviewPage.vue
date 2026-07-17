@@ -2,6 +2,12 @@
   <q-layout view="lHh Lpr lFf" class="course-preview">
     <q-page-container>
       <q-page class="course-preview__page">
+        <AuthDialog
+          v-model="authDialogOpen"
+          :return-path="authReturnPath"
+          :show-project-login="false"
+          @authenticated="handleAuthenticated"
+        />
         <div v-if="loading" class="course-preview__loading"><q-spinner color="teal-3" size="42px" /></div>
         <div v-else-if="course" class="course-preview__shell">
           <header class="course-preview__header">
@@ -51,16 +57,28 @@ import { computed, onMounted, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useQuasar } from 'quasar'
 import { api } from 'boot/axios'
+import AuthDialog from 'components/AuthDialog.vue'
 
 const route = useRoute()
 const router = useRouter()
 const $q = useQuasar()
+function hasUserSession () {
+  if (!localStorage.getItem('aito_user_token')) return false
+  try {
+    return JSON.parse(localStorage.getItem('aito_user') || '{}').role === 'user'
+  } catch (error) {
+    return false
+  }
+}
 const course = ref(null)
 const loading = ref(true)
 const buying = ref(false)
 const owned = ref(false)
-const isUser = computed(() => Boolean(localStorage.getItem('aito_user_token')))
+const isUser = ref(hasUserSession())
+const authDialogOpen = ref(false)
+const pendingPurchase = ref(false)
 const accessLabel = computed(() => course.value?.accessMode === 'early_access' ? 'Acesso antecipado' : 'Acesso completo')
+const authReturnPath = computed(() => route.fullPath)
 
 function headers () { return { headers: { Authorization: `Bearer ${localStorage.getItem('aito_user_token')}` } } }
 function money (value) { return Number(value || 0) ? new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(Number(value)) : 'Gratuito' }
@@ -70,19 +88,27 @@ async function load () {
     const response = await api.get(`/courses/${route.params.slug}`)
     course.value = response.data.data
     api.post(`/courses/${route.params.slug}/view`, { sessionId: sessionStorage.getItem('aito_course_session') || '' }).catch(() => null)
-    if (isUser.value) {
-      const mine = await api.get('/courses/me', headers())
-      owned.value = (mine.data.data || []).some((item) => String(item.course?.slug) === String(route.params.slug))
-    }
   } catch (error) {
     course.value = null
   } finally {
     loading.value = false
   }
+  if (!course.value || !isUser.value) return
+  try {
+    const mine = await api.get('/courses/me', headers())
+    owned.value = (mine.data.data || []).some((item) => String(item.course?.slug) === String(route.params.slug))
+  } catch (error) {
+    isUser.value = false
+    owned.value = false
+  }
 }
 
 async function startCourse () {
-  if (!isUser.value) { router.push('/app'); return }
+  if (!isUser.value) {
+    pendingPurchase.value = true
+    authDialogOpen.value = true
+    return
+  }
   if (owned.value) { router.push(`/cursos/${route.params.slug}/aulas`); return }
   buying.value = true
   try {
@@ -93,6 +119,19 @@ async function startCourse () {
     $q.notify({ type: 'negative', message: error.response?.data?.message || 'Nao foi possivel iniciar o pagamento.' })
   } finally {
     buying.value = false
+  }
+}
+
+function handleAuthenticated(data) {
+  isUser.value = data.user?.role === 'user'
+  if (!isUser.value) {
+    pendingPurchase.value = false
+    $q.notify({ type: 'warning', icon: 'mdi-account-alert-outline', message: 'Entre com uma conta de usuario para comprar cursos.' })
+    return
+  }
+  if (pendingPurchase.value) {
+    pendingPurchase.value = false
+    window.setTimeout(() => startCourse(), 0)
   }
 }
 

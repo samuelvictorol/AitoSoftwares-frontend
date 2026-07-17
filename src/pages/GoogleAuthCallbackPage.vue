@@ -22,6 +22,7 @@ const router = useRouter()
 const message = ref('Validando a conta Google...')
 
 function goHomeWithError(text) {
+  sessionStorage.removeItem('aito_auth_return_path')
   $q.notify({ type: 'negative', message: text })
   router.replace('/')
 }
@@ -59,8 +60,11 @@ onMounted(() => {
     localStorage.setItem(userKey, JSON.stringify({ ...user, role }))
 
     window.history.replaceState({}, document.title, '/auth/google/callback')
+    const returnPath = sessionStorage.getItem('aito_auth_return_path')
+    sessionStorage.removeItem('aito_auth_return_path')
+    const safeReturnPath = returnPath && returnPath.startsWith('/') && !returnPath.startsWith('//') ? returnPath : ''
     message.value = 'Acesso confirmado. Redirecionando...'
-    router.replace(role === 'admin' ? '/admin' : '/app')
+    router.replace(safeReturnPath || (role === 'admin' ? '/admin' : '/app'))
   } catch (error) {
     goHomeWithError('A resposta do Google estava invalida.')
   }
