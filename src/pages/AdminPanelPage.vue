@@ -52,8 +52,8 @@
             <q-tab-panel name="credentials"><CredentialManager admin /></q-tab-panel>
             <q-tab-panel name="projects"><ProjectManager admin /></q-tab-panel>
             <q-tab-panel name="invoices"><InvoiceManager admin /></q-tab-panel>
-            <q-tab-panel name="courses"><CourseManager /></q-tab-panel>
-            <q-tab-panel name="purchases"><CoursePurchaseManager /></q-tab-panel>
+            <q-tab-panel name="courses"><CourseManager @open-payments="openCoursePayments" /></q-tab-panel>
+            <q-tab-panel name="purchases"><CoursePurchaseManager :initial-course-id="purchaseCourseId" /></q-tab-panel>
             <q-tab-panel name="certificates"><CertificateManager /></q-tab-panel>
             <q-tab-panel name="course-comments"><CourseCommentManager /></q-tab-panel>
 
@@ -91,7 +91,7 @@ export default {
   components: { FinanceDashboard, AdminCostManager, SupportTicketsPanel, ContractManager, CredentialManager, ProjectManager, InvoiceManager, CourseManager, CoursePurchaseManager, CertificateManager, CourseCommentManager, GeneratedCredentialsDialog },
   data () {
     return {
-      tab: 'projects', token: localStorage.getItem('aito_admin_token'), admin: {}, leads: [], users: [], customers: [], policies: [], leadSearch: '', leadStatus: '', personSearch: '', leadDialog: false, personDialog: false, detailDialog: false, selectedDetail: {}, credentialsDialogOpen: false, generatedCredentials: { customer: {}, password: '' }, leadForm: this.emptyLead(), personForm: this.emptyPerson('user'), policyDraft: {},
+      tab: 'projects', token: localStorage.getItem('aito_admin_token'), admin: {}, leads: [], users: [], customers: [], policies: [], purchaseCourseId: '', leadSearch: '', leadStatus: '', personSearch: '', leadDialog: false, personDialog: false, detailDialog: false, selectedDetail: {}, credentialsDialogOpen: false, generatedCredentials: { customer: {}, password: '' }, leadForm: this.emptyLead(), personForm: this.emptyPerson('user'), policyDraft: {},
       detailOptions: [{ name: 'courses', label: 'Cursos', description: 'Trilhas, aulas, materiais e marketplace.', icon: 'mdi-school-outline' }, { name: 'leads', label: 'Leads', description: 'Captacao e acompanhamento de oportunidades.', icon: 'mdi-account-multiple-outline' }, { name: 'users', label: 'Usuarios', description: 'Acessos, perfis e contas AitoLearn.', icon: 'mdi-account-outline' }, { name: 'customers', label: 'Clientes', description: 'Cadastros e acessos de clientes.', icon: 'mdi-briefcase-outline' }, { name: 'costs', label: 'Custos', description: 'Lancamentos financeiros e anexos.', icon: 'mdi-cash-multiple' }, { name: 'tickets', label: 'Chamados', description: 'Suporte e solicitacoes de atendimento.', icon: 'mdi-lifebuoy' }, { name: 'contracts', label: 'Contratos', description: 'Documentos e acordos vinculados.', icon: 'mdi-file-document-outline' }, { name: 'credentials', label: 'Credenciais', description: 'Chaves e acessos compartilhados.', icon: 'mdi-key-chain-variant' }, { name: 'invoices', label: 'Notas fiscais', description: 'Documentos fiscais e valores emitidos.', icon: 'mdi-receipt-text-outline' }, { name: 'purchases', label: 'Compras de cursos', description: 'Pagamentos e interesse por curso.', icon: 'mdi-cart-check-outline' }, { name: 'certificates', label: 'Certificados', description: 'Certificados gerados e verificacao.', icon: 'mdi-certificate-outline' }, { name: 'course-comments', label: 'Comentarios', description: 'Moderacao das conversas nas aulas.', icon: 'mdi-comment-text-multiple-outline' }],
       leadStatuses: [{ label: 'Novo', value: 'new' }, { label: 'Contatado', value: 'contacted' }, { label: 'Qualificado', value: 'qualified' }, { label: 'Fechado', value: 'closed' }],
       leadColumns: [{ name: 'name', label: 'Nome', field: 'name', align: 'left', sortable: true }, { name: 'email', label: 'Contato', field: row => row.email || row.phone || '-', align: 'left' }, { name: 'type', label: 'Tipo', field: 'flowType', align: 'left' }, { name: 'message', label: 'Mensagem', field: 'message', align: 'left' }, { name: 'tags', label: 'Tags', field: 'tags', align: 'left' }, { name: 'status', label: 'Status', field: 'status', align: 'left' }, { name: 'createdAt', label: 'Entrada', field: row => this.formatDate(row.createdAt), align: 'left' }, { name: 'actions', label: '', align: 'right' }],
@@ -123,6 +123,7 @@ export default {
     async loadPolicies () { try { const { data } = await api.get('/admin/policies', this.headers); this.policies = data.data || []; this.selectPolicy(this.policies[0]) } catch (error) { this.notifyError(error) } },
     selectPolicy (policy) { if (policy) this.policyDraft = { ...policy } },
     openDetail (name) { this.tab = name },
+    openCoursePayments (course) { this.purchaseCourseId = course?._id || ''; this.tab = 'purchases' },
     openLeadDialog (lead) { this.leadForm = lead ? { ...lead } : this.emptyLead(); this.leadDialog = true },
     openDetails (lead) { this.selectedDetail = lead; this.detailDialog = true },
     async saveLead () { this.loading.save = true; try { const id = this.leadForm._id; const result = id ? await api.put(`/admin/leads/${id}`, this.leadForm, this.headers) : await api.post('/admin/leads', this.leadForm, this.headers); if (id) this.leads = this.leads.map(item => item._id === id ? result.data.data : item); else this.leads.unshift(result.data.data); this.leadDialog = false; this.$q.notify({ type: 'positive', message: 'Lead salvo.' }) } catch (error) { this.notifyError(error) } finally { this.loading.save = false } },
