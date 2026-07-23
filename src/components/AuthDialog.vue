@@ -37,12 +37,17 @@
           <q-icon name="mdi-google" size="18px" />
           Continuar com Google
         </button>
+        <button v-if="isAffiliate" type="button" class="auth-dialog__action full-width q-mt-sm" @click="affiliateApplicationOpen = true">
+          <q-icon name="mdi-account-star-outline" size="18px" />
+          Quero me tornar afiliado
+        </button>
         <q-btn v-if="showProjectLogin && !isAffiliate" outline no-caps class="auth-dialog__project full-width q-mt-sm" icon="mdi-briefcase-outline" label="Acompanhar projeto" @click="goToCustomerLogin" />
       </q-card-section>
     </q-card>
   </q-dialog>
 
   <PasswordResetDialog v-if="!isAffiliate" v-model="passwordResetOpen" audience="user" :initial-email="form.identifier.includes('@') ? form.identifier : ''" @completed="handlePasswordResetCompleted" />
+  <AffiliateApplicationDialog v-if="isAffiliate" v-model="affiliateApplicationOpen" />
 </template>
 
 <script setup>
@@ -51,6 +56,7 @@ import { useQuasar } from 'quasar'
 import { useRouter } from 'vue-router'
 import { api, apiBaseURL } from 'boot/axios'
 import PasswordResetDialog from 'components/PasswordResetDialog.vue'
+import AffiliateApplicationDialog from 'components/AffiliateApplicationDialog.vue'
 
 const props = defineProps({
   modelValue: { type: Boolean, default: false },
@@ -66,6 +72,7 @@ const router = useRouter()
 const authMode = ref(props.initialMode === 'register' ? 'register' : 'login')
 const loading = ref(false)
 const passwordResetOpen = ref(false)
+const affiliateApplicationOpen = ref(false)
 const form = reactive({ identifier: '', name: '', email: '', phone: '', password: '' })
 const isOpen = computed({ get: () => props.modelValue, set: (value) => emit('update:modelValue', value) })
 const isAffiliate = computed(() => props.audience === 'affiliate')

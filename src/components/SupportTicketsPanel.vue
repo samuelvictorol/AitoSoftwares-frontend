@@ -105,6 +105,7 @@ const typeOptions = [
   { label: 'Financeiro', value: 'financial' },
   { label: 'Projeto', value: 'project' },
   { label: 'Solicitar saque', value: 'withdrawal' },
+  { label: 'Candidatura de afiliado', value: 'affiliate_application' },
   { label: 'Outro', value: 'other' },
 ]
 const projectClientIds = computed(() => (props.project?.clients || []).map((item) => item.id || item._id || item))
