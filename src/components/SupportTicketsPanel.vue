@@ -48,6 +48,7 @@
             <q-select v-if="admin" v-model="form.status" outlined label="Status" class="q-mt-sm" :options="statusOptions" emit-value map-options />
             <q-select v-model="form.type" outlined label="Tipo" class="q-mt-sm" :options="typeOptions" emit-value map-options />
             <q-input v-model="form.description" outlined type="textarea" autogrow label="Descricao" class="q-mt-sm" :rules="[requiredRule]" />
+            <q-file v-if="admin && form.type === 'withdrawal'" v-model="proofFile" outlined label="Comprovante de pagamento" accept="image/*,.pdf" class="q-mt-sm" />
             <q-btn unelevated no-caps class="portal-module__primary full-width q-mt-md" type="submit" label="Salvar chamado" :loading="saving" />
           </q-form>
         </q-card-section>
@@ -57,7 +58,7 @@
     <q-dialog v-model="detailDialog">
       <q-card class="portal-module__dialog">
         <q-card-section class="portal-module__dialog-head"><div><span class="portal-module__eyebrow">Detalhes do chamado</span><h3>{{ selectedDetail.title || 'Chamado' }}</h3></div><q-btn flat round dense icon="mdi-close" aria-label="Fechar" @click="detailDialog = false" /></q-card-section>
-        <q-card-section class="tickets-panel__detail-body"><p>{{ selectedDetail.description || 'Sem descricao cadastrada.' }}</p><div><span>Status</span><strong>{{ statusLabel(selectedDetail.status) }}</strong></div></q-card-section>
+        <q-card-section class="tickets-panel__detail-body"><p>{{ selectedDetail.description || 'Sem descricao cadastrada.' }}</p><div><span>Status</span><strong>{{ statusLabel(selectedDetail.status) }}</strong></div><a v-if="selectedDetail.attachment?.publicId" :href="`${apiBaseURL}/files/${selectedDetail.attachment.publicId}`" target="_blank" rel="noopener noreferrer">Abrir comprovante</a></q-card-section>
       </q-card>
     </q-dialog>
   </section>
@@ -66,7 +67,7 @@
 <script setup>
 import { computed, onMounted, ref } from 'vue'
 import { useQuasar } from 'quasar'
-import { api } from 'boot/axios'
+import { api, apiBaseURL } from 'boot/axios'
 
 const props = defineProps({ admin: { type: Boolean, default: false }, projectId: { type: String, default: '' }, project: { type: Object, default: null } })
 const projectId = props.projectId
@@ -83,6 +84,7 @@ const dialog = ref(false)
 const detailDialog = ref(false)
 const form = ref(emptyForm())
 const selectedDetail = ref({})
+const proofFile = ref(null)
 const search = ref('')
 const filterStatus = ref('')
 const filterType = ref('')
@@ -92,6 +94,9 @@ const statusOptions = [
   { label: 'Em andamento', value: 'in_progress' },
   { label: 'Resolvido', value: 'resolved' },
   { label: 'Fechado', value: 'closed' },
+  { label: 'Saque solicitado', value: 'withdrawal_requested' },
+  { label: 'Saque finalizado', value: 'withdrawal_completed' },
+  { label: 'Saque rejeitado', value: 'withdrawal_rejected' },
 ]
 const typeOptions = [
   { label: 'Suporte', value: 'support' },
@@ -99,6 +104,7 @@ const typeOptions = [
   { label: 'Acesso', value: 'access' },
   { label: 'Financeiro', value: 'financial' },
   { label: 'Projeto', value: 'project' },
+  { label: 'Solicitar saque', value: 'withdrawal' },
   { label: 'Outro', value: 'other' },
 ]
 const projectClientIds = computed(() => (props.project?.clients || []).map((item) => item.id || item._id || item))
@@ -133,8 +139,8 @@ function formatDate(value) { return value ? new Date(value).toLocaleDateString('
 function preview(value) { const text = String(value || '').trim(); return text.length > 48 ? `${text.slice(0, 48)}...` : text || '-' }
 function statusLabel(value) { return statusOptions.find((item) => item.value === value)?.label || value || '-' }
 function typeLabel(value) { return typeOptions.find((item) => item.value === value)?.label || value || '-' }
-function openCreate() { form.value = emptyForm(); if (!props.admin) form.value.targetUserId = undefined; dialog.value = true }
-function openEdit(ticket) { form.value = { ...emptyForm(), ...ticket, targetUserId: ticket.targetUser?._id || ticket.targetUser?.id || '', projectId: projectId || ticket.project?.id || ticket.project?._id || '' }; dialog.value = true }
+function openCreate() { form.value = emptyForm(); proofFile.value = null; if (!props.admin) form.value.targetUserId = undefined; dialog.value = true }
+function openEdit(ticket) { form.value = { ...emptyForm(), ...ticket, targetUserId: ticket.targetUser?._id || ticket.targetUser?.id || '', projectId: projectId || ticket.project?.id || ticket.project?._id || '' }; proofFile.value = null; dialog.value = true }
 function openDetails(ticket) { selectedDetail.value = ticket; detailDialog.value = true }
 async function load() {
   if (!token) return
@@ -167,6 +173,12 @@ async function save() {
       : await api.post(endpoint, props.admin ? form.value : { title: form.value.title, type: form.value.type, description: form.value.description, projectId: form.value.projectId }, headers)
     if (form.value._id) tickets.value = tickets.value.map((item) => item._id === form.value._id ? response.data.data : item)
     else tickets.value.unshift(response.data.data)
+    if (props.admin && proofFile.value && response.data.data?._id) {
+      const body = new FormData()
+      body.append('attachment', proofFile.value)
+      await api.post(`/admin/tickets/${response.data.data._id}/attachment`, body, { headers: { Authorization: headers.headers.Authorization, 'Content-Type': 'multipart/form-data' } })
+    }
+    proofFile.value = null
     dialog.value = false
     $q.notify({ type: 'positive', message: 'Chamado salvo.' })
   } catch (error) { notifyError(error) } finally { saving.value = false }

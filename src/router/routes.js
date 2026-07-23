@@ -52,6 +52,12 @@ const routes = [
     component: () => import('pages/UserHomePage.vue'),
   },
   {
+    path: '/affiliate',
+    name: 'affiliate-app',
+    meta: { requiresAuth: 'affiliate' },
+    component: () => import('pages/AffiliateHomePage.vue'),
+  },
+  {
     path: '/customer',
     name: 'customer-app',
     meta: { requiresAuth: 'customer' },

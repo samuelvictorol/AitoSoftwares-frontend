@@ -31,6 +31,7 @@
                 <strong>{{ money(course.price) }}</strong>
               </div>
               <div v-if="course.accessMode === 'early_access'" class="course-preview__early-note"><q-icon name="mdi-clock-fast" /> Acesso antecipado: os videos comecam a subir em breve e voce acompanha a trilha em tempo real.</div>
+              <div v-if="course.price" class="course-preview__coupon"><q-input v-model="couponCode" outlined dense label="Cupom do afiliado (opcional)" @keyup.enter="validateCoupon"><template #append><q-btn flat dense icon="mdi-check" aria-label="Validar cupom" :loading="validatingCoupon" @click="validateCoupon" /></template></q-input><small v-if="couponFeedback" :class="{ 'is-error': couponError }">{{ couponFeedback }}</small></div>
               <q-btn unelevated no-caps class="course-preview__button" :icon="owned ? 'mdi-school-outline' : 'mdi-lock-open-outline'" :label="owned ? 'Acessar curso' : course.price ? 'Comprar acesso' : 'Comecar gratis'" :loading="buying" @click="startCourse" />
             </div>
           </section>
@@ -77,11 +78,16 @@ const owned = ref(false)
 const isUser = ref(hasUserSession())
 const authDialogOpen = ref(false)
 const pendingPurchase = ref(false)
+const couponCode = ref('')
+const couponFeedback = ref('')
+const couponError = ref(false)
+const validatingCoupon = ref(false)
 const accessLabel = computed(() => course.value?.accessMode === 'early_access' ? 'Acesso antecipado' : 'Acesso completo')
 const authReturnPath = computed(() => route.fullPath)
 
 function headers () { return { headers: { Authorization: `Bearer ${localStorage.getItem('aito_user_token')}` } } }
 function money (value) { return Number(value || 0) ? new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(Number(value)) : 'Gratuito' }
+async function validateCoupon () { if (!couponCode.value.trim()) return; validatingCoupon.value = true; couponError.value = false; try { const response = await api.post(`/courses/${route.params.slug}/coupon/validate`, { couponCode: couponCode.value.trim() }, headers()); const data = response.data.data; couponFeedback.value = `Cupom aplicado: -${money(data.discountAmount)} · total ${money(data.chargeAmount)}` } catch (error) { couponError.value = true; couponFeedback.value = error.response?.data?.message || 'Cupom inválido.' } finally { validatingCoupon.value = false } }
 
 async function load () {
   try {
@@ -112,7 +118,7 @@ async function startCourse () {
   if (owned.value) { router.push(`/cursos/${route.params.slug}/aulas`); return }
   buying.value = true
   try {
-    const response = await api.post(`/courses/${route.params.slug}/checkout`, {}, headers())
+    const response = await api.post(`/courses/${route.params.slug}/checkout`, { couponCode: couponCode.value.trim() }, headers())
     if (response.data.data?.alreadyOwned || response.data.data?.free) { owned.value = true; router.push(`/cursos/${route.params.slug}/aulas`); return }
     window.location.href = response.data.data.checkoutUrl
   } catch (error) {

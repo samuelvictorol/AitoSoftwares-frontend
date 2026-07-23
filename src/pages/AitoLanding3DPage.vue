@@ -33,7 +33,7 @@
       </button>
 
       <div class="landing-3d__header-actions">
-        <button class="landing-3d__account-link" type="button" aria-label="Abrir acesso" @click="openAuth()">
+        <button class="landing-3d__account-link" type="button" aria-label="Abrir acesso" @click="openAccessChooser">
           <q-icon name="mdi-account-outline" aria-hidden="true" />
           <span class="landing-3d__account-label">{{ accountLabel }}</span>
         </button>
@@ -106,7 +106,7 @@
             </div>
 
             <div v-if="section.id === 'contato'" class="landing-3d__contact-copy">
-              <button type="button" class="landing-3d__text-link" @click="openAuth('register')">
+              <button type="button" class="landing-3d__text-link" @click="openAuth('register', 'user')">
                 <q-icon name="mdi-account-plus-outline" aria-hidden="true" />
                 Criar acesso para acompanhar o projeto
               </button>
@@ -252,7 +252,18 @@
       </q-card>
     </q-dialog>
 
-    <AuthDialog v-model="authDialogOpen" :initial-mode="authMode" @authenticated="handleAuthSuccess" />
+    <q-dialog v-model="accessDialogOpen">
+      <q-card class="landing-3d__dialog-card landing-3d__access-dialog">
+        <q-card-section class="landing-3d__dialog-head"><div><span class="landing-3d__dialog-kicker">Acesso AitoSoftwares</span><h3>Escolha seu espaço</h3></div><q-btn flat round dense icon="mdi-close" aria-label="Fechar" @click="accessDialogOpen = false" /></q-card-section>
+        <q-card-section class="landing-3d__dialog-body landing-3d__access-options">
+          <button type="button" @click="openAuth('login', 'user')"><q-icon name="mdi-school-outline" /><span><strong>Área de estudo</strong><small>Entrar na AitoLearn</small></span><q-icon name="mdi-chevron-right" /></button>
+          <button type="button" @click="router.push('/customer/login'); accessDialogOpen = false"><q-icon name="mdi-briefcase-outline" /><span><strong>Acompanhar meu projeto</strong><small>Portal privado do cliente</small></span><q-icon name="mdi-chevron-right" /></button>
+          <button type="button" @click="openAuth('login', 'affiliate')"><q-icon name="mdi-account-star-outline" /><span><strong>Área do afiliado</strong><small>Cupons e vendas atribuídas</small></span><q-icon name="mdi-chevron-right" /></button>
+        </q-card-section>
+      </q-card>
+    </q-dialog>
+
+    <AuthDialog v-model="authDialogOpen" :initial-mode="authMode" :audience="authAudience" @authenticated="handleAuthSuccess" />
 
     <q-dialog v-model="coursePromptOpen">
       <q-card class="landing-3d__dialog-card landing-3d__course-prompt">
@@ -335,6 +346,8 @@ const brandDialogOpen = ref(false)
 const selectedBrand = ref(null)
 const authDialogOpen = ref(false)
 const authMode = ref('login')
+const authAudience = ref('user')
+const accessDialogOpen = ref(false)
 const referralDialogOpen = ref(false)
 const iaChat = ref(false)
 const coursePromptOpen = ref(false)
@@ -401,18 +414,31 @@ function handleBrandSelect(brand) {
   brandDialogOpen.value = true
 }
 
-function openAuth(mode = 'login') {
+function openAuth(mode = 'login', audience = 'user') {
   const session = getStoredSession()
   if (session?.role === 'admin') return router.push('/admin')
   if (session?.role === 'customer') return router.push('/customer')
   if (session?.role === 'user') return router.push('/app')
+  if (session?.role === 'affiliate') return router.push('/affiliate')
+  accessDialogOpen.value = false
   authMode.value = mode
+  authAudience.value = audience
   authDialogOpen.value = true
+}
+
+function openAccessChooser() {
+  const session = getStoredSession()
+  if (session?.role === 'admin') return router.push('/admin')
+  if (session?.role === 'customer') return router.push('/customer')
+  if (session?.role === 'affiliate') return router.push('/affiliate')
+  if (session?.role === 'user') return router.push('/app')
+  accessDialogOpen.value = true
 }
 
 function openAuthFromQuery() {
   if (route.query.auth !== 'login') return
   authMode.value = 'login'
+  authAudience.value = 'user'
   authDialogOpen.value = true
   const query = { ...route.query }
   delete query.auth
@@ -421,7 +447,7 @@ function openAuthFromQuery() {
 
 function handleAuthSuccess(data) {
   sessionVersion.value += 1
-  router.push(data.user?.role === 'admin' ? '/admin' : '/app')
+  router.push(data.user?.role === 'admin' ? '/admin' : data.user?.role === 'affiliate' ? '/affiliate' : '/app')
 }
 
 function buildWhatsappUrl(message) {
@@ -457,6 +483,7 @@ function getStoredSession() {
   const sessions = [
     { tokenKey: 'aito_admin_token', userKey: 'aito_admin_user', fallbackRole: 'admin' },
     { tokenKey: 'aito_user_token', userKey: 'aito_user', fallbackRole: 'user' },
+    { tokenKey: 'aito_affiliate_token', userKey: 'aito_affiliate_user', fallbackRole: 'affiliate' },
   ]
 
   for (const session of sessions) {
@@ -789,6 +816,15 @@ onBeforeUnmount(() => {
 .landing-3d__google-button .q-icon { color: var(--aito-aqua); }
 .landing-3d__project-login { min-height: 2.7rem; border-color: rgba(143, 255, 238, 0.42); border-radius: 999px; color: #8fffee; background: rgba(19, 188, 157, 0.04); font-size: 0.74rem; }
 .landing-3d__auth-note { display: block; margin-top: 0.9rem; color: rgba(225, 255, 249, 0.42); font-size: 0.62rem; line-height: 1.45; }
+.landing-3d__access-dialog { width: min(92vw, 34rem); }
+.landing-3d__access-options { display: grid; gap: .65rem; }
+.landing-3d__access-options button { display: grid; grid-template-columns: 2rem 1fr auto; align-items: center; gap: .7rem; width: 100%; padding: .85rem; border: 1px solid rgba(19,188,157,.28); border-radius: .7rem; color: #effffb; background: rgba(19,188,157,.06); text-align: left; cursor: pointer; transition: border-color 180ms ease, transform 180ms ease, background 180ms ease; }
+.landing-3d__access-options button:hover, .landing-3d__access-options button:focus-visible { border-color: #8fffee; background: rgba(19,188,157,.14); outline: none; transform: translateY(-2px); }
+.landing-3d__access-options button > .q-icon:first-child { color: #8fffee; font-size: 1.55rem; }
+.landing-3d__access-options button > .q-icon:last-child { color: rgba(239,255,251,.5); }
+.landing-3d__access-options span { display: grid; gap: .2rem; }
+.landing-3d__access-options strong { font-size: .8rem; }
+.landing-3d__access-options small { color: rgba(239,255,251,.58); font-size: .68rem; }
 
 @media (max-width: 1100px) {
   .landing-3d__title { font-size: 3.7rem; }

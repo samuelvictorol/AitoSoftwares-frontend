@@ -30,6 +30,7 @@ export default defineRouter(function (/* { store, ssrContext } */) {
     if (process.env.SERVER) return true
 
     const token = localStorage.getItem('aito_user_token')
+    const affiliateToken = localStorage.getItem('aito_affiliate_token')
     let sessionUser = {}
     try {
       sessionUser = JSON.parse(localStorage.getItem('aito_user') || '{}')
@@ -55,6 +56,14 @@ export default defineRouter(function (/* { store, ssrContext } */) {
 
     if (to.meta?.requiresAuth === 'admin' && !localStorage.getItem('aito_admin_token')) {
       return '/admin/login'
+    }
+
+    if (to.meta?.requiresAuth === 'affiliate' && !affiliateToken) return '/'
+    if (to.meta?.requiresAuth === 'affiliate') {
+      try {
+        const affiliate = JSON.parse(localStorage.getItem('aito_affiliate_user') || '{}')
+        if (affiliate.role !== 'affiliate') return '/'
+      } catch (error) { return '/' }
     }
 
     return true

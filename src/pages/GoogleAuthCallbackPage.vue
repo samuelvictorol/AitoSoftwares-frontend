@@ -46,15 +46,17 @@ onMounted(() => {
 
   try {
     const user = JSON.parse(rawUser)
-    const role = user.role === 'admin' ? 'admin' : 'user'
+    const role = ['admin', 'affiliate'].includes(user.role) ? user.role : 'user'
     localStorage.removeItem('aito_admin_token')
     localStorage.removeItem('aito_admin_user')
     localStorage.removeItem('aito_user_token')
     localStorage.removeItem('aito_user')
+    localStorage.removeItem('aito_affiliate_token')
+    localStorage.removeItem('aito_affiliate_user')
     localStorage.removeItem('aito_seller_token')
     localStorage.removeItem('aito_seller_user')
-    const tokenKey = role === 'admin' ? 'aito_admin_token' : 'aito_user_token'
-    const userKey = role === 'admin' ? 'aito_admin_user' : 'aito_user'
+    const tokenKey = role === 'admin' ? 'aito_admin_token' : role === 'affiliate' ? 'aito_affiliate_token' : 'aito_user_token'
+    const userKey = role === 'admin' ? 'aito_admin_user' : role === 'affiliate' ? 'aito_affiliate_user' : 'aito_user'
 
     localStorage.setItem(tokenKey, token)
     localStorage.setItem(userKey, JSON.stringify({ ...user, role }))
@@ -64,7 +66,7 @@ onMounted(() => {
     sessionStorage.removeItem('aito_auth_return_path')
     const safeReturnPath = returnPath && returnPath.startsWith('/') && !returnPath.startsWith('//') ? returnPath : ''
     message.value = 'Acesso confirmado. Redirecionando...'
-    router.replace(safeReturnPath || (role === 'admin' ? '/admin' : '/app'))
+    router.replace(safeReturnPath || (role === 'admin' ? '/admin' : role === 'affiliate' ? '/affiliate' : '/app'))
   } catch (error) {
     goHomeWithError('A resposta do Google estava invalida.')
   }

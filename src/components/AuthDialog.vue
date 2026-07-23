@@ -14,7 +14,7 @@
 
       <q-card-section class="auth-dialog__tabs">
         <button type="button" :class="{ 'is-active': authMode === 'login' }" @click="authMode = 'login'">Entrar</button>
-        <button type="button" :class="{ 'is-active': authMode === 'register' }" @click="authMode = 'register'">Criar acesso</button>
+        <button v-if="!isAffiliate" type="button" :class="{ 'is-active': authMode === 'register' }" @click="authMode = 'register'">Criar acesso</button>
       </q-card-section>
 
       <q-card-section class="auth-dialog__body">
@@ -37,12 +37,12 @@
           <q-icon name="mdi-google" size="18px" />
           Continuar com Google
         </button>
-        <q-btn v-if="showProjectLogin" outline no-caps class="auth-dialog__project full-width q-mt-sm" icon="mdi-briefcase-outline" label="Acompanhar projeto" @click="goToCustomerLogin" />
+        <q-btn v-if="showProjectLogin && !isAffiliate" outline no-caps class="auth-dialog__project full-width q-mt-sm" icon="mdi-briefcase-outline" label="Acompanhar projeto" @click="goToCustomerLogin" />
       </q-card-section>
     </q-card>
   </q-dialog>
 
-  <PasswordResetDialog v-model="passwordResetOpen" audience="user" :initial-email="form.identifier.includes('@') ? form.identifier : ''" @completed="handlePasswordResetCompleted" />
+  <PasswordResetDialog v-if="!isAffiliate" v-model="passwordResetOpen" audience="user" :initial-email="form.identifier.includes('@') ? form.identifier : ''" @completed="handlePasswordResetCompleted" />
 </template>
 
 <script setup>
@@ -58,6 +58,7 @@ const props = defineProps({
   initialEmail: { type: String, default: '' },
   returnPath: { type: String, default: '' },
   showProjectLogin: { type: Boolean, default: true },
+  audience: { type: String, default: 'user' },
 })
 const emit = defineEmits(['update:modelValue', 'authenticated'])
 const $q = useQuasar()
@@ -67,13 +68,14 @@ const loading = ref(false)
 const passwordResetOpen = ref(false)
 const form = reactive({ identifier: '', name: '', email: '', phone: '', password: '' })
 const isOpen = computed({ get: () => props.modelValue, set: (value) => emit('update:modelValue', value) })
+const isAffiliate = computed(() => props.audience === 'affiliate')
 const requiredRule = (value) => Boolean(String(value || '').trim()) || 'Preencha este campo.'
 
 function persistSession(data) {
-  const role = data.user?.role === 'admin' ? 'admin' : 'user'
-  ;['aito_admin_token', 'aito_admin_user', 'aito_user_token', 'aito_user', 'aito_seller_token', 'aito_seller_user'].forEach((key) => localStorage.removeItem(key))
-  const tokenKey = role === 'admin' ? 'aito_admin_token' : 'aito_user_token'
-  const userKey = role === 'admin' ? 'aito_admin_user' : 'aito_user'
+  const role = isAffiliate.value ? 'affiliate' : 'user'
+  ;['aito_admin_token', 'aito_admin_user', 'aito_user_token', 'aito_user', 'aito_affiliate_token', 'aito_affiliate_user', 'aito_seller_token', 'aito_seller_user'].forEach((key) => localStorage.removeItem(key))
+  const tokenKey = role === 'affiliate' ? 'aito_affiliate_token' : 'aito_user_token'
+  const userKey = role === 'affiliate' ? 'aito_affiliate_user' : 'aito_user'
   localStorage.setItem(tokenKey, data.token)
   localStorage.setItem(userKey, JSON.stringify({ ...data.user, role }))
   return { ...data, user: { ...data.user, role } }
@@ -84,7 +86,7 @@ async function submitAuth() {
   try {
     const response = authMode.value === 'register'
       ? await api.post('/auth/register', { name: form.name, email: form.email, phone: form.phone, password: form.password })
-      : await api.post('/auth/login', { identifier: form.identifier, password: form.password })
+      : await api.post(isAffiliate.value ? '/auth/affiliate/login' : '/auth/login', { identifier: form.identifier, password: form.password })
     const data = persistSession(response.data)
     isOpen.value = false
     $q.notify({ type: 'positive', icon: 'mdi-login', message: 'Acesso realizado.' })
@@ -98,7 +100,7 @@ async function submitAuth() {
 
 function continueWithGoogle() {
   if (props.returnPath) sessionStorage.setItem('aito_auth_return_path', props.returnPath)
-  window.location.assign(`${apiBaseURL.replace(/\/$/, '')}/auth/google`)
+  window.location.assign(`${apiBaseURL.replace(/\/$/, '')}/auth/google?audience=${encodeURIComponent(props.audience)}`)
 }
 
 function goToCustomerLogin() {
@@ -114,7 +116,7 @@ function handlePasswordResetCompleted({ email }) {
 
 watch(() => props.modelValue, (visible) => {
   if (!visible) return
-  authMode.value = props.initialMode === 'register' ? 'register' : 'login'
+  authMode.value = !isAffiliate.value && props.initialMode === 'register' ? 'register' : 'login'
   if (props.initialEmail) form.identifier = props.initialEmail
 })
 </script>
