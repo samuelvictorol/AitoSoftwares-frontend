@@ -52,6 +52,10 @@ const props = defineProps({
   surpriseZoom: {
     type: Number,
     default: 1
+  },
+  introPhase: {
+    type: String,
+    default: 'complete'
   }
 })
 
@@ -91,7 +95,8 @@ const BRAND_NAVY = 0x0b1220
 const STAR_COLORS = [0x1fb694, 0x23917d, 0x50dcc4, 0x8fffee]
 const MODEL_LOAD_TIMEOUT_MS = 9000
 const MODEL_LOAD_CONCURRENCY = 2
-const LANDING_MODEL_KEYS = ['obj1', 'logo', 'obj2', 'obj3', 'obj4', 'samuel', 'dion']
+const LANDING_MODEL_KEYS = ['intro', 'logo', 'obj2', 'obj3', 'obj4', 'samuel', 'dion']
+const MOBILE_MODEL_BY_SECTION = ['intro', 'logo', 'obj2', 'obj2', 'obj3', 'samuel', 'dion', 'obj4']
 const SURPRISE_MODEL_KEYS = ['obj4', 'obj4Dance', 'samuelDance', 'dionDance']
 const COURSE_MODEL_KEYS = ['obj4', 'obj2', 'obj3']
 
@@ -107,7 +112,7 @@ const STATE_DEFAULTS = {
 }
 
 const MODEL_KEYFRAMES = {
-  obj1: [
+  intro: [
     { section: 0, x: 2.35, y: 0.05, ry: -0.35, rz: -0.08, scale: 1, opacity: 1 },
     { section: 1, x: 4.2, y: 0, scale: 0.42, opacity: 0 }
   ],
@@ -180,6 +185,7 @@ let baseCameraZ = 8.4
 let surpriseFocusFrom = 'obj4Dance'
 let surpriseFocusTarget = 'obj4Dance'
 let surpriseFocusMix = 1
+let introTransitionMix = props.introPhase === 'complete' ? 1 : 0
 
 const pointerTarget = new THREE.Vector2()
 const pointerCurrent = new THREE.Vector2()
@@ -642,6 +648,10 @@ function playModelAnimations(entry, mixerRoot, clips) {
 }
 
 function loadModelEntry(loader, key, config) {
+  if (config.procedural) {
+    return Promise.resolve({ key, status: 'fallback' })
+  }
+
     const url = resolveModelUrl(modelFileCandidates(config))
 
     if (!url) {
@@ -776,22 +786,7 @@ function queueNearbyModelLoads(sectionPosition) {
     return
   }
 
-  Object.entries(MODEL_KEYFRAMES).forEach(([key, keyframes]) => {
-    if (!modelEntries[key]) return
-
-    const visibleKeyframes = keyframes.filter((keyframe) => keyframe.opacity > 0.01)
-    const firstSection = visibleKeyframes[0]?.section ?? keyframes[0].section
-    const lastSection = visibleKeyframes[visibleKeyframes.length - 1]?.section ??
-      keyframes[keyframes.length - 1].section
-    const isNearViewport = firstSection <= sectionPosition + 1.35 &&
-      lastSection >= sectionPosition - 1.35
-
-    if (isNearViewport) {
-      queueModelLoad(key)
-    } else if (Math.abs(sectionPosition - lastSection) > 1.8) {
-      unloadModel(key)
-    }
-  })
+  LANDING_MODEL_KEYS.forEach(queueModelLoad)
 }
 
 function loadModels() {
@@ -800,7 +795,7 @@ function loadModels() {
 
   const initialKeys = props.surpriseStage
     ? SURPRISE_MODEL_KEYS
-    : props.courseStage ? COURSE_MODEL_KEYS : ['obj1', 'logo']
+    : props.courseStage ? COURSE_MODEL_KEYS : LANDING_MODEL_KEYS
 
   return Promise.all(initialKeys.map(queueModelLoad))
 }
@@ -1172,6 +1167,11 @@ function updateCourseStageModels(elapsedTime, isMobile, sectionPosition) {
   })
 }
 
+function mobileActiveModelKey(sectionPosition) {
+  const index = clamp(Math.round(sectionPosition), 0, MOBILE_MODEL_BY_SECTION.length - 1)
+  return MOBILE_MODEL_BY_SECTION[index]
+}
+
 function updateModels(sectionPosition, elapsedTime) {
   const isMobile = window.innerWidth < 768
 
@@ -1193,14 +1193,25 @@ function updateModels(sectionPosition, elapsedTime) {
   const lastSection = Math.max(props.sectionCount - 1, 0)
   const danceZoneAmount = clamp((sectionPosition - (lastSection - 0.72)) / 0.72, 0, 1)
   const danceZoneActive = danceZoneAmount > 0.01
+  const activeMobileModel = isMobile ? mobileActiveModelKey(sectionPosition) : null
 
   Object.entries(modelEntries).forEach(([key, entry]) => {
     const keyframes = MODEL_KEYFRAMES[key]
     if (!keyframes) return
 
+    if (activeMobileModel && key !== activeMobileModel) {
+      setObjectOpacity(entry.root, 0)
+      if (entry.mixer) entry.mixer.timeScale = 0
+      return
+    }
+
     if (entry.mixer) entry.mixer.timeScale = props.reducedMotion ? 0.45 : 1
 
     const state = sampleKeyframes(keyframes, sectionPosition)
+    if (key === 'intro') {
+      const targetTransition = props.introPhase === 'loading' ? 0 : 1
+      introTransitionMix = lerp(introTransitionMix, targetTransition, props.reducedMotion ? 0.12 : 0.055)
+    }
     const isBaseDanceRobot = key === 'obj4'
     const isDanceRobot = key === 'obj4Dance'
     let positionY = state.y * verticalScale + mobileYOffset
@@ -1209,6 +1220,15 @@ function updateModels(sectionPosition, elapsedTime) {
     let rotationZ = state.rz * rotationFactor
     let scale = state.scale * modelScale
     let opacity = state.opacity
+
+    if (key === 'intro') {
+      const transition = easeInOut(introTransitionMix)
+      positionY = lerp(0, positionY, transition)
+      rotationX = lerp(0.08, rotationX, transition)
+      rotationY = lerp(0, rotationY, transition)
+      rotationZ = lerp(0, rotationZ, transition)
+      scale = lerp(isMobile ? 0.88 : 1.04, scale, transition)
+    }
 
     if (!props.soloDance) {
       const facing = mouseFacingRotation(rotationX, rotationY, rotationZ, rotationFactor)

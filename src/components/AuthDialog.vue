@@ -32,8 +32,8 @@
         </q-form>
 
         <q-btn v-if="authMode === 'login'" flat no-caps class="auth-dialog__forgot full-width q-mt-sm" icon="mdi-lock-reset" label="Esqueci minha senha" @click="passwordResetOpen = true" />
-        <div class="auth-dialog__separator"><span>ou</span></div>
-        <button type="button" class="auth-dialog__action full-width" @click="continueWithGoogle">
+        <div v-if="!isAffiliate" class="auth-dialog__separator"><span>ou</span></div>
+        <button v-if="!isAffiliate" type="button" class="auth-dialog__action full-width" @click="continueWithGoogle">
           <q-icon name="mdi-google" size="18px" />
           Continuar com Google
         </button>

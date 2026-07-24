@@ -1,8 +1,9 @@
 export const landing3dModels = Object.freeze({
-  obj1: {
-    fileName: 'obj1.glb',
-    highQualityFileName: 'obj1.desktop.glb',
-    fallback: 'cloud'
+  intro: {
+    fileName: '__procedural-loader__.glb',
+    highQualityFileName: '',
+    fallback: 'loader-object',
+    procedural: true
   },
   logo: {
     fileName: 'obj4.glb',
@@ -15,8 +16,8 @@ export const landing3dModels = Object.freeze({
     fallback: 'torus-knot'
   },
   obj3: {
-    fileName: 'obj3.glb',
-    highQualityFileName: 'obj3.desktop.glb',
+    fileName: 'obj1.glb',
+    highQualityFileName: 'obj1.desktop.glb',
     fallback: 'icosahedron'
   },
   obj4: {

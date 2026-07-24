@@ -12,6 +12,7 @@
       :scroll-progress="scrollProgress"
       :reduced-motion="prefersReducedMotion"
       :section-count="landing3dSections.length"
+      :intro-phase="introPhase"
       @ready="handleSceneReady"
     />
 
@@ -342,6 +343,7 @@ const sceneReady = ref(cachedIntro)
 const introRevealing = ref(cachedIntro)
 const introComplete = ref(cachedIntro)
 const introTextVisible = ref(cachedIntro)
+const introPhase = ref(cachedIntro ? 'complete' : 'loading')
 const brandDialogOpen = ref(false)
 const selectedBrand = ref(null)
 const authDialogOpen = ref(false)
@@ -389,13 +391,15 @@ function handleSceneReady() {
   if (sceneReadyWatchdog) window.clearTimeout(sceneReadyWatchdog)
 }
 function handleIntroReveal() {
+  introPhase.value = 'handoff'
   introRevealing.value = true
   window.clearTimeout(introTextTimer)
   introTextTimer = window.setTimeout(() => {
     introTextVisible.value = true
-  }, prefersReducedMotion.value ? 420 : 980)
+  }, prefersReducedMotion.value ? 220 : 1450)
 }
 function handleIntroComplete() {
+  introPhase.value = 'complete'
   introComplete.value = true
   try {
     window.sessionStorage.setItem(LANDING_INTRO_CACHE_KEY, '1')
@@ -595,6 +599,12 @@ onBeforeUnmount(() => {
   inset: 0;
   z-index: 1;
   pointer-events: none;
+  transition: opacity 1200ms cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+.landing-3d--intro-loading .landing-3d__atmosphere,
+.landing-3d--intro-loading .landing-3d__noise {
+  opacity: 0;
 }
 
 .landing-3d__atmosphere {

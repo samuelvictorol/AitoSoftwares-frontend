@@ -5,7 +5,7 @@ export const landing3dSections = Object.freeze([
     title: 'Tecnologia sob medida para empresas de alto padrão.',
     description: 'Software sob medida, IA, cloud e automação trabalhando juntos para transformar complexidade em movimento.',
     align: 'left',
-    modelKey: 'obj1',
+    modelKey: 'intro',
     cta: {
       label: 'Quero meu diagnóstico grátis',
       href: 'https://wa.me/5561981748795?text=Ola%2C%20quero%20meu%20diagnostico%20gratis%20com%20a%20AitoSoftwares.'
