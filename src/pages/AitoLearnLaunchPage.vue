@@ -1,8 +1,15 @@
 <template>
-  <main class="learn-launch" :style="{ minHeight: `${sections.length * 100}vh` }">
+  <main class="learn-launch" :style="{ minHeight: `${navSections.length * 100}vh` }">
+    <AuthDialog
+      v-model="authDialogOpen"
+      :return-path="route.fullPath"
+      :show-project-login="false"
+      audience="user"
+      @authenticated="handleAuthenticated"
+    />
     <AitoThreeScene
       course-stage
-      :section-count="sections.length"
+      :section-count="navSections.length"
       :scroll-progress="scrollProgress"
       :reduced-motion="prefersReducedMotion"
       @ready="handleSceneReady"
@@ -17,6 +24,12 @@
       </router-link>
       <div class="learn-launch__header-actions">
         <router-link class="learn-launch__legal-link" to="/politica-privacidade">Privacidade</router-link>
+        <button v-if="!isUser" class="learn-launch__login" type="button" @click="openUserLogin">
+          <q-icon name="mdi-login" aria-hidden="true" /> Entrar
+        </button>
+        <button v-else class="learn-launch__login" type="button" @click="router.push('/app')">
+          <q-icon name="mdi-school-outline" aria-hidden="true" /> Area do estudante
+        </button>
         <button class="learn-launch__back" type="button" @click="router.push('/')">
           <q-icon name="mdi-arrow-left" aria-hidden="true" />
           Voltar para Aito
@@ -36,6 +49,20 @@
     </nav>
 
     <div class="learn-launch__content">
+      <section id="catalogo" data-landing-3d-section class="learn-launch__section learn-launch__section--catalog">
+        <div class="learn-launch__catalog">
+          <div class="learn-launch__catalog-head">
+            <div><p class="learn-launch__eyebrow">AITOLEARN / CATALOGO</p><h1>Aprendizado que vira software em producao.</h1><p>Escolha uma trilha, veja o preview e construa com contexto.</p></div>
+            <q-icon name="mdi-school-outline" size="76px" aria-hidden="true" />
+          </div>
+          <div class="learn-launch__catalog-search"><q-input v-model="catalogSearch" outlined clearable label="Buscar cursos" @keyup.enter="loadCatalog"><template #prepend><q-icon name="mdi-magnify" /></template></q-input><q-btn unelevated no-caps class="learn-launch__button learn-launch__button--primary" icon="mdi-magnify" label="Buscar" :loading="catalogLoading" @click="loadCatalog" /></div>
+          <div v-if="catalogLoading && !catalogCourses.length" class="learn-launch__catalog-loading"><q-spinner color="teal-3" size="32px" /> Carregando trilhas...</div>
+          <template v-else>
+            <div class="learn-launch__catalog-row"><div class="learn-launch__catalog-row-head"><div><p class="learn-launch__eyebrow">TRILHAS RECENTES</p><h2>Do mais novo ao mais antigo.</h2></div><span>20 por pagina</span></div><q-tabs v-model="catalogTab" class="learn-launch__course-tabs" outside-arrows mobile-arrows align="left"><q-tab v-for="course in recentCourses" :key="course._id" :name="course._id" no-caps @click="openCourse(course)"><article class="learn-launch__course-card"><div class="learn-launch__course-image"><img v-if="course.banner" :src="course.banner.url" :alt="course.title" loading="lazy" decoding="async"><div v-else><q-icon name="mdi-school-outline" size="32px" /></div><span v-if="isPromotion(course)">Promo</span></div><div><strong>{{ course.title }}</strong><small>{{ course.topicCount || 0 }} aulas · {{ course.hours || 0 }}h</small><b v-if="isPromotion(course)"><s>{{ money(course.price) }}</s> {{ money(currentPrice(course)) }}</b><b v-else>{{ money(currentPrice(course)) }}</b></div></article></q-tab><div v-if="!recentCourses.length" class="learn-launch__catalog-empty">Nenhum curso encontrado.</div></q-tabs><q-pagination v-if="catalogPageCount > 1" v-model="catalogPage" :max="catalogPageCount" max-pages="5" direction-links boundary-links color="teal-3" class="learn-launch__pagination" @update:model-value="catalogTab = ''" /></div>
+            <div class="learn-launch__catalog-row"><div class="learn-launch__catalog-row-head"><div><p class="learn-launch__eyebrow">TRILHAS GRATUITAS</p><h2>Comece sem pagar.</h2></div><span>Login de usuario necessario</span></div><q-tabs v-model="freeCatalogTab" class="learn-launch__course-tabs" outside-arrows mobile-arrows align="left"><q-tab v-for="course in freeCourses" :key="course._id" :name="course._id" no-caps @click="openCourse(course)"><article class="learn-launch__course-card"><div class="learn-launch__course-image"><img v-if="course.banner" :src="course.banner.url" :alt="course.title" loading="lazy" decoding="async"><div v-else><q-icon name="mdi-school-outline" size="32px" /></div><span>Gratis</span></div><div><strong>{{ course.title }}</strong><small>{{ course.topicCount || 0 }} aulas · {{ course.hours || 0 }}h</small><b>Gratis</b></div></article></q-tab><div v-if="!freeCourses.length" class="learn-launch__catalog-empty">Novas trilhas gratuitas em breve.</div></q-tabs></div>
+          </template>
+        </div>
+      </section>
       <section
         v-for="(section, index) in sections"
         :id="section.id"
@@ -52,12 +79,8 @@
             <p class="learn-launch__description">{{ section.description }}</p>
 
             <div v-if="section.kind === 'hero'" class="learn-launch__actions">
-              <button type="button" class="learn-launch__button learn-launch__button--primary" @click="scrollToSection('inscricao')">
-                Acessar Cursos
-                <q-icon name="mdi-arrow-down" aria-hidden="true" />
-              </button>
-              <button type="button" class="learn-launch__button learn-launch__button--ghost" @click="goTo('/cursos')">
-                Ver como funciona
+              <button type="button" class="learn-launch__button learn-launch__button--ghost" @click="scrollToSection('frontend')">
+                Conhecer a trilha
                 <q-icon name="mdi-play-circle-outline" aria-hidden="true" />
               </button>
             </div>
@@ -151,13 +174,15 @@
 </template>
 
 <script setup>
-import { onBeforeUnmount, onMounted, reactive, ref } from 'vue'
+import { computed, onBeforeUnmount, onMounted, reactive, ref } from 'vue'
 import { useQuasar } from 'quasar'
-import { useRouter } from 'vue-router'
+import { useRoute, useRouter } from 'vue-router'
 import { api } from 'boot/axios'
 import AitoThreeScene from 'components/landing3d/AitoThreeScene.vue'
+import AuthDialog from 'components/AuthDialog.vue'
 import { useLandingScroll } from 'src/composables/useLandingScroll'
 
+const route = useRoute()
 const router = useRouter()
 const $q = useQuasar()
 const sections = Object.freeze([
@@ -182,10 +207,18 @@ const sections = Object.freeze([
     description: 'Use Codex e Claude para acelerar raciocinio, testes e implementacao com arquitetura, limites, revisao e seguranca antes do deploy.', items: ['Initializers seguros', 'Integracao de pagamento', 'Testes e observabilidade', 'Javascript e Python','Bonus de prompt engineering'], stack: ['Vue', 'Three.js', 'Node', 'MongoDB', 'Cloud', 'IA']
   }
 ])
-const navSections = Object.freeze([...sections, { id: 'inscricao', label: 'Inscricao' }, { id: 'sobre-aitolearn', label: 'AitoLearn' }])
+const navSections = Object.freeze([{ id: 'catalogo', label: 'Cursos' }, ...sections, { id: 'inscricao', label: 'Inscricao' }, { id: 'sobre-aitolearn', label: 'AitoLearn' }])
 const { activeSection, prefersReducedMotion, scrollProgress, scrollToSection } = useLandingScroll(navSections.length)
 const sceneReady = ref(false)
 const saving = ref(false)
+const authDialogOpen = ref(false)
+const catalogLoading = ref(false)
+const catalogCourses = ref([])
+const catalogSearch = ref('')
+const catalogPage = ref(1)
+const catalogTab = ref('')
+const freeCatalogTab = ref('')
+const catalogPageSize = 20
 let loaderWatchdog
 const videoUrl = import.meta.env.VITE_AITOLEARN_VIDEO_URL || 'https://www.youtube.com/embed/ekZtwCJvH1g?playsinline=1&rel=0'
 const profileOptions = [
@@ -199,14 +232,44 @@ const profileOptions = [
 ]
 const lead = reactive({ name: '', email: '', phone: '', profileType: '', question: '' })
 const requiredRule = (value) => Boolean(String(value || '').trim()) || 'Preencha este campo.'
+const isUser = computed(() => {
+  if (!localStorage.getItem('aito_user_token')) return false
+  try { return JSON.parse(localStorage.getItem('aito_user') || '{}').role === 'user' } catch (error) { return false }
+})
+const filteredCatalogCourses = computed(() => {
+  const query = catalogSearch.value.trim().toLowerCase()
+  if (!query) return catalogCourses.value
+  return catalogCourses.value.filter((course) => `${course.title || ''} ${course.description || ''}`.toLowerCase().includes(query))
+})
+const catalogPageCount = computed(() => Math.max(1, Math.ceil(filteredCatalogCourses.value.length / catalogPageSize)))
+const recentCourses = computed(() => filteredCatalogCourses.value.slice((catalogPage.value - 1) * catalogPageSize, catalogPage.value * catalogPageSize))
+const freeCourses = computed(() => filteredCatalogCourses.value.filter((course) => currentPrice(course) <= 0).slice(0, catalogPageSize))
 
 function handleSceneReady() {
   sceneReady.value = true
   window.clearTimeout(loaderWatchdog)
 }
-function goTo(path) {
-  router.push(path)
-  window.scrollTo({ top: 0, behavior: 'smooth' })
+function currentPrice(course) {
+  const price = Number(course?.price || 0)
+  const promotion = Number(course?.promoPrice || course?.precoPromocao || 0)
+  return promotion > 0 && promotion < price ? promotion : price
+}
+function isPromotion(course) { return currentPrice(course) < Number(course?.price || 0) }
+function money(value) { return Number(value || 0) ? new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(Number(value)) : 'Gratis' }
+function openCourse(course) { if (course?.slug) router.push(`/cursos/${course.slug}`) }
+function openUserLogin() { if (isUser.value) return router.push('/app'); authDialogOpen.value = true }
+function handleAuthenticated(data) { if (data?.user?.role === 'user') router.push('/app') }
+async function loadCatalog() {
+  catalogLoading.value = true
+  try {
+    const response = await api.get('/courses', { params: { q: catalogSearch.value.trim() } })
+    catalogCourses.value = response.data.data || []
+    catalogPage.value = 1
+    catalogTab.value = ''
+    freeCatalogTab.value = ''
+  } catch (error) {
+    $q.notify({ type: 'negative', message: error.response?.data?.message || 'Nao foi possivel carregar os cursos.' })
+  } finally { catalogLoading.value = false }
 }
 
 async function submitLead() {
@@ -238,6 +301,7 @@ async function submitLead() {
 
 onMounted(() => {
   loaderWatchdog = window.setTimeout(() => { sceneReady.value = true }, 10000)
+  loadCatalog()
 })
 
 onBeforeUnmount(() => window.clearTimeout(loaderWatchdog))
@@ -261,12 +325,41 @@ onBeforeUnmount(() => window.clearTimeout(loaderWatchdog))
 .learn-launch__brand span span { color: var(--teal); }
 .learn-launch__header-actions { display: flex; align-items: center; gap: 1rem; }
 .learn-launch__legal-link { color: rgba(239,255,251,.7); font-size: .72rem; text-decoration: none; }
+.learn-launch__login { display: inline-flex; align-items: center; gap: .35rem; padding: .58rem .8rem; border: 1px solid rgba(143,255,238,.42); border-radius: .65rem; color: #03110f; background: linear-gradient(135deg, #8fffee, var(--teal)); cursor: pointer; font: inherit; font-size: .72rem; font-weight: 900; }
 .learn-launch__back, .learn-launch__button { display: inline-flex; align-items: center; justify-content: center; gap: .5rem; border: 1px solid rgba(19,188,157,.4); color: #effffb; background: rgba(3,25,26,.72); border-radius: .65rem; cursor: pointer; font: inherit; font-size: .76rem; font-weight: 800; }
 .learn-launch__back { padding: .6rem .8rem; }
 .learn-launch__progress { position: fixed; z-index: 6; top: 50%; right: 1.25rem; display: grid; gap: .55rem; transform: translateY(-50%); }
 .learn-launch__progress button { width: .5rem; height: .5rem; padding: 0; border: 1px solid rgba(143,255,238,.55); border-radius: 50%; background: transparent; cursor: pointer; transition: transform .25s ease, background .25s ease; }
 .learn-launch__progress button.is-active { background: var(--teal); box-shadow: 0 0 12px rgba(19,188,157,.7); transform: scale(1.6); }
 .learn-launch__content { position: relative; z-index: 2; }
+.learn-launch__section--catalog { align-items: center; padding-top: clamp(6.5rem, 11vh, 8rem); }
+.learn-launch__catalog { width: min(1240px, 100%); margin: 0 auto; }
+.learn-launch__catalog-head { display: flex; align-items: flex-end; justify-content: space-between; gap: 2rem; }
+.learn-launch__catalog-head h1 { max-width: 16ch; }
+.learn-launch__catalog-head > .q-icon { flex: 0 0 auto; color: var(--teal); filter: drop-shadow(0 0 20px rgba(19,188,157,.4)); }
+.learn-launch__catalog-search { display: grid; grid-template-columns: 1fr auto; gap: .7rem; margin-top: 1.5rem; }
+.learn-launch__catalog-search :deep(.q-field__control) { min-height: 46px; color: #effffb; background: rgba(7,40,40,.76); }
+.learn-launch__catalog-search :deep(.q-field__label), .learn-launch__catalog-search :deep(.q-field__native), .learn-launch__catalog-search :deep(.q-field__input) { color: rgba(239,255,251,.88); }
+.learn-launch__catalog-row { margin-top: 1.35rem; }
+.learn-launch__catalog-row-head { display: flex; align-items: flex-end; justify-content: space-between; gap: 1rem; }
+.learn-launch__catalog-row-head h2 { max-width: none; margin: .25rem 0 0; font-size: 1rem; }
+.learn-launch__catalog-row-head > span { color: rgba(229,255,250,.55); font-size: .66rem; }
+.learn-launch__course-tabs { min-height: 172px; margin-top: .65rem; border-bottom: 1px solid rgba(19,188,157,.14); }
+.learn-launch__course-tabs :deep(.q-tabs__content) { gap: .65rem; }
+.learn-launch__course-tabs :deep(.q-tab) { min-width: 240px; min-height: 165px; padding: 0; align-items: stretch; text-transform: none; }
+.learn-launch__course-card { display: grid; width: 240px; height: 160px; grid-template-rows: 88px 1fr; overflow: hidden; border: 1px solid rgba(143,255,238,.26); border-radius: .7rem; text-align: left; background: rgba(3,25,26,.76); box-shadow: 0 14px 34px rgba(0,0,0,.2); transition: border-color .25s ease, transform .25s ease, box-shadow .25s ease; }
+.learn-launch__course-card:hover { border-color: rgba(143,255,238,.72); box-shadow: 0 18px 44px rgba(19,188,157,.16); transform: translateY(-3px); }
+.learn-launch__course-image { position: relative; overflow: hidden; background: linear-gradient(135deg, rgba(19,188,157,.22), rgba(3,16,18,.9)); }
+.learn-launch__course-image img { display: block; width: 100%; height: 100%; object-fit: cover; }
+.learn-launch__course-image > div { display: grid; height: 100%; place-items: center; color: var(--aqua); }
+.learn-launch__course-image > span { position: absolute; top: .4rem; right: .4rem; padding: .2rem .4rem; border: 1px solid rgba(143,255,238,.55); border-radius: 999px; color: #03110f; background: #8fffee; font-size: .58rem; font-weight: 900; }
+.learn-launch__course-card > div:last-child { display: grid; align-content: center; gap: .25rem; padding: .55rem .65rem; }
+.learn-launch__course-card strong { display: -webkit-box; overflow: hidden; color: #effffb; font-size: .75rem; line-height: 1.2; -webkit-box-orient: vertical; -webkit-line-clamp: 2; }
+.learn-launch__course-card small { color: rgba(229,255,250,.56); font-size: .62rem; }
+.learn-launch__course-card b { color: #8fffee; font-size: .75rem; }
+.learn-launch__course-card s { margin-right: .25rem; color: rgba(229,255,250,.46); font-size: .6rem; }
+.learn-launch__catalog-empty, .learn-launch__catalog-loading { display: flex; min-height: 160px; align-items: center; justify-content: center; gap: .6rem; color: rgba(229,255,250,.58); font-size: .75rem; }
+.learn-launch__pagination { margin-top: .55rem; }
 .learn-launch__section { display: grid; min-height: 100vh; padding: clamp(7.5rem, 14vh, 10rem) clamp(1rem, 6vw, 7rem) 4rem; align-items: start; }
 .learn-launch__section-inner { display: grid; width: min(1200px, 100%); margin: 0 auto; grid-template-columns: minmax(0, .86fr) minmax(0, 1.14fr); align-items: center; gap: clamp(2rem, 7vw, 7rem); }
 .learn-launch__copy { max-width: 38rem; }
@@ -317,6 +410,8 @@ onBeforeUnmount(() => window.clearTimeout(loaderWatchdog))
 @media (max-width: 760px) {
   .learn-launch__header { padding: .75rem 1rem; }
   .learn-launch__legal-link { display: none; }
+  .learn-launch__login { padding: .55rem; font-size: 0; }
+  .learn-launch__login .q-icon { font-size: 1.15rem; }
   .learn-launch__back { padding: .55rem; font-size: 0; }
   .learn-launch__back .q-icon { font-size: 1.2rem; }
   .learn-launch__progress { right: .7rem; }
@@ -329,6 +424,11 @@ onBeforeUnmount(() => window.clearTimeout(loaderWatchdog))
   .learn-launch__lead-form { justify-self: stretch; }
   .learn-launch__form-grid { grid-template-columns: 1fr; }
   .learn-launch__form-full { grid-column: auto; }
+  .learn-launch__catalog-head > .q-icon { display: none; }
+  .learn-launch__catalog-search { grid-template-columns: 1fr; }
+  .learn-launch__catalog-row-head { align-items: flex-start; flex-direction: column; gap: .25rem; }
+  .learn-launch__course-tabs :deep(.q-tab) { min-width: 78vw; }
+  .learn-launch__course-card { width: 78vw; }
   .learn-launch__veil { background: linear-gradient(180deg, rgba(3,9,11,.58), rgba(3,9,11,.78)); }
 }
 @media (prefers-reduced-motion: reduce) { .learn-launch__loader-orb { animation: none; } }

@@ -12,7 +12,6 @@
 
           <div class="course-store__search">
             <q-input v-model="search" outlined clearable label="Buscar cursos" @keyup.enter="load"><template #prepend><q-icon name="mdi-magnify" /></template></q-input>
-            <q-btn unelevated flat icon="mdi-school" dense label="Saiba Mais" @click="router.push('/aitolearn')" />
             <q-btn unelevated class="course-store__button" icon="mdi-magnify" label="Buscar" :loading="loading" @click="load" />
           </div>
 

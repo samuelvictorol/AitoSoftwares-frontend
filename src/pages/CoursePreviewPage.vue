@@ -11,7 +11,7 @@
         <div v-if="loading" class="course-preview__loading"><q-spinner color="teal-3" size="42px" /></div>
         <div v-else-if="course" class="course-preview__shell">
           <header class="course-preview__header">
-            <router-link to="/cursos" class="course-preview__back"><q-icon name="mdi-arrow-left" /> Cursos</router-link>
+            <router-link to="/aitolearn" class="course-preview__back"><q-icon name="mdi-arrow-left" /> Cursos</router-link>
             <router-link to="/" class="course-preview__brand">AITO<span>LEARN</span></router-link>
           </header>
 
@@ -28,11 +28,12 @@
                 <span><q-icon name="mdi-clock-outline" /> {{ course.hours || 0 }} horas</span>
                 <span><q-icon name="mdi-play-box-multiple-outline" /> {{ course.topicCount || 0 }} aulas</span>
                 <span><q-icon :name="course.accessMode === 'early_access' ? 'mdi-timer-sand' : 'mdi-lock-open-outline'" /> {{ accessLabel }}</span>
-                <strong>{{ money(course.price) }}</strong>
+                <strong v-if="promotionActive"><s>{{ money(course.price) }}</s> {{ money(currentPrice) }}</strong>
+                <strong v-else>{{ money(currentPrice) }}</strong>
               </div>
               <div v-if="course.accessMode === 'early_access'" class="course-preview__early-note"><q-icon name="mdi-clock-fast" /> Acesso antecipado: os videos comecam a subir em breve e voce acompanha a trilha em tempo real.</div>
-              <div v-if="course.price" class="course-preview__coupon"><q-input v-model="couponCode" outlined dense label="Cupom do afiliado (opcional)" @keyup.enter="validateCoupon"><template #append><q-btn flat dense icon="mdi-check" aria-label="Validar cupom" :loading="validatingCoupon" @click="validateCoupon" /></template></q-input><small v-if="couponFeedback" :class="{ 'is-error': couponError }">{{ couponFeedback }}</small></div>
-              <q-btn unelevated no-caps class="course-preview__button" :icon="owned ? 'mdi-school-outline' : 'mdi-lock-open-outline'" :label="owned ? 'Acessar curso' : course.price ? 'Comprar acesso' : 'Comecar gratis'" :loading="buying" @click="startCourse" />
+              <div v-if="currentPrice > 0" class="course-preview__coupon"><q-input v-model="couponCode" outlined dense label="Cupom do afiliado (opcional)" @keyup.enter="validateCoupon"><template #append><q-btn flat dense icon="mdi-check" aria-label="Validar cupom" :loading="validatingCoupon" @click="validateCoupon" /></template></q-input><small v-if="couponFeedback" :class="{ 'is-error': couponError }">{{ couponFeedback }}</small></div>
+              <q-btn unelevated no-caps class="course-preview__button" :icon="owned ? 'mdi-school-outline' : 'mdi-lock-open-outline'" :label="owned ? 'Acessar curso' : currentPrice > 0 ? 'Comprar acesso' : 'Comecar gratis'" :loading="buying" @click="startCourse" />
             </div>
           </section>
 
@@ -83,6 +84,12 @@ const couponFeedback = ref('')
 const couponError = ref(false)
 const validatingCoupon = ref(false)
 const accessLabel = computed(() => course.value?.accessMode === 'early_access' ? 'Acesso antecipado' : 'Acesso completo')
+const currentPrice = computed(() => {
+  const price = Number(course.value?.price || 0)
+  const promotion = Number(course.value?.promoPrice || course.value?.precoPromocao || 0)
+  return promotion > 0 && promotion < price ? promotion : price
+})
+const promotionActive = computed(() => currentPrice.value < Number(course.value?.price || 0))
 const authReturnPath = computed(() => route.fullPath)
 
 function headers () { return { headers: { Authorization: `Bearer ${localStorage.getItem('aito_user_token')}` } } }

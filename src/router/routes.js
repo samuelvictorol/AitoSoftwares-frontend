@@ -2,7 +2,7 @@ const routes = [
   {
     path: '/',
     name: 'landing-3d',
-    component: () => import('pages/AitoLanding3DPage.vue'),
+    redirect: '/aitolearn',
   },
   {
     path: '/auth/google/callback',
@@ -16,7 +16,7 @@ const routes = [
   },
   {
     path: '/aitolearn',
-    name: 'aitolearn-course-1',
+    name: 'aitolearn-catalog',
     component: () => import('pages/AitoLearnLaunchPage.vue'),
   },
   {
@@ -26,8 +26,8 @@ const routes = [
   },
   {
     path: '/cursos',
-    name: 'course-marketplace',
-    component: () => import('pages/CourseMarketplacePage.vue'),
+    name: 'course-marketplace-legacy',
+    redirect: '/aitolearn',
   },
   {
     path: '/cursos/:slug/aulas',

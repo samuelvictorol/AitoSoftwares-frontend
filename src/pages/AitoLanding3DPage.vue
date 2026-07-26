@@ -274,7 +274,7 @@
         </q-card-section>
         <q-card-section class="landing-3d__dialog-body">
           <p>Aprenda a construir e vender sistemas high ticket com frontend, backend, pagamentos, cloud, IA e 3D.</p>
-          <q-btn unelevated no-caps class="landing-3d__auth-submit q-mt-md full-width" icon="mdi-lightbulb-on-outline" label="Conhecer a AitoLearn" @click="router.push('/cursos'); coursePromptOpen = false" />
+          <q-btn unelevated no-caps class="landing-3d__auth-submit q-mt-md full-width" icon="mdi-lightbulb-on-outline" label="Conhecer a AitoLearn" @click="router.push('/aitolearn'); coursePromptOpen = false" />
         </q-card-section>
       </q-card>
     </q-dialog>
@@ -410,7 +410,7 @@ function handleIntroComplete() {
 }
 
 function handleAboutCtaClick() {
-  router.push('/cursos')
+  router.push('/aitolearn')
 }
 
 function handleBrandSelect(brand) {
@@ -455,7 +455,7 @@ function handleAuthSuccess(data) {
 }
 
 function buildWhatsappUrl(message) {
-  return `https://wa.me/5561981748795?text=${encodeURIComponent(message)}`
+  return `https://wa.me/556182529083?text=${encodeURIComponent(message)}`
 }
 
 async function sendLead() {

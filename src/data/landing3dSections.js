@@ -8,11 +8,11 @@ export const landing3dSections = Object.freeze([
     modelKey: 'intro',
     cta: {
       label: 'Quero meu diagnóstico grátis',
-      href: 'https://wa.me/5561981748795?text=Ola%2C%20quero%20meu%20diagnostico%20gratis%20com%20a%20AitoSoftwares.'
+      href: 'https://wa.me/556182529083?text=Ola%2C%20quero%20meu%20diagnostico%20gratis%20com%20a%20AitoSoftwares.'
     },
     secondaryCta: {
       label: 'AitoLearn: estude conosco',
-      to: '/cursos'
+      to: '/aitolearn'
     },
     surpriseCta: {
       label: 'Surpreenda-me',

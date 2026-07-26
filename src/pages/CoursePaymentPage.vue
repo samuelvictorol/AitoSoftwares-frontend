@@ -9,7 +9,7 @@
       <p>{{ message }}</p>
       <small v-if="polling" class="course-payment__polling"><q-spinner-dots size="18px" /> Aguardando a confirmação automática...</small>
       <q-btn v-if="unlocked && courseSlug" unelevated no-caps class="course-payment__button" label="Abrir curso" icon="mdi-school-outline" @click="router.push(`/cursos/${courseSlug}/aulas`)" />
-      <q-btn v-else flat no-caps color="teal-3" label="Voltar aos cursos" icon="mdi-arrow-left" @click="router.push('/cursos')" />
+      <q-btn v-else flat no-caps color="teal-3" label="Voltar aos cursos" icon="mdi-arrow-left" @click="router.push('/aitolearn')" />
     </div></q-page></q-page-container>
   </q-layout>
 </template>

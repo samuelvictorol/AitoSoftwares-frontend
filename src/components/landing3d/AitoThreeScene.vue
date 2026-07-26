@@ -98,7 +98,7 @@ const MODEL_LOAD_CONCURRENCY = 2
 const LANDING_MODEL_KEYS = ['intro', 'logo', 'obj2', 'obj3', 'obj4', 'samuel', 'dion']
 const MOBILE_MODEL_BY_SECTION = ['intro', 'logo', 'obj2', 'obj2', 'obj3', 'samuel', 'dion', 'obj4']
 const SURPRISE_MODEL_KEYS = ['obj4', 'obj4Dance', 'samuelDance', 'dionDance']
-const COURSE_MODEL_KEYS = ['obj4', 'obj2', 'obj3']
+const COURSE_MODEL_KEYS = ['obj4']
 
 const STATE_DEFAULTS = {
   x: 0,
