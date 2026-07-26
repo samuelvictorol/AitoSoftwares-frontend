@@ -2,7 +2,7 @@ const routes = [
   {
     path: '/',
     name: 'landing-3d',
-    redirect: '/aitolearn',
+    component: () => import('pages/AitoLanding3DPage.vue'),
   },
   {
     path: '/auth/google/callback',
