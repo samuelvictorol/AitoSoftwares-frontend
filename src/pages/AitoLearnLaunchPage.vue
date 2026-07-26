@@ -340,13 +340,13 @@ onBeforeUnmount(() => window.clearTimeout(loaderWatchdog))
 .learn-launch__progress button.is-active { background: var(--teal); box-shadow: 0 0 12px rgba(19,188,157,.7); transform: scale(1.6); }
 .learn-launch__content { position: relative; z-index: 2; }
 .learn-launch__section--catalog { align-items: center; padding-top: clamp(6.5rem, 11vh, 8rem); }
-.learn-launch__catalog { width: min(1240px, 100%); margin: 0 auto; }
+.learn-launch__catalog { width: min(1240px, 100%); min-width: 0; max-width: 100%; margin: 0 auto; }
 .learn-launch__catalog-head { display: flex; align-items: flex-end; justify-content: space-between; gap: 2rem; }
 .learn-launch__catalog-head h1 { max-width: 16ch; }
 .learn-launch__catalog-head > div > p:not(.learn-launch__eyebrow) { display: none; }
 .learn-launch__catalog-head > .q-icon { flex: 0 0 auto; color: var(--teal); filter: drop-shadow(0 0 20px rgba(19,188,157,.4)); }
 .learn-launch__catalog-search { display: grid; min-width: 0; grid-template-columns: minmax(0, 1fr) auto; gap: .7rem; margin-top: 1.5rem; }
-.learn-launch__catalog-search > * { min-width: 0; }
+.learn-launch__catalog-search > * { min-width: 0; max-width: 100%; box-sizing: border-box; }
 .learn-launch__catalog-search :deep(.q-field__control) { min-height: 46px; color: #effffb; background: rgba(7,40,40,.76); }
 .learn-launch__catalog-search :deep(.q-field__label), .learn-launch__catalog-search :deep(.q-field__native), .learn-launch__catalog-search :deep(.q-field__input) { color: rgba(239,255,251,.88); }
 .learn-launch__catalog-row { margin-top: 1.35rem; }
@@ -370,7 +370,7 @@ onBeforeUnmount(() => window.clearTimeout(loaderWatchdog))
 .learn-launch__course-card s { margin-right: .25rem; color: rgba(229,255,250,.46); font-size: .6rem; }
 .learn-launch__catalog-empty, .learn-launch__catalog-loading { display: flex; min-height: 160px; align-items: center; justify-content: center; gap: .6rem; color: rgba(229,255,250,.58); font-size: .75rem; }
 .learn-launch__pagination { margin-top: .55rem; }
-.learn-launch__section { display: grid; min-height: 100vh; padding: clamp(7.5rem, 14vh, 10rem) clamp(1rem, 6vw, 7rem) 4rem; align-items: start; }
+.learn-launch__section { display: grid; min-width: 0; min-height: 100vh; padding: clamp(7.5rem, 14vh, 10rem) clamp(1rem, 6vw, 7rem) 4rem; align-items: start; }
 .learn-launch__section-inner { display: grid; width: min(1200px, 100%); margin: 0 auto; grid-template-columns: minmax(0, .86fr) minmax(0, 1.14fr); align-items: center; gap: clamp(2rem, 7vw, 7rem); }
 .learn-launch__copy { max-width: 38rem; }
 .learn-launch__eyebrow { margin: 0 0 1rem; color: var(--aqua); font-size: .7rem; font-weight: 900; letter-spacing: .16em; }
@@ -436,9 +436,12 @@ onBeforeUnmount(() => window.clearTimeout(loaderWatchdog))
   .learn-launch__form-full { grid-column: auto; }
   .learn-launch__catalog-head > .q-icon { display: none; }
   .learn-launch__catalog-search { width: 100%; grid-template-columns: minmax(0, 1fr); }
-  .learn-launch__catalog-search .q-btn { width: 100%; }
+  .learn-launch__catalog-search .q-btn { width: 100%; min-width: 0 !important; max-width: 100%; box-sizing: border-box; }
   .learn-launch__catalog-row-head { align-items: flex-start; flex-direction: column; gap: .25rem; }
-  .learn-launch__course-tabs :deep(.q-tab) { min-width: 78vw; }
+  .learn-launch__course-tabs { width: 100%; max-width: 100%; }
+  .learn-launch__course-tabs :deep(.q-tabs__content) { display: flex !important; width: 100% !important; max-width: 100% !important; justify-content: flex-start !important; overflow-x: auto !important; overflow-y: hidden !important; flex-wrap: nowrap !important; touch-action: pan-x; -webkit-overflow-scrolling: touch; overscroll-behavior-x: contain; scrollbar-width: none; }
+  .learn-launch__course-tabs :deep(.q-tabs__content::-webkit-scrollbar) { display: none; }
+  .learn-launch__course-tabs :deep(.q-tab) { flex: 0 0 auto; min-width: 78vw; max-width: 78vw; }
   .learn-launch__course-card { width: 78vw; }
   .learn-launch__veil { background: linear-gradient(180deg, rgba(3,9,11,.58), rgba(3,9,11,.78)); }
 }
