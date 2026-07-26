@@ -24,11 +24,14 @@
       </router-link>
       <div class="learn-launch__header-actions">
         <router-link class="learn-launch__legal-link" to="/politica-privacidade">Privacidade</router-link>
-        <button v-if="!isUser" class="learn-launch__login" type="button" @click="openUserLogin">
-          <q-icon name="mdi-login" aria-hidden="true" /> Entrar
+        <button v-if="!isUser && !isAffiliate" class="learn-launch__login" type="button" @click="openUserLogin">
+          <q-icon name="mdi-login" aria-hidden="true" /> Entrar/Cadastrar
         </button>
-        <button v-else class="learn-launch__login" type="button" @click="router.push('/app')">
+        <button v-if="isUser" class="learn-launch__login" type="button" @click="router.push('/app')">
           <q-icon name="mdi-school-outline" aria-hidden="true" /> Area do estudante
+        </button>
+        <button v-if="isAffiliate" class="learn-launch__login" type="button" @click="router.push('/affiliate')">
+          <q-icon name="mdi-account-star-outline" aria-hidden="true" /> Area do afiliado
         </button>
         <button class="learn-launch__back" type="button" @click="router.push('/')">
           <q-icon name="mdi-arrow-left" aria-hidden="true" />
@@ -52,7 +55,7 @@
       <section id="catalogo" data-landing-3d-section class="learn-launch__section learn-launch__section--catalog">
         <div class="learn-launch__catalog">
           <div class="learn-launch__catalog-head">
-            <div><p class="learn-launch__eyebrow">AITOLEARN / CATALOGO</p><h1>Aprendizado que vira software em producao.</h1><p>Escolha uma trilha, veja o preview e construa com contexto.</p></div>
+            <div><p class="learn-launch__eyebrow">AITOLEARN / CATALOGO</p><h1>Aprenda e construa.</h1></div>
             <q-icon name="mdi-school-outline" size="76px" aria-hidden="true" />
           </div>
           <div class="learn-launch__catalog-search"><q-input v-model="catalogSearch" outlined clearable label="Buscar cursos" @keyup.enter="loadCatalog"><template #prepend><q-icon name="mdi-magnify" /></template></q-input><q-btn unelevated no-caps class="learn-launch__button learn-launch__button--primary" icon="mdi-magnify" label="Buscar" :loading="catalogLoading" @click="loadCatalog" /></div>
@@ -236,6 +239,10 @@ const isUser = computed(() => {
   if (!localStorage.getItem('aito_user_token')) return false
   try { return JSON.parse(localStorage.getItem('aito_user') || '{}').role === 'user' } catch (error) { return false }
 })
+const isAffiliate = computed(() => {
+  if (localStorage.getItem('aito_user_token') || !localStorage.getItem('aito_affiliate_token')) return false
+  try { return JSON.parse(localStorage.getItem('aito_affiliate_user') || '{}').role === 'affiliate' } catch (error) { return false }
+})
 const filteredCatalogCourses = computed(() => {
   const query = catalogSearch.value.trim().toLowerCase()
   if (!query) return catalogCourses.value
@@ -257,7 +264,7 @@ function currentPrice(course) {
 function isPromotion(course) { return currentPrice(course) < Number(course?.price || 0) }
 function money(value) { return Number(value || 0) ? new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(Number(value)) : 'Gratis' }
 function openCourse(course) { if (course?.slug) router.push(`/cursos/${course.slug}`) }
-function openUserLogin() { if (isUser.value) return router.push('/app'); authDialogOpen.value = true }
+function openUserLogin() { if (isUser.value) return router.push('/app'); if (isAffiliate.value) return router.push('/affiliate'); authDialogOpen.value = true }
 function handleAuthenticated(data) { if (data?.user?.role === 'user') router.push('/app') }
 async function loadCatalog() {
   catalogLoading.value = true
@@ -336,17 +343,20 @@ onBeforeUnmount(() => window.clearTimeout(loaderWatchdog))
 .learn-launch__catalog { width: min(1240px, 100%); margin: 0 auto; }
 .learn-launch__catalog-head { display: flex; align-items: flex-end; justify-content: space-between; gap: 2rem; }
 .learn-launch__catalog-head h1 { max-width: 16ch; }
+.learn-launch__catalog-head > div > p:not(.learn-launch__eyebrow) { display: none; }
 .learn-launch__catalog-head > .q-icon { flex: 0 0 auto; color: var(--teal); filter: drop-shadow(0 0 20px rgba(19,188,157,.4)); }
-.learn-launch__catalog-search { display: grid; grid-template-columns: 1fr auto; gap: .7rem; margin-top: 1.5rem; }
+.learn-launch__catalog-search { display: grid; min-width: 0; grid-template-columns: minmax(0, 1fr) auto; gap: .7rem; margin-top: 1.5rem; }
+.learn-launch__catalog-search > * { min-width: 0; }
 .learn-launch__catalog-search :deep(.q-field__control) { min-height: 46px; color: #effffb; background: rgba(7,40,40,.76); }
 .learn-launch__catalog-search :deep(.q-field__label), .learn-launch__catalog-search :deep(.q-field__native), .learn-launch__catalog-search :deep(.q-field__input) { color: rgba(239,255,251,.88); }
 .learn-launch__catalog-row { margin-top: 1.35rem; }
 .learn-launch__catalog-row-head { display: flex; align-items: flex-end; justify-content: space-between; gap: 1rem; }
 .learn-launch__catalog-row-head h2 { max-width: none; margin: .25rem 0 0; font-size: 1rem; }
 .learn-launch__catalog-row-head > span { color: rgba(229,255,250,.55); font-size: .66rem; }
-.learn-launch__course-tabs { min-height: 172px; margin-top: .65rem; border-bottom: 1px solid rgba(19,188,157,.14); }
-.learn-launch__course-tabs :deep(.q-tabs__content) { gap: .65rem; }
-.learn-launch__course-tabs :deep(.q-tab) { min-width: 240px; min-height: 165px; padding: 0; align-items: stretch; text-transform: none; }
+.learn-launch__catalog-row-head h2, .learn-launch__catalog-row-head > span { display: none; }
+.learn-launch__course-tabs { min-width: 0; min-height: 172px; margin-top: .65rem; overflow: hidden; border-bottom: 1px solid rgba(19,188,157,.14); }
+.learn-launch__course-tabs :deep(.q-tabs__content) { justify-content: flex-start; gap: .65rem; overflow-x: auto; overflow-y: hidden; scrollbar-width: thin; }
+.learn-launch__course-tabs :deep(.q-tab) { flex: 0 0 auto; min-width: 240px; min-height: 165px; padding: 0; align-items: stretch; text-transform: none; }
 .learn-launch__course-card { display: grid; width: 240px; height: 160px; grid-template-rows: 88px 1fr; overflow: hidden; border: 1px solid rgba(143,255,238,.26); border-radius: .7rem; text-align: left; background: rgba(3,25,26,.76); box-shadow: 0 14px 34px rgba(0,0,0,.2); transition: border-color .25s ease, transform .25s ease, box-shadow .25s ease; }
 .learn-launch__course-card:hover { border-color: rgba(143,255,238,.72); box-shadow: 0 18px 44px rgba(19,188,157,.16); transform: translateY(-3px); }
 .learn-launch__course-image { position: relative; overflow: hidden; background: linear-gradient(135deg, rgba(19,188,157,.22), rgba(3,16,18,.9)); }
@@ -425,7 +435,8 @@ onBeforeUnmount(() => window.clearTimeout(loaderWatchdog))
   .learn-launch__form-grid { grid-template-columns: 1fr; }
   .learn-launch__form-full { grid-column: auto; }
   .learn-launch__catalog-head > .q-icon { display: none; }
-  .learn-launch__catalog-search { grid-template-columns: 1fr; }
+  .learn-launch__catalog-search { width: 100%; grid-template-columns: minmax(0, 1fr); }
+  .learn-launch__catalog-search .q-btn { width: 100%; }
   .learn-launch__catalog-row-head { align-items: flex-start; flex-direction: column; gap: .25rem; }
   .learn-launch__course-tabs :deep(.q-tab) { min-width: 78vw; }
   .learn-launch__course-card { width: 78vw; }

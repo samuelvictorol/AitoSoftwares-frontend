@@ -32,7 +32,6 @@ const routes = [
   {
     path: '/cursos/:slug/aulas',
     name: 'course-learning',
-    meta: { requiresAuth: 'user' },
     component: () => import('pages/CourseLearningPage.vue'),
   },
   {
